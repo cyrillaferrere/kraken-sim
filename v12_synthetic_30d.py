@@ -70,7 +70,7 @@ def proposal(market,identity,asset,qty,ttl=26*3600):
             "reason":"Simulation fictive de la tendance EMA BTC et ETH de la strategie C",
             "confidence":0.70,"ttl_seconds":ttl}
 
-def run_30day_fixture(out):
+def _run_30day_fixture(out):
     root=state_dir(out)
     if (root/"paper_engine_v12.db").exists() or (root/"dry_run_30d.json").exists():
         raise ValueError("DRY_RUN_OUTPUT_ALREADY_EXISTS: use a fresh external directory")
@@ -135,3 +135,10 @@ def run_30day_fixture(out):
         (root/"dry_run_30d.json").write_text(json.dumps(report,indent=2,ensure_ascii=False)+"\n",encoding="utf8")
         return report
     finally:e.close()
+
+
+def run_30day_fixture(*args,**kwargs):
+    """Fixture pré-V1.6.3 : plafond absolu 1 500 USDC désactivé (ratios conservés)."""
+    from v12_autonomy import crypto_cap_disabled
+    with crypto_cap_disabled():
+        return _run_30day_fixture(*args,**kwargs)

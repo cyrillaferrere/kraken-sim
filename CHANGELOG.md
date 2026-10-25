@@ -12,6 +12,18 @@
 > - Versions sur `develop` : **moteur partagé V1.2 · stratégie V1.1 · UX/UI V1.1.2**. En PR expérimentale seulement : **moteur V1.3 (`VERSION_ENGINE_V12`) · stratégie V1.2**, sans fusion ni cycle.
 
 
+## [Moteur V1.6.3] — 26/10/2026 00h59 (Paris) — Kraken Bot (VERSION_ENGINE_V12, moteur expérimental V1.2)
+### Fonctionnel
+- `v12_autonomy.py` : plafond absolu d'exposition crypto `RISK.max_crypto_exposure_usdc` (1 500 USDC) sur le **coût investi frais inclus** (Σ qty × avg_cost) + ordres en attente ; refus `CRYPTO_EXPOSURE_CAP_USDC` à l'admission et à l'exécution.
+- `v12_cycle.py` (nouveau) + `cycle_v12.py --cycle --state-dir` : cycle PAPER déterministe moteur (pas une IT Grok) repris sur l'état existant (pas de réinitialisation), taille des ordres et contrôle de profondeur calculés sur le budget restant sous plafond ; HOLD motivé sinon. Aucun ordre réel, aucune clé.
+- `render_v12_page.py`, `dashboard_v12_cockpit_template.html` : affichage plafond, montant investi, budget restant et USDC restant ; ordres PAPER exécutés listés.
+### Corrections / tests
+- `tests/test_v12_exposure_cap.py` (8 tests) ; fixtures synthétiques pré-V1.6.3 exécutées plafond désactivé (`crypto_cap_disabled`, jamais en cycle).
+
+## [Stratégie V1.2] — 26/10/2026 00h59 (Paris) — Kraken Bot (paramètres expérimentaux, accompagne Moteur V1.6.3)
+### Fonctionnel
+- `strategy/v1_2/params.json` : `RISK.max_crypto_exposure_usdc=1500`, `crypto_exposure_basis=COST_INVESTED_INCL_FEES` (consigne Cyril : capital réel suivi, 1 500 USDC max investis en crypto). Backtest **non recalculé** avec ce plafond.
+
 ## [Stratégie V1.2] — 26/10/2026 01h00 (Paris) — Kraken Bot (paramètres expérimentaux, accompagne Moteur V1.6.2)
 ### Fonctionnel
 - `strategy/v1_2/params.json` : `UNIVERSE.min_median_daily_usdc_volume_30d` = 1 000 000 (ex-`min_median_daily_usd_volume` = 5 000 000) + bloc `LIQUIDITY` (garde-fous Depth, alerte, repli 5 M documenté non automatisé). STRATEGY_VERSION reste V1.2 (stratégie expérimentale non sélectionnée).

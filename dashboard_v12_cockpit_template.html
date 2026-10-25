@@ -83,7 +83,7 @@ h1,h2,h3,p{margin:0}h1{font-size:29px;letter-spacing:-.9px;font-weight:720;line-
    </section>
   </div>
   <section class="grid4" style="margin-top:14px" aria-label="Indicateurs du portefeuille">
-   <article class="card kpi"><div class="eyebrow">Liquidités</div><div class="value" id="cash">—</div><div class="foot">Cash du portefeuille PAPER</div></article>
+   <article class="card kpi"><div class="eyebrow">Liquidités</div><div class="value" id="cash">—</div><div class="foot" id="cashFoot">Cash du portefeuille PAPER</div></article>
    <article class="card kpi"><div class="eyebrow">Écart vs USDC conservés</div><div class="value" id="vsUsdc">—</div><div class="foot" id="usdcValue">Référence USDC indisponible</div></article>
    <article class="card kpi"><div class="eyebrow">Exposition</div><div class="value" id="exposure">—</div><div class="foot">Plafond global V1.2 : 90 %</div></article>
    <article class="card kpi"><div class="eyebrow">Drawdown actuel</div><div class="value" id="drawdown">—</div><div class="foot" id="riskCaption">Seuil de sécurité : −25 % depuis le pic</div></article>
@@ -175,6 +175,9 @@ function valid(d){return d&&d.strategy_id==="kraken-sim-v1.2"&&d.environment==="
 function setNotice(message,error){const n=qs("notice");n.classList.toggle("is-error",!!error);text("noticeText",message);}
 function derive(d){
  const equity=num(d.equity),cash=num(d.cash),start=num(d.C0);
+ const cx=obj(d.crypto_exposure);
+ if(num(cx.max_crypto_exposure_usdc)!==null){const m=v=>num(v)===null?"—":num(v).toLocaleString("fr-FR",{maximumFractionDigits:2})+" USDC";
+  text("cashFoot","Plafond crypto "+m(cx.max_crypto_exposure_usdc)+" (coût investi) · investi "+m(cx.invested_usdc)+" · budget restant "+m(cx.budget_remaining_usdc)+" · USDC restant "+m(cx.usdc_remaining));}
  const gain=equity!==null&&start!==null?equity-start:null;
  const usdc=num(d.usdc_hold_usdc??d.benchmarks?.usdc_hold_usdc);
  const btc=num(d.btc_hold_usdc??d.benchmarks?.btc_hold_usdc);

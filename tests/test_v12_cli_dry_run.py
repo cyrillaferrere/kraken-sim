@@ -41,8 +41,9 @@ class TestSyntheticCLI(unittest.TestCase):
             self.assertFalse((Path(td)/"external_state").exists())
             act=subprocess.run([sys.executable,str(CLI),"--cycle"],
                                env=env,cwd=ROOT,capture_output=True,text=True,timeout=20)
-            self.assertEqual(act.returncode,3)
-            self.assertIn("BLOCKED",act.stderr)
+            # Moteur V1.6.3 : --cycle PAPER refuse sans état existant (jamais d'init implicite).
+            self.assertEqual(act.returncode,4)
+            self.assertIn("STATE_MISSING_RUN_INIT_CHECK_FIRST",act.stderr)
             self.assertFalse((Path(td)/"external_state").exists())
     def test_no_implicit_dry_run_without_external_path(self):
         result=subprocess.run([sys.executable,str(CLI),"--dry-run"],
