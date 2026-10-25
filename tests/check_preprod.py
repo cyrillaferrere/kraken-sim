@@ -6,7 +6,11 @@ P = os.environ.get("PREPROD_OUT", os.path.join(D, "_site")) + "/index.html"
 h = open(P).read(); bad = []
 if "PreProd</small>" not in h: bad.append("identification discrète PreProd absente")
 if "preprod-banner" in h: bad.append("ancien bandeau rouge toujours présent")
-if 'const STATE_URL = "https://raw.githubusercontent.com/cyrillaferrere/kraken-sim/main/state/public_state.json";' not in h: bad.append("STATE_URL ne pointe pas vers la prod")
+source = ("https://raw.githubusercontent.com/cyrillaferrere/kraken-sim-preprod/state-v12/public_state_v12.json"
+          if os.environ.get("PREPROD_V12_READY") == "1"
+          else "https://raw.githubusercontent.com/cyrillaferrere/kraken-sim/main/state/public_state.json")
+if ('const STATE_URL = "' + source + '";') not in h:
+    bad.append("STATE_URL ne pointe pas sur la source explicitement validée")
 if "__DATA__" in h: bad.append("données non injectées")
 chrome = next((shutil.which(b) for b in ("google-chrome", "google-chrome-stable", "chromium", "chromium-browser") if shutil.which(b)), None)
 if chrome:
