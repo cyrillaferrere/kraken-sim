@@ -16,3 +16,6 @@ La source officielle Kraken décrit les CSV OHLCVT et leurs colonnes : https://s
 - `tests/test_v12_protected_paths.py` : tests négatifs automatiques sur `state/x.json`, `state/public_state.json`, `state/history/...`, `VERSION_ENGINE` et autres chemins V1.1 ; règle P0 du workflow réparée.
 - `tests/test_v12_version_isolation.py` : export V1.2 sous `VERSION_ENGINE_V12` sans modifier `VERSION_ENGINE` (version sur develop) ; nouveaux ordres V1.1 étiquetés comme avant.
 - `tests/test_v12_isolation.py` : tests supplémentaires pour clones de production, dossiers `state`, ancêtres contenant `sim.db` et checkout Git autorisé de la seule préprod.
+
+### Validation stratégique
+- `tests/test_v12_acceptance.py` vérifie que les runs exploratoires, les métriques OOS absentes et tout manquement aux sept critères §5 sont rejetés. La sélection Calmar puis Sortino exige un dossier `VALIDATED_WALK_FORWARD` complet. **Le walk-forward n'est pas encore calculé**.
