@@ -6,7 +6,9 @@ from datetime import datetime,timedelta,timezone
 
 from v12_grok_issues import InboxError,parse_decision_issue,fetch_latest
 from v12_kraken_public import KrakenMarketError,collect,overview,daily_bars,call
-from v12_live_bridge import paper_step
+from v12_live_bridge import paper_step,fetch_and_step
+from v12_grok_issues import InboxError
+from unittest.mock import patch
 from v12_paper_engine import PaperEngine
 from v12_synthetic_30d import start_market,market_at,proposal
 from v12_autonomy import utc
@@ -79,6 +81,36 @@ class TestPublicBridge(unittest.TestCase):
         got=fetch_latest(USER_ID,"read-only-test",opener=opener)
         self.assertEqual(got["issue_number"],44)
         with self.assertRaises(InboxError):fetch_latest(USER_ID,None,opener=opener)
+    def test_full_bridge_safeguards_run_if_github_is_down(self):
+        seed=start_market()
+        m=market_at(seed,0);m["data_origin"]="KRAKEN_PUBLIC_API"
+        with tempfile.TemporaryDirectory() as td:
+            engine=PaperEngine(td)
+            try:
+                with patch("v12_live_bridge.collect",return_value=m),patch(
+                    "v12_grok_issues.fetch_latest",side_effect=InboxError("timeout")):
+                    response=fetch_and_step(engine,USER_ID,"fake-public-read-token",max_pairs=2)
+                self.assertEqual(response["tick"]["status"],"DRY_RUN")
+                self.assertEqual(response["it_status"],"GITHUB_UNAVAILABLE_NO_NEW_DECISIONS")
+                self.assertEqual(response["live_orders"],0)
+                self.assertEqual(engine.report()["marks"],1)
+            finally:engine.close()
+    def test_full_bridge_mismatched_hash_rejects_new_orders(self):
+        seed=start_market()
+        m=market_at(seed,0);m["data_origin"]="KRAKEN_PUBLIC_API"
+        batch={"it_id":"x","synthesis_sha256":"a"*64,"decisions":[]}
+        verified=parse_decision_issue(issue(batch),USER_ID)
+        with tempfile.TemporaryDirectory() as td:
+            engine=PaperEngine(td)
+            try:
+                with patch("v12_live_bridge.collect",return_value=m),patch(
+                    "v12_grok_issues.fetch_latest",return_value=verified):
+                    result=fetch_and_step(engine,USER_ID,"fake-public-read-token",max_pairs=2)
+                self.assertEqual(result["it_status"],"GROK_IT_REJECTED")
+                self.assertEqual(result["it_decisions"],[])
+                self.assertFalse(engine.wallet().positions)
+                self.assertEqual(engine.report()["marks"],1)
+            finally:engine.close()
     def test_offline_bridge_real_origin_requires_engine_and_bound_synthesis(self):
         seed=start_market()
         m=market_at(seed,0)
