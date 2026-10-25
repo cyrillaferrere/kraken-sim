@@ -236,6 +236,7 @@ updateCycle(); setInterval(updateCycle, 1000);
 document.querySelectorAll(".zoom button").forEach(b => { b.disabled = false; b.title = `Bougies Kraken ${ZOOM[b.dataset.range][2]}`;
   b.onclick = () => { zr = b.dataset.range; document.querySelectorAll(".zoom button").forEach(x => x.classList.toggle("active", x === b)); $("lchart").innerHTML = '<div class="sub">Chargement…</div>'; loadOhlc(); }; });
 // --- revalorisation live des positions (bid Kraken, comme la sim) ---
+let liveAt = null;
 function revalue() {
   const K = D.core || {positions: []}; if (!D.positions.length && !K.positions.length) return;  // K = socle de référence (valeur si conservé), déjà inclus dans D.positions
   let pv = 0, kv = 0;
@@ -248,12 +249,12 @@ function revalue() {
   for (const r of D.pnl_by_asset) { const p = D.positions.find(q => q.asset === r.asset); if (p) { r.unreal = p.qty * (p.price - p.avg); r.total = r.real + r.unreal; } }
 }
 async function pollPositions() {
-  const pairs = [...new Set(D.positions.concat((D.core || {}).positions || []).map(p => p.pair).filter(Boolean))]; if (!pairs.length) return;
+  const pairs = [...new Set(D.positions.concat((D.core || {}).positions || []).map(p => p.pair).filter(Boolean).concat(["XXBTZUSD"]))];
   try { const r = await (await fetch("https://api.kraken.com/0/public/Ticker?pair=" + pairs.join(","))).json();
     for (const [k, t] of Object.entries(r.result || {})) liveBid[k] = +t.b[0];
     for (const p of pairs) if (!liveBid[p]) { const k = Object.keys(r.result || {}).find(x => x.replace(/^X|Z(?=USD$)/g, "") === p.replace(/^X|Z(?=USD$)/g, "")); if (k) liveBid[p] = liveBid[k]; }
-    revalue(); renderSim(); renderExit(); stamp(`positions revalorisées en direct (bid Kraken) à ${parisFmt.format(new Date())}`);
-  } catch (e) { stamp("revalorisation directe indisponible, valeurs du cycle"); }
+    liveAt = new Date(); revalue(); renderSim(); renderExit(); stamp(`LIVE : prix Kraken (bid) à ${parisFmt.format(liveAt)}, rafraîchi toutes les 20 s`);
+  } catch (e) { stamp(`prix live indisponibles : valeurs FIGÉES du cycle${liveAt ? " (dernier prix live " + parisFmt.format(liveAt) + ")" : ""}`); }
 }
 // --- indicateurs de sortie (bougies journalières clôturées, même calcul que la sim) ---
 async function pollExitInd() {
@@ -268,7 +269,8 @@ function renderExit() {
   if (!D.positions.length) { T.innerHTML = '<tr><td colspan="6" style="color:var(--mute)">Aucune position ouverte.</td></tr>'; return; }
   const hold = D.min_hold_h || 48, sn = D.snapshot || {}, rs = D.btc_regime_state || sn.state || null, band = sn.band || null;
   const REGL = {on: "haussier", neutral: "neutre", off: "baissier"};
-  const regTxt = `${REGL[rs] || "n.d."}${band ? `<br><small>clôture BTC ${usd(sn.btc_close)} · bande ${usd(band[0])} – ${usd(band[1])}</small>` : ""}`;
+  const bl = liveBid["XXBTZUSD"], lt = liveAt ? parisFmt.format(liveAt) : null;
+  const regTxt = `${REGL[rs] || "n.d."} <small>(sur clôture ${sn.candle || ""})</small>${band ? `<br><small>clôture BTC ${usd(sn.btc_close)} · bande ${usd(band[0])} – ${usd(band[1])}</small>` : ""}${band && bl ? `<br><small>live ${usd(bl)} (${lt}) : ${pct((bl / band[0] - 1) * 100)} vs borne basse, ${pct((bl / band[1] - 1) * 100)} vs borne haute${bl < band[0] ? " — sous la bande (indicatif, jugé à la clôture)" : bl > band[1] ? " — au-dessus de la bande (indicatif)" : ""}</small>` : ""}`;
   T.innerHTML = D.positions.map(p => {
     const x = liveInd[p.asset], close = x ? x.c : p.close, e50 = x ? x.e50 : p.ema50;
     const dist = p.stop ? (p.price / p.stop - 1) * 100 : null, stopHit = p.stop != null && p.price <= p.stop;
@@ -278,8 +280,8 @@ function renderExit() {
     const trendExit = regOff || (below && (!p.origin || left <= 0));
     const decision = stopHit ? '<b class="down">Vente (stop)</b>' : regOff ? '<b class="down">Vente risk-off au prochain cycle</b>' : trendExit ? '<b class="down">Vente au prochain cycle (clôture &lt; EMA50)</b>' : below ? '<b>Sortie différée (détention min. 48 h)</b>' : '<b class="up">Conserver</b>';
     return `<tr><td>${esc(p.asset)}${p.test ? ' <small>(test)</small>' : ''}</td>
-      <td>${yn(stopHit, `stop ${usd(p.stop)} · bid ${usd(p.price)} · distance ${dist == null ? "n.d." : pct(dist)}<br><small>Stop touché ?</small>`)}</td>
-      <td>${yn(below, `clôture ${usd(close)} vs EMA50 ${usd(e50)} (${close && e50 ? pct((close / e50 - 1) * 100) : "n.d."})<br><small>Sous EMA50 ?</small>`)}</td>
+      <td>${yn(stopHit, `stop ${usd(p.stop)} · bid ${liveAt ? "live" : "du cycle (figé)"} ${usd(p.price)} · distance ${dist == null ? "n.d." : pct(dist)}<br><small>Stop touché ?</small>`)}</td>
+      <td>${yn(below, `sur clôture : ${usd(close)} vs EMA50 ${usd(e50)} (${close && e50 ? pct((close / e50 - 1) * 100) : "n.d."})${liveAt && e50 ? `<br><small>live ${usd(p.price)} (${lt}) : ${pct((p.price / e50 - 1) * 100)} vs EMA50</small>` : ""}<br><small>Sous EMA50 (clôture) ?</small>`)}</td>
       <td>${yn(regOff, `${regTxt}<br><small>Régime baissier (risk-off) ?</small>`)}</td>
       <td>${yn(left <= 0, `détenu ${nf(held, 1)} h · reste ${nf(left, 1)} h<br><small>Durée min. écoulée ?</small>`)}</td>
       <td>${decision}</td></tr>`; }).join("");
@@ -290,7 +292,7 @@ function stamp(extra) { $("stateSrc").textContent = `État de la sim : ${stateNo
 async function pollState() {
   try { const r = await fetch(STATE_URL + "?t=" + Date.now(), {cache: "no-store"}); if (!r.ok) throw new Error(r.status);
     const S = await r.json();
-    if (S.last_cycle_iso && new Date(S.last_cycle_iso) >= new Date(D.last_cycle_iso)) { Object.assign(D, S); stateNote = `état publié chargé ${parisFmt.format(new Date())}`; renderSim(); updateCycle(); }
+    if (S.last_cycle_iso && new Date(S.last_cycle_iso) >= new Date(D.last_cycle_iso)) { Object.assign(D, S); stateNote = `état publié chargé ${parisFmt.format(new Date())}`; if (Object.keys(liveBid).length) revalue(); renderSim(); renderExit(); updateCycle(); }
     else stateNote = "état publié plus ancien que l'instantané, instantané conservé";
   } catch (e) { stateNote = "instantané intégré (état publié injoignable)"; }
   stamp(); pollPositions();
