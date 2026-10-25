@@ -1,0 +1,106 @@
+name: Kraken Sim V1.2 — préprod manuelle isolée (init-check HOLD seul)
+# Déclenchement MANUEL uniquement : aucun schedule, aucune clé Kraken, aucun ordre.
+on:
+  workflow_dispatch:
+    inputs:
+      code_sha:
+        description: "SHA épinglé de strategy/v1.2 (40 hex)"
+        type: string
+        required: true
+        default: "972b4c4406d4847b9e7e7bd3f71350c36409fbf1"
+permissions:
+  contents: read
+concurrency:
+  group: kraken-sim-v12
+  cancel-in-progress: false
+env:
+  V12_REVIEWED_CODE_SHA: ${{ inputs.code_sha }}
+jobs:
+  check:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Exiger un SHA immuable
+        shell: bash
+        run: |
+          [[ "$V12_REVIEWED_CODE_SHA" =~ ^[a-f0-9]{40}$ ]] || { echo "::error::V1.2 non épinglée"; exit 1; }
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.V12_REVIEWED_CODE_SHA }}
+          persist-credentials: false
+          fetch-depth: 0
+          path: code
+      - name: Le SHA doit appartenir à strategy/v1.2
+        working-directory: code
+        shell: bash
+        run: |
+          git merge-base --is-ancestor "$V12_REVIEWED_CODE_SHA" origin/strategy/v1.2 || { echo "::error::SHA hors strategy/v1.2"; exit 1; }
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12"}
+      - name: Tests hors ligne
+        working-directory: code
+        run: |
+          python3 -m unittest discover -s tests -p 'test_v12_*.py'
+          python3 -m unittest discover -s tests -p 'test_v11_nonregression.py'
+      - name: Lire l'état V1.2 public (sans clé)
+        shell: bash
+        run: |
+          git clone --depth 1 --branch state-v12 https://github.com/cyrillaferrere/kraken-sim-preprod.git "$RUNNER_TEMP/v12state"
+          git -C "$RUNNER_TEMP/v12state" rev-parse HEAD > "$RUNNER_TEMP/v12_previous_sha"
+      - name: Init-check HOLD seul (données publiques Kraken, 0 ordre)
+        working-directory: code
+        env:
+          V12_STATE_DIR: ${{ runner.temp }}/v12state
+        run: python3 cycle_v12.py --init-check --state-dir "$V12_STATE_DIR"
+      - name: Contrôle zéro ordre et construction de l'artefact
+        shell: bash
+        run: |
+          set -euo pipefail
+          R="$RUNNER_TEMP/v12state/check_report.json"
+          python3 -c "import json,sys;r=json.load(open(sys.argv[1]));assert r['orders']==0 and r['fills']==0 and r['trades']==0 and r['mode']=='INIT_CHECK_HOLD_ONLY',r" "$R"
+          mkdir -p "$RUNNER_TEMP/v12out"
+          cp "$RUNNER_TEMP/v12_previous_sha" "$RUNNER_TEMP/v12out/previous_sha"
+          for f in paper_engine_v12.db grok_paper_evidence_v12.db check_report.json; do
+            test -f "$RUNNER_TEMP/v12state/$f" || { echo "::error::fichier $f absent"; exit 1; }
+            cp "$RUNNER_TEMP/v12state/$f" "$RUNNER_TEMP/v12out/$f"
+          done
+      - uses: actions/upload-artifact@v4
+        with:
+          name: v12-next-state
+          path: ${{ runner.temp }}/v12out/
+          retention-days: 7
+  publish:
+    needs: check
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: v12-next-state
+          path: ${{ runner.temp }}/v12out
+      - name: Publication limitée à preprod/state-v12 (si 0 ordre)
+        env:
+          DEPLOY_KEY: ${{ secrets.PREPROD_DEPLOY_KEY }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -c "import json,sys;r=json.load(open(sys.argv[1]));assert r['orders']==0 and r['fills']==0,r" "$RUNNER_TEMP/v12out/check_report.json" || { echo "::error::ordres != 0, aucune publication"; exit 1; }
+          test -n "$DEPLOY_KEY" || { echo "::error::clef absente"; exit 1; }
+          mkdir -p "$HOME/.ssh"; chmod 700 "$HOME/.ssh"
+          (umask 077; printf '%s\n' "$DEPLOY_KEY" > "$HOME/.ssh/v12")
+          trap 'rm -f "$HOME/.ssh/v12"' EXIT
+          # GitHub's published Ed25519 HOST key (not trust-on-first-use):
+          printf '%s\n' 'github.com ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOMqqnkVzrm0SdG6UOoqKLsabgH5C9okWi0dh2l9GKJl' > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/known_hosts"
+          export GIT_SSH_COMMAND="ssh -o StrictHostKeyChecking=yes -o IdentitiesOnly=yes -i $HOME/.ssh/v12"
+          git clone --depth 1 --branch state-v12 git@github.com:cyrillaferrere/kraken-sim-preprod.git "$RUNNER_TEMP/v12publish"
+          test "$(git -C "$RUNNER_TEMP/v12publish" rev-parse HEAD)" = "$(cat "$RUNNER_TEMP/v12out/previous_sha")" || { echo "::error::conflit d'état, aucun push"; exit 1; }
+          for f in paper_engine_v12.db grok_paper_evidence_v12.db check_report.json; do cp "$RUNNER_TEMP/v12out/$f" "$RUNNER_TEMP/v12publish/"; done
+          cd "$RUNNER_TEMP/v12publish"
+          git config user.name kraken-v12-paper-bot
+          git config user.email kraken-sim-bot@users.noreply.github.com
+          git add paper_engine_v12.db grok_paper_evidence_v12.db check_report.json
+          git diff --cached --quiet || git commit -m "state V1.2 init-check run $GITHUB_RUN_ID (code ${V12_REVIEWED_CODE_SHA::7}, 0 ordre)"
+          git push origin HEAD:state-v12
+          rm -f "$HOME/.ssh/v12"
