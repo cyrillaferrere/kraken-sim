@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Independent V1.2 PAPER ledger. No V1.1 imports, no implicit DB path."""
 import os
+import configparser
 import sqlite3
 from pathlib import Path
 ROOT = Path(__file__).resolve().parent
@@ -29,8 +30,19 @@ def state_dir(raw=None):
             if ancestor != path:
                 raise IsolationError("nested output inside another Git repository")
             cfg = gitmeta / "config"
-            if not cfg.is_file() or "kraken-sim-preprod" not in cfg.read_text(encoding="utf-8",errors="replace"):
-                raise IsolationError("V1.2 state Git checkout must be kraken-sim-preprod")
+            parser = configparser.ConfigParser()
+            if not cfg.is_file():
+                raise IsolationError("V1.2 checkout origin configuration missing")
+            parser.read(cfg, encoding="utf-8")
+            actual = parser.get('remote "origin"', "url", fallback="").rstrip("/")
+            allowed = {
+                "https://github.com/cyrillaferrere/kraken-sim-preprod.git",
+                "https://github.com/cyrillaferrere/kraken-sim-preprod",
+                "git@github.com:cyrillaferrere/kraken-sim-preprod.git",
+                "ssh://git@github.com/cyrillaferrere/kraken-sim-preprod.git",
+            }
+            if actual not in allowed:
+                raise IsolationError("V1.2 state checkout origin must exactly match preprod repo")
     return path
 
 def db_path(raw=None):
