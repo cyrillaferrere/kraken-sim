@@ -1,12 +1,21 @@
 {
-  "_instructions": "TEMPLATE ONLY — copy to MANIFEST.json and replace placeholders after official download; do not commit incomplete/false checksums",
-  "files": [
-    {
-      "asset": "BTC",
-      "file": "XBTUSD_1440.csv",
-      "sha256": "REPLACE_WITH_REAL_SHA256",
-      "source_url": "https://support.kraken.com/fr/articles/360047124832-downloadable-historical-ohlcvt-open-high-low-close-volume-trades-data",
-      "retrieved_utc": "REPLACE_WITH_UTC_DOWNLOAD_DATE"
-    }
-  ]
+  "_instructions": "TEMPLATE — ne pas recopier comme données réelles. Remplir UNIQUEMENT après avoir obtenu l'intégralité des paires USD Kraken historiques et leurs CSV officiels SHA-256. Ne jamais déclarer verified=true sans preuve externe.",
+  "coverage": {
+    "all_historical_usd_spot_pairs_verified": false,
+    "enumeration_source_url": null,
+    "enumeration_utc": null,
+    "historical_pair_ids": []
+  },
+  "files": [],
+  "_expected_file_fields": {
+    "asset": "BTC (symbole normalisé, quote USD)",
+    "file": "BTCUSD_1440.csv (nom sans chemin)",
+    "sha256": "64 caractères hexadécimaux, vérifiés sur le fichier binaire",
+    "source_url": "Lien officiel original du CSV",
+    "retrieved_utc": "Horodatage UTC du téléchargement",
+    "listed_at": "Date ISO UTC de cotation initiale (vérifiée)",
+    "status": "active ou delisted",
+    "delisted_at": "Date ISO UTC de délistage si status=delisted, sinon null",
+    "min_order_usd": "Minimum de l'actif si connu, jamais supposé"
+  }
 }
