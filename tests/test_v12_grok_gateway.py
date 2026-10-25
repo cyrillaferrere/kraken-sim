@@ -4,11 +4,14 @@ import unittest
 from datetime import datetime,timedelta
 from pathlib import Path
 
-from test_v12_autonomy import fixture
+from test_v12_autonomy import fixture,risk_fixture
 from v12_accounting import Portfolio
-from v12_grok_gateway import inspect_and_record
+from v12_grok_gateway import inspect_and_record as real_inspect
 from v12_learning import open_journal,summarize,verify
 
+def inspect_and_record(proposal,market,portfolio,directory,now):
+    return real_inspect(proposal,market,portfolio,directory,now,
+                        risk_state=risk_fixture(market),phase="admission")
 class TestGrokGatewayOffline(unittest.TestCase):
     def test_good_paper_proposal_is_logged_and_never_executed(self):
         market,proposal=fixture()
