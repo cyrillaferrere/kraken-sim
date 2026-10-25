@@ -9,7 +9,14 @@
 >   `## [Moteur Vx.y] — JJ/MM/AAAA HHhMM (Paris) — Kraken Bot`, `## [Stratégie Vx.y] — … — Kraken Bot` ou `## [UX Vx.y] — JJ/MM/AAAA HHhMM (Paris) — GPT6`
 >   puis les sections utiles : **Fonctionnel / UX-UI / Infra / Corrections**, une ligne par changement (fichier + impact sur les décisions, « aucun » si visuel).
 > - Les commits automatiques « état sim … » ne sont pas journalisés.
-> - Versions actuelles : **Moteur V1.2 · Stratégie V1.1 · UX/UI V1.1**.
+> - Versions actuelles : **Moteur V1.2 · Stratégie V1.1 · UX/UI V1.1.1**.
+
+## [UX V1.1.1] — 25/10/2026 15h00 (Paris) — GPT6
+### UX-UI
+- `dashboard_template.html` : vue d'ensemble hiérarchisée, explication du régime de dernier cycle, comparaison au socle repliable, typographie et mobile améliorés.
+- `dashboard_template.html` : filtres et recherche du journal existant, sans toucher aux ordres.
+- `dashboard_template.html` : replay historique en lecture seule (schéma 1), chargement mensuel différé, gestion des cycles incomplets et retour au direct.
+- `docs/SPEC_UX.md` : usages, sources et limites du replay et de l'affichage UX V1.1.1. Impact trading : aucun.
 
 ## [Moteur V1.2] — 25/10/2026 14h45 — Kraken Bot
 ### Moteur
