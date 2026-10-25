@@ -41,7 +41,7 @@ class TestGrokPaperFirewall(unittest.TestCase):
         result=validate(decision,snapshot,wallet,now=snapshot["observed_at"])
         self.assertTrue(result["accepted"],result)
         self.assertEqual(result["status"],"PREFLIGHT_ONLY_NOT_EXECUTED")
-        self.assertEqual(wallet.cash,6605.10)
+        self.assertEqual(wallet.cash,Portfolio('6605.10').cash)
         self.assertEqual(wallet.positions,{})
         self.assertLessEqual(result["max_strategy_weight"],.5)
     def test_extra_risk_override_is_refused(self):
