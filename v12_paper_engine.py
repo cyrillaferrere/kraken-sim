@@ -417,6 +417,22 @@ class PaperEngine:
                     events.append({"id":identity,"action":"MAKER_POSTED"})
             else:
                 if now<=utc(placed_at):continue
+                # An order admitted at a previous IT is NOT pre-authorized forever:
+                # re-check live quotes, remaining positions/cash and portfolio risk
+                # at EVERY settlement cycle. Exclude only its own reservation.
+                origin=self.conn.execute("SELECT asof FROM syntheses WHERE digest=?",(sha,)).fetchone()
+                if not origin:raise ValueError("ADMISSION_SYNTHESIS_MISSING")
+                live=dict(snapshot,signal_asof=origin[0])
+                second_gate=validate(dec,live,p,now,
+                                     risk_state=self._risk(snapshot,exclude=identity),
+                                     phase="execution")
+                if not second_gate["accepted"]:
+                    self.conn.execute("""UPDATE orders SET status='REJECTED',reason=?
+                                         WHERE decision_id=?""",
+                                      (second_gate["reason"],identity))
+                    events.append({"id":identity,"action":"SETTLEMENT_REJECTED",
+                                   "reason":second_gate["reason"]})
+                    continue
                 # Only public trades after placing the limit, crossing strictly, can
                 # generate partial PAPER maker fills. Remainder falls back to taker.
                 tape=snapshot.get("trades",{}).get(asset,[])
@@ -474,7 +490,10 @@ class PaperEngine:
                 for asset,held in list(p.positions.items()):
                     self._execute_taker(p,"risk:"+slot,asset,"SELL",held["qty"],quotes,moment,forced=True)
                     events.append({"action":"FORCED_SELL","asset":asset})
-            if not self._get("risk_lock"):
+            if self._get("risk_lock"):
+                self.conn.execute("""UPDATE orders SET status='RISK_CANCELLED',
+                      reason='ENGINE_RISK_LOCK' WHERE status IN ('ADMITTED','MAKER_PENDING')""")
+            else:
                 events.extend(self._protect_positions(p,quotes,snapshot,moment,slot))
             if not self._get("risk_lock") and not self._get("paused"):
                 events.extend(self._process_pending(p,quotes,snapshot,moment))
