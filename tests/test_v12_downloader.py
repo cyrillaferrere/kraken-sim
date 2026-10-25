@@ -59,8 +59,10 @@ class TestKrakenManualDownload(unittest.TestCase):
                 document=json.loads(config.read_text())
                 self.assertEqual(document["archives"][0]["sha256"],hashlib.sha256(content).hexdigest())
                 self.assertIn("NOT_HISTORICALLY_CERTIFIED",document["status"])
-                with self.assertRaisesRegex(ValueError,"EXISTS"):
-                    fetch.build_config(dst,result)
+                self.assertEqual(fetch.build_config(dst,result),config)
+                # A later invocation must not rewrite or discard verified evidence.
+                self.assertEqual(json.loads(config.read_text())["archives"][0]["sha256"],
+                                 hashlib.sha256(content).hexdigest())
     def test_invalid_resume_range_is_rejected(self):
         with tempfile.TemporaryDirectory() as t:
             dest=Path(t)
@@ -101,7 +103,10 @@ class TestKrakenManualDownload(unittest.TestCase):
             zipfile=(d/fetch.FULL_NAME)
             zipfile.write_bytes(b"mock full zip")
             with patch.object(fetch,"FULL_SHA256",hashlib.sha256(b"mock full zip").hexdigest()):
+                cfg=fetch.build_config(d,zipfile)
+                self.assertEqual(len(json.loads(cfg.read_text())["archives"]),1)
                 cfg=fetch.build_config(d,zipfile,f)
+                self.assertEqual(fetch.build_config(d,zipfile,f),cfg)
             q=json.loads(cfg.read_text())["archives"][1]
             self.assertFalse(q["checksum_independently_attested"])
             self.assertIn("Local fingerprint only",q["checksum_provenance"])
