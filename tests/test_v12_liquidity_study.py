@@ -1,6 +1,6 @@
 import unittest
 from datetime import date,timedelta
-from v12_liquidity_study import analyze,FIXED
+from research_liquidity_v12 import analyze,FIXED
 
 def fixture(vol_btc=6000000,vol_eth=1500000,eur_rate=1.10):
     base=date(2026,8,1);rows=[]
