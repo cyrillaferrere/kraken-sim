@@ -1,6 +1,6 @@
 # GARDE-FOUS — contrat d'interface GPT6 ↔ Kraken Bot
 
-**Rôles** : Kraken Bot = moteur, données, règles (`VERSION_ENGINE`). GPT6 = UX/UI (`VERSION_UX` dans `dashboard_template.html`). Stratégie (`strategy/params.json`, `STRATEGY_VERSION`) = Kraken Bot uniquement, **GPT6 n'y touche jamais**. Paper trading uniquement, aucun ordre réel.
+**Rôles** : Kraken Bot supervise la stratégie et la revue technique ; GPT-6 gère l'UX, et exceptionnellement l'implémentation de la V1.2 sur `strategy/v1.2`. `VERSION_ENGINE` reste partagé avec la V1.1 et ne doit pas changer dans la PR V1.2 ; `VERSION_ENGINE_V12` versionne séparément le moteur expérimental. Paper trading uniquement, aucun ordre réel.
 
 ## Circuit de livraison (préprod → prod)
 1. Branches `ux/*`, `feature/*`, `fix/*` créées **depuis `develop`** → PR vers `develop` (guard doit être vert).
@@ -25,14 +25,14 @@
 - GPT6 modifie **uniquement** `dashboard_template.html` (+ `CHANGELOG.md`, `docs/SPEC_UX.md`). **Jamais** `cycle_v11.py`, `cycle.py`, `backtest.py`, `page_data.py`, `render_page.py`, `sim.db`, `state/`, `.github/workflows/`, `VERSION_ENGINE`, `strategy/`, `tests/`.
 - GPT6 travaille sur une branche `ux/<sujet>` (ou `feature/*`, `fix/*`) créée depuis `develop` et ouvre une PR vers `develop`, qu'il fusionne lui-même une fois guard vert (voir Circuit) ; **jamais de push direct sur develop, jamais de push ni de fusion sur main**.
 - Chaque PR UX **incrémente `VERSION_UX`** et ajoute en tête de `CHANGELOG.md` une entrée `## [UX <nouvelle version>] — date — GPT6`.
-- Chaque modif moteur/données **incrémente `VERSION_ENGINE`** + entrée `## [Moteur <version>]` (Kraken Bot).
+- Chaque modification du moteur V1.1 impose une évolution de `VERSION_ENGINE` ; la V1.2 utilise exclusivement `VERSION_ENGINE_V12` (Moteur V1.3 en expérimentation) et ne peut modifier la version partagée.
 - Chaque changement de stratégie **incrémente `STRATEGY_VERSION`** + entrée `## [Stratégie <version>]` avec paramètres avant/après, justification et **backtest** (Kraken Bot).
 - Besoin d'une donnée ou d'une règle nouvelle → issue GitHub avec l'étiquette **`fonctionnel`** (Kraken Bot l'ajoute dans `page_data.py`, puis le contrat).
 
 ## 3. Ce que bloque `guard.yml` (PR et push sur main)
 - **perimetre-ux** (PR depuis `ux/*`) : échoue si un fichier hors `dashboard_template.html`, `CHANGELOG.md`, `docs/SPEC_UX.md` est modifié.
 - **perimetre-gpt6** (PR depuis `ux/*`, `feature/*`, `fix/*`) : échoue si la PR modifie le moteur, `VERSION_ENGINE`, `strategy/`, `params.json`, `.github/workflows/sim.yml`, `state/` ou `sim.db`. Ces changements passent par une branche Kraken Bot avec revue technique.
-- **versions** (toute PR) : template modifié sans changement de `VERSION_UX`, sans `CHANGELOG.md` ou sans entrée `## [UX <version>]` → échec ; `strategy/` modifié sans incrément de `STRATEGY_VERSION`, sans entrée `## [Stratégie <version>]` ou sans backtest → échec ; fichiers moteur modifiés sans incrément de `VERSION_ENGINE` et entrée `## [Moteur <version>]` → échec.
+- **perimetre-strategie** (toute PR `strategy/*`) : bloque `state/**`, `sim.db`, `VERSION_ENGINE` partagé et fichiers moteur/stratégie V1.1 ; tests négatifs inclus.\n- **versions** (toute PR) : template modifié sans changement de `VERSION_UX`, sans `CHANGELOG.md` ou sans entrée `## [UX <version>]` → échec ; `strategy/` modifié sans incrément de `STRATEGY_VERSION`, sans entrée `## [Stratégie <version>]` ou sans backtest → échec ; fichiers moteur modifiés sans incrément de `VERSION_ENGINE` et entrée `## [Moteur <version>]` → échec.
 - **preprod-isole** (PR et push) : `preprod.yml` / `render_preprod.py` ne doivent référencer ni la base de la sim, ni les scripts de cycle/rendu prod, ni l'écriture d'état, ni un push vers `kraken-sim` (seul `kraken-sim-preprod`).
 - **contrat** (PR et push) : `tests/check_template.py` (points 1 à 7 ci-dessus, rendu réel avec `render_page.py` puis Chrome sans interface : zéro erreur JS, zéro undefined/NaN, versions affichées).
 
@@ -59,3 +59,9 @@ La PR vers `develop` est fusionnée par GPT-6 dès que `guard` est vert ; la PR 
 - La SPEC de stratégie provient de Grok Bot ; première fusion de `strategy/v1.2` vers develop soumise à Cyril et à une revue technique Grok Bot.
 - Le site préprod continue temporairement à afficher V1.1 jusqu'à un état V1.2 réel et testé ; ne jamais présenter ses données V1.1 comme les résultats du moteur V1.2.
 - Numérotations indépendantes : moteur V1.3, stratégie V1.2 et UX propre.
+
+### Revue Grok Bot du 25 octobre 2026 — résolution du P0
+- La regex précédente de `perimetre-strategie` contenait le motif `state/` ancré de fin, qui ne détectait aucun fichier sous `state/`.
+- La nouvelle règle interdit `^state/` et les chemins V1.1 exacts, notamment `VERSION_ENGINE`.
+- `tests/test_v12_protected_paths.py` teste explicitement les chemins `state/public_state.json`, `state/history/index.json`, `state/x.json` ainsi que les autres fichiers protégés.
+- `VERSION_ENGINE_V12` est distinct : toute révision du moteur expérimental ne peut plus ré-étiqueter les ordres V1.1.
