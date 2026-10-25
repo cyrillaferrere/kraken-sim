@@ -63,6 +63,28 @@ class TestKrakenManualDownload(unittest.TestCase):
                 # A later invocation must not rewrite or discard verified evidence.
                 self.assertEqual(json.loads(config.read_text())["archives"][0]["sha256"],
                                  hashlib.sha256(content).hexdigest())
+    def test_complete_partial_is_promoted_without_network(self):
+        with tempfile.TemporaryDirectory() as td:
+            dest=Path(td)
+            name="Kraken_OHLCVT_Full.zip.part00"
+            data=b"fully received but still partial"
+            digest=hashlib.sha256(data).hexdigest()
+            (dest/(name+".partial")).write_bytes(data)
+            with patch.object(fetch.urllib.request,"urlopen",side_effect=AssertionError("NO NETWORK")):
+                path,status=fetch.get_part(dest,name,digest)
+            self.assertEqual(status,"recovered")
+            self.assertEqual(path.read_bytes(),data)
+            self.assertFalse((dest/(name+".partial")).exists())
+    def test_q3_requires_actual_zip_container(self):
+        with tempfile.TemporaryDirectory() as td:
+            d=Path(td)
+            file=d/fetch.Q3_NAME
+            file.write_text("not a zip")
+            full=d/fetch.FULL_NAME
+            full.write_bytes(b"fake full")
+            with patch.object(fetch,"FULL_SHA256",hashlib.sha256(b"fake full").hexdigest()):
+                with self.assertRaisesRegex(ValueError,"Q3_INPUT_NOT_A_ZIP"):
+                    fetch.build_config(d,full,file)
     def test_invalid_resume_range_is_rejected(self):
         with tempfile.TemporaryDirectory() as t:
             dest=Path(t)
@@ -99,14 +121,15 @@ class TestKrakenManualDownload(unittest.TestCase):
         with tempfile.TemporaryDirectory() as t:
             d=Path(t)
             f=d/fetch.Q3_NAME
-            f.write_bytes(b"Q3 mock, not real historical archive")
-            zipfile=(d/fetch.FULL_NAME)
-            zipfile.write_bytes(b"mock full zip")
+            with zipfile.ZipFile(f,"w") as z:
+                z.writestr("BTCUSD_1440.csv","1735689600,100,102,99,101,100,3\\n")
+            full_file=(d/fetch.FULL_NAME)
+            full_file.write_bytes(b"mock full zip")
             with patch.object(fetch,"FULL_SHA256",hashlib.sha256(b"mock full zip").hexdigest()):
-                cfg=fetch.build_config(d,zipfile)
+                cfg=fetch.build_config(d,full_file)
                 self.assertEqual(len(json.loads(cfg.read_text())["archives"]),1)
-                cfg=fetch.build_config(d,zipfile,f)
-                self.assertEqual(fetch.build_config(d,zipfile,f),cfg)
+                cfg=fetch.build_config(d,full_file,f)
+                self.assertEqual(fetch.build_config(d,full_file,f),cfg)
             q=json.loads(cfg.read_text())["archives"][1]
             self.assertFalse(q["checksum_independently_attested"])
             self.assertIn("Local fingerprint only",q["checksum_provenance"])
