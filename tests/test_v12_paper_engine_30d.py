@@ -159,8 +159,8 @@ class TestPaperEngine30Days(unittest.TestCase):
                 locked=engine._get("usdc_initial_units")
                 self.assertIsNotNone(locked)
                 later=market_day(base,1)
-                later["usdc_usd"]["bid"]="0.95"
-                later["usdc_usd"]["ask"]="0.96"
+                later["usdc_usd"]["bid"]="0.9500"
+                later["usdc_usd"]["ask"]="0.9520"
                 engine.tick(at(later,2),(utc(later["observed_at"])+timedelta(hours=2)).isoformat(),slot="NEXT")
                 self.assertEqual(engine._get("usdc_initial_units"),locked)
             finally:engine.close()
