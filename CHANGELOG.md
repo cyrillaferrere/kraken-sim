@@ -19,6 +19,15 @@
 - **Non exécuté / aucun résultat** au moment de ce commit : le backtest V1.2 sera implémenté et évalué hors échantillon avant toute sélection ou mise en fonctionnement.
 
 ## [Moteur V1.3] — 25/10/2026 — GPT-6 (préprod V1.2, infrastructure)
+### Corrections P1-A à P1-F de Grok Bot (fonctionnement par IT, sans activation)
+- `v12_autonomy.py` : admission de la décision sur la synthèse de son IT puis revalidation sur quotes fraîches au cycle suivant ; TTL jusqu'à 26 h (A/C/D) et 7 jours (B). Refus des signaux incompatibles et des montants qui dépassent le cash réservé, les positions ou le risque.
+- `v12_paper_engine.py` : exécuteur PAPER SQLite **hors réseau et hors production**, ordres idempotents par `decision_id`, maker initial puis éventuel fill partiel et repli taker, contrôle répété du risque avant tout fill, liquidations, stops déterministes A/B/C/D sans IT Grok, état moteur persistant (pic, pause, kill-switch, modèles/politiques autorisés).
+- `v12_usdc_baseline.py` : comparaison contre les USDC conservés sur bid/ask observés, sans parité 1 USD inventée. `v12_paper_engine.py` calcule lui-même les outcomes à J+1/7/30, MAE et écarts USDC/BTC ; les sorties Grok ne peuvent pas écrire ces résultats.
+- Exposition candidate C plafonnée à **min(90 % global, plafond spécifique)** ; test de dépassement explicite.
+- `cycle_v12.py --dry-run --out ...`, `v12_synthetic_30d.py` : simulation locale accélérée de 30 jours **100 % synthétiques**, double livraison, IT manquantes, décision expirée, fill et kill-switch, résultat écrit uniquement hors dépôt. **`--cycle` demeure interdit**.
+- `tests/test_v12_paper_engine_30d.py`, `tests/test_v12_cli_dry_run.py` : couverture du flux à blanc, garde-fous, sortie C indépendante de Grok et refus d'activation. Voir `docs/REVIEW_GROK_P1_30J_V12.md`.
+- **Aucun résultat historique réel, aucun ordre réel, aucune fusion ni IT Grok lancée**. Le collecteur Kraken et le canal authentifié GitHub Issue ne sont pas branchés.
+
 ### Suite aux corrections P1 de Grok Bot (branche, sans cycles)
 - **Étape autonomie Grok V1.2 (sur PR, sans cycle)** : `v12_autonomy.py` reçoit une décision structurée et rejette tout signal/poids A/B/C/D non conforme, avec données Kraken fraîchement clôturées, frais F2, sans short ni levier, limite de corrélation et kill-switch indépendants. La politique/modèle actifs sont imposés par le futur orchestrateur, jamais par Grok.
 - `v12_grok_gateway.py` : mode **prévalidation uniquement** et journalisation d'une proposition Grok ou indisponibilité, sans appel effectif au modèle ni exécution d'ordre.

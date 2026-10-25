@@ -1,6 +1,6 @@
 # Kraken Sim V1.2 — état de livraison technique (25 octobre 2026)
 
-**Branche** : `strategy/v1.2` ; **PR** : #7 EN BROUILLON vers `develop`. **AUCUNE FUSION, aucun cycle V1.2, aucun ordre réel, aucun workflow V1.2 sur main.**
+**Branche** : `strategy/v1.2` ; **PR** : #7 EN BROUILLON vers `develop`. **AUCUNE FUSION, aucun cycle V1.2 activé (uniquement des cycles synthétiques en tests locaux/CI), aucun ordre réel, aucun workflow V1.2 sur main.**
 
 ## Versions et préproduction
 
@@ -8,7 +8,7 @@
 - Moteur expérimental V1.2 : `VERSION_ENGINE_V12=V1.3`, stratégie `STRATEGY_VERSION=V1.2`. Aucune confusion des ordres.
 - Etat préprod : branche `state-v12` du dépôt `kraken-sim-preprod`, sans portefeuille fictif inventé.
 - `sim_v12.yml` présent **uniquement dans la PR**, manuel, sans cron, code SHA à épingler après accord de Cyril, calcul sans secret, publication séparée vers `state-v12`, host key GitHub épinglée.
-- `cycle_v12.py --cycle` demeure **bloqué par conception**.
+- `cycle_v12.py --cycle` demeure **bloqué par conception**. `--dry-run --out <chemin externe>` exécute seulement un scénario de 30 jours synthétiques sans aucun réseau ni ordre réel.
 - `render_preprod.py` ne sélectionne le template V1.2 que si `PREPROD_V12_READY=1` et si la source est réellement V1.2. Le site actuel reste V1.1 en lecture seule par défaut.
 
 ## Fonctionnalités développées dans la PR
@@ -44,6 +44,16 @@ La [vision d'architecture autonomie et apprentissage](VISION_AUTONOMIE_APPRENTIS
 - `v12_autonomy.py` refuse les décisions qui ne passent pas les signaux ou les limites de risque. `v12_grok_gateway.py` enregistre les résultats sans jamais envoyer d'ordre. `v12_learning.py` stocke des événements pour comparer rétrospectivement les décisions et proposer des politiques shadow.
 - **Grok n'est pas encore connecté** à ces modules, le compte PAPER autonome ne tourne pas, aucune boucle d'apprentissage n'est activée. Documentation : [GROK_AUTONOME_V12_ETAPE1.md](GROK_AUTONOME_V12_ETAPE1.md).
 - La première exécution restera soumise à l'accord distinct de Cyril après tests de l'exécuteur et contrôles de sécurité.
+
+## Revue Grok Bot : six P1 livrées en DRY-RUN, pas en fonctionnement autonome réel
+- **P1-A** : séparation admission de l'IT et exécution au cycle suivant, avec quotes récentes réévaluées et TTL compatible avec le cron espacé.
+- **P1-B** : exécuteur PAPER persistant indépendant, idempotence des décisions et cycles, maker/taker, sorties déterministes A/B/C/D et liquidation d'urgence.
+- **P1-C** : limites, pic d'equity, kill-switch et politiques actifs **chargés de la base du moteur**, jamais du document Grok.
+- **P1-D** : référence USDC HOLD sur quotes USDC/USD observées (pas de peg imposé).
+- **P1-E** : outcomes J+1/J+7/J+30 (MAE, PnL net portefeuille, frais, USDC, BTC) calculés depuis les marks par le moteur.
+- **P1-F** : candidate C soumise au plafond global 90 % ; test explicite.
+- [Procédure, limites et commande `--dry-run`](REVIEW_GROK_P1_30J_V12.md). **Ni Grok Bot, ni Kraken public, ni GitHub Issues ne sont encore connectés au moteur autonomisé.** Les données de 30 jours sont inventées exclusivement pour les tests techniques.
+- La refonte UX de préprod reste un chantier distinct après finalisation du contrat de données.
 
 ## Blocages à traiter avant tout backtest OFFICIEL
 

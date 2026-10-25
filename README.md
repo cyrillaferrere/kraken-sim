@@ -1,4 +1,6 @@
-> **NOUVEAU — autonomie Grok V1.2 :** [décision A/B/C/D, sécurité indépendante et journal d'apprentissage](docs/GROK_AUTONOME_V12_ETAPE1.md). Ce sont des prévalidations **hors ligne** : aucune invocation Grok, aucun ordre PAPER et aucune promotion LIVE automatique.
+> **ÉTAPE V1.2 — correction des 6 P1 Grok :** [simulation PAPER synthétique 30 jours](docs/REVIEW_GROK_P1_30J_V12.md), `python3 cycle_v12.py --dry-run --out /tmp/kraken-v12-test`. Les ordres sont **fictifs et hors ligne** ; **aucune IT Grok, aucun cron ni ordre réel activé**. `--cycle` reste bloqué.
+
+> **Autonomie Grok V1.2 :** [décision A/B/C/D, sécurité indépendante et apprentissage](docs/GROK_AUTONOME_V12_ETAPE1.md). La liaison réelle à Grok et au collecteur Kraken reste à construire ; aucune promotion LIVE automatique.
 
 > **NOUVEAU — données historiques V1.2 :** [téléchargement manuel, reprenable et sécurisé des archives Kraken](docs/TELECHARGEMENT_KRAKEN_V1_2.md), avec 5 checksums officiels et vérification du ZIP complet. Aucune archive massive n'a été téléchargée par GitHub Actions et aucun cycle V1.2 n'a été lancé. Exception de travail GPT-6 sur `strategy/v1.2` : voir `GARDE_FOUS.md`.
 
