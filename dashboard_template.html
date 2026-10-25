@@ -1,0 +1,438 @@
+<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#080c14"><title>Kraken Sim — Tableau de bord V1.1</title><style>
+:root{color-scheme:dark;--bg:#080c14;--surface:#101824;--ink:#eaf2fb;--muted:#9cacc0;--soft:#758aa4;--line:#233247;--blue:#75b5ff;--green:#3cdaa8;--red:#ff6b7d;--amber:#ffac43;--purple:#a88bf5}
+*{box-sizing:border-box}html{scroll-behavior:smooth;scroll-padding-top:76px}body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.52 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-variant-numeric:tabular-nums}button{font:inherit}button,a,summary{-webkit-tap-highlight-color:transparent}a{color:inherit}button:focus-visible,a:focus-visible,summary:focus-visible{outline:2px solid var(--blue);outline-offset:3px}.up{color:var(--green)!important}.down{color:var(--red)!important}.muted,.sub{color:var(--muted)}.sub{font-size:12px}.eyebrow{font-size:11px;font-weight:750;letter-spacing:1px;text-transform:uppercase;color:var(--soft)}h1,h2,h3,p{margin-top:0}h2{font-size:18px;letter-spacing:-.25px;margin-bottom:14px}h3{font-size:15px;margin-bottom:12px}.dot{width:8px;height:8px;display:inline-block;border-radius:50%;background:var(--soft);flex-shrink:0}.dot.on{background:var(--green);box-shadow:0 0 0 3px #3cdaa823}.frame{margin-left:66px;min-height:100vh;transition:margin-left .2s}.rail{position:fixed;left:0;top:0;bottom:0;width:66px;z-index:30;background:#0b1420;border-right:1px solid var(--line);display:flex;flex-direction:column;align-items:stretch;transition:width .2s;overflow:hidden}.rail.expanded{width:224px}.rail-head{height:68px;display:flex;align-items:center;gap:12px;padding:14px 14px;border-bottom:1px solid var(--line)}.mark{display:grid;place-items:center;min-width:38px;height:38px;border-radius:11px;background:linear-gradient(145deg,#67acfb,#245b9b);font-size:22px;font-weight:800}.rail-text{white-space:nowrap;opacity:0;transition:opacity .15s;font-size:13px;font-weight:760}.rail.expanded .rail-text,.rail.expanded .nav-label,.rail.expanded .nav-text{opacity:1}.rail-text small{display:block;font-size:10px;font-weight:500;letter-spacing:1px;color:var(--soft)}.nav-list{display:flex;flex-direction:column;gap:5px;padding:14px 9px}.rail-link,.nav-control{width:100%;text-align:left;display:flex;align-items:center;gap:12px;min-height:40px;padding:0 13px;background:none;border:0;border-radius:9px;color:#a5b9d0;text-decoration:none;cursor:pointer;white-space:nowrap}.rail-link:hover,.nav-control:hover{background:#17263a;color:#fff}.rail-link.is-active{background:#1a3047;color:#9dd0ff}.nav-icon{font-size:19px;width:22px;min-width:22px;display:grid;place-items:center;line-height:1}.nav-label,.nav-text{opacity:0;transition:opacity .15s}.nav-text{font-size:13px;font-weight:580}.nav-control{margin-top:auto;margin-bottom:12px}.rail.expanded~.frame{margin-left:224px}.mobile-nav{display:none}.frame-inner{width:min(1580px,100%);margin:0 auto;padding:0 clamp(20px,3vw,50px) 80px}.app-top{position:sticky;top:0;z-index:20;display:flex;align-items:center;justify-content:space-between;gap:18px;min-height:62px;background:#080c14ed;backdrop-filter:blur(18px);border-bottom:1px solid var(--line);margin-bottom:26px}.app-brand{display:flex;align-items:baseline;gap:11px;white-space:nowrap}.app-brand strong{font-size:16px;letter-spacing:-.45px}.app-brand strong span{color:var(--blue)}.app-brand em{font-size:11px;font-style:normal;color:var(--soft)}.app-status{display:flex;align-items:center;gap:16px;white-space:nowrap;min-width:0}.status-live{font-size:12px;color:#b7d4c8;display:flex;gap:7px;align-items:center}.time-info{display:flex;align-items:baseline;gap:7px;font-size:11px;color:var(--muted)}#cycleElapsed{font-size:15px;color:var(--ink);font-weight:720;letter-spacing:-.15px}#cycleNext{font-size:11px;color:var(--muted)}#ver{font-size:11px;color:var(--soft);padding-left:12px;border-left:1px solid var(--line)}#uptime{display:none}.top-provenance{color:var(--soft);font-size:11px;padding:4px 0 8px;line-height:1.35}#head{font-size:11px;color:var(--soft);margin-bottom:7px;max-width:none}#stateSrc{display:block;color:var(--soft);font-size:11px;overflow-wrap:anywhere;margin-top:5px}#kill .card{color:var(--red);border:1px solid #a94454;padding:12px;margin-bottom:12px}.account{display:flex;align-items:flex-end;justify-content:space-between;gap:28px;margin:16px 0 19px}.account-label{font-size:12px;color:var(--muted);letter-spacing:.9px;font-weight:700;text-transform:uppercase;margin-bottom:4px}.account-balance{font-size:clamp(35px,4.2vw,58px);font-weight:725;letter-spacing:-2px;line-height:1.12;white-space:nowrap}.account-pnl{display:flex;flex-wrap:wrap;gap:12px;align-items:center;font-weight:650;font-size:20px;margin-top:8px}.account-pnl .pctval{font-size:16px}.account-caption{color:var(--soft);font-size:12px;margin-top:6px}.period-wrap{display:flex;flex-direction:column;align-items:flex-end;gap:9px;padding-bottom:8px}.periods,.zoom,.seg{display:flex;flex-wrap:wrap;gap:4px}.periods button,.zoom button,.seg button{background:transparent;border:1px solid transparent;border-radius:7px;padding:8px 11px;color:#a7bbd2;cursor:pointer;font-size:12px;font-weight:600;white-space:nowrap}.periods button:hover,.zoom button:hover,.seg button:hover{background:#192a3f}.periods button.active,.zoom button.active,.seg button.on{background:#1c3852;color:#e9f5ff;border-color:#416889}.period-note{font-size:11px;color:#aebed0;text-align:right;max-width:390px}.period-note.partial{color:#ffbf70}.market-strip{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:0;border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:16px 0;margin-bottom:24px}.strip-item{padding:0 16px;border-right:1px solid var(--line);min-width:0}.strip-item:first-child{padding-left:0}.strip-item:last-child{border:0;padding-right:0}.strip-label{color:var(--soft);font-size:11px;line-height:1.3}.strip-value{font-size:17px;font-weight:670;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.major-grid{display:grid;grid-template-columns:minmax(0,1.42fr) minmax(340px,1fr);gap:28px;margin-bottom:30px}.chart-panel{min-width:0}.section-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:12px}.section-head h2{margin:0}.section-head .sub{font-size:11px}.chart-surface{background:linear-gradient(180deg,#0e1a2a 0%,#0c1420 100%);border:1px solid var(--line);border-radius:13px;overflow:hidden;position:relative;padding:10px 14px 8px}.equity-plot{height:246px;position:relative}.equity-plot svg{width:100%;height:100%;display:block}.plot-tooltip{position:absolute;pointer-events:none;background:#1d3048;border:1px solid #436383;border-radius:8px;padding:7px 10px;font-size:12px;color:#eaf4ff;white-space:nowrap;z-index:3;transform:translate(-50%,-115%);display:none;box-shadow:0 8px 22px #0007}.axis-caption{font-size:11px;color:var(--soft);padding:5px 8px 1px}.btc-price{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:3px}#lp{font-size:clamp(21px,2.3vw,30px);letter-spacing:-.7px;font-weight:700}#lch{font-size:12px}#lst{font-size:11px;color:var(--soft);margin:4px 0}.btc-controls{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:8px 0 5px}.zoom button{padding:5px 8px;font-size:11px;border-color:#24354b}.chartwrap{min-height:0}#lchart{height:185px;min-height:0}#lchart svg{width:100%;height:100%;max-height:175px}.chart-surface svg text{fill:#8198b3;font-family:inherit}.chart-surface svg line{stroke:#2a3d53}.legend{display:flex;align-items:center;flex-wrap:wrap;gap:12px;margin:5px 0}.legend span{font-size:11px;color:var(--muted)}.legend i{display:inline-block;width:8px;height:8px;border-radius:3px;margin-right:5px}.quiet-details>summary{font-size:12px;color:var(--muted);cursor:pointer;list-style:none;padding:9px 0}.quiet-details>summary::before{content:'＋';margin-right:9px;color:var(--blue)}.quiet-details[open]>summary::before{content:'−'}.quiet-details[open]{padding-bottom:10px}.quiet-details #bchart{max-height:185px;overflow:hidden}.quiet-details #bchart svg{height:165px}.section-block{border-top:1px solid var(--line);padding-top:21px;margin-top:16px;margin-bottom:28px}.section-title-row{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:13px}.section-title-row h2{margin:0}.section-title-row span{font-size:12px;color:var(--soft)}.portfolio-grid{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(260px,.75fr);gap:28px}.panel-lite{min-width:0}.panel-lite h3{margin-bottom:9px}.scroll{overflow-x:auto;max-width:100%;scrollbar-color:#3c5067 transparent}table{width:100%;border-collapse:collapse;font-size:13px}th,td{text-align:left;padding:10px 8px;border-bottom:1px solid #203047;vertical-align:middle;white-space:nowrap}th{font-size:11px;letter-spacing:.45px;color:var(--soft);font-weight:650;text-transform:uppercase}td:first-child{font-weight:600}tr:hover td{background:#ffffff06}#pos table{min-width:545px}#alloc table{min-width:260px}.source-only{display:none!important}.empty-message{padding:18px 0;color:var(--muted);font-size:13px}.allocation-track{height:11px;border-radius:10px;overflow:hidden;display:flex;background:#213249;gap:2px;margin:18px 0 17px}.allocation-track span{display:block;min-width:0;transition:width .4s}.allocation-row{display:flex;align-items:center;gap:9px;margin:10px 0;font-size:13px}.allocation-row i{display:block;width:9px;height:9px;border-radius:2px}.allocation-row b{margin-left:auto;font-size:13px}.allocation-row small{font-size:12px;color:var(--soft);margin-left:5px}.exit-wrap{margin-top:20px}#sellConditions{font-size:12px}#sellConditions td{white-space:normal;min-width:110px;line-height:1.55}#sellConditions td:first-child{min-width:84px}#sellConditions td:last-child{min-width:128px}#sellConditions small{font-size:10px;color:var(--soft)}.risk-table{width:100%;border:1px solid var(--line);border-radius:11px;padding:0 12px;overflow:auto}.risk-table table{min-width:780px}.analytics-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:28px}.small-plot{height:200px;position:relative}.small-plot svg{width:100%;height:100%}.comparison-key{display:flex;gap:13px;flex-wrap:wrap;font-size:11px;color:var(--muted);margin-top:8px}.comparison-key i{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:4px}.activity-grid{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(340px,.9fr);gap:28px}.activity-list{max-height:400px;overflow-y:auto;scrollbar-color:#334c63 transparent}.order-entry{border-bottom:1px solid var(--line)}.order-entry summary{display:grid;grid-template-columns:108px 66px 60px minmax(0,1fr) 96px;align-items:center;gap:10px;padding:13px 4px;list-style:none;cursor:pointer;min-height:48px;font-size:13px}.order-entry summary::-webkit-details-marker{display:none}.order-entry summary:hover{background:#142237}.order-action{font-size:11px;font-weight:760;letter-spacing:.3px}.order-fee{font-size:12px;text-align:right;color:var(--soft)}.order-detail{padding:4px 14px 16px 22px;color:#b9c9da;font-size:13px;line-height:1.7;border-left:2px solid #36526c;margin:0 0 8px 2px;overflow-wrap:anywhere}.order-date{color:var(--muted);font-size:12px}.order-asset{font-weight:760}.order-sum{color:#cbd9e9;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.signal-list{display:flex;flex-direction:column;gap:12px}.signal-row{display:grid;grid-template-columns:61px 1fr 48px;gap:12px;align-items:center;font-size:13px}.score-track{height:7px;background:#1d3045;border-radius:10px;overflow:hidden}.score-fill{height:100%;border-radius:10px;background:#6594b6}.score-fill.strong{background:var(--green)}.signal-score{text-align:right;font-weight:660}.signals-legend{font-size:12px;color:var(--muted);margin-top:12px}.mini-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.detail-panel{border-bottom:1px solid var(--line);padding-bottom:20px;margin-bottom:20px}.detail-panel summary{list-style:none;cursor:pointer;font-size:15px;font-weight:650;display:flex;justify-content:space-between;align-items:center;gap:10px}.detail-panel summary::after{content:'+';color:var(--blue);font-size:19px}.detail-panel[open] summary::after{content:'−'}.detail-panel>div{padding-top:14px}.detail-panel .sub{font-size:12px;line-height:1.6}.metrics-detail .grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}.m{min-width:0;border-bottom:1px solid var(--line);padding:10px 4px}.m b{font-weight:680;font-size:18px;display:block;overflow-wrap:anywhere}.m span{display:block;color:var(--soft);font-size:12px;margin-top:3px}.metrics-detail #metrics>.m{display:block}.insights-table #ind table{min-width:850px}.insights-table #ind td{font-size:12px}.insights-table #indsrc{margin-bottom:10px}.insights-table #indst{font-size:12px;margin-top:8px}.backtest-body table{min-width:730px}.backtest-body td,.backtest-body th{font-size:12px}.backtest-body .warn{font-size:12px;color:#e6be7b;background:#2b241c;border-left:3px solid #b78e46;padding:10px}.backtest-body .seg{margin:10px 0}.backtest-body .seg button{border-color:#30435a}.decision-scroll{max-height:320px;overflow:auto}.decision-scroll table{min-width:630px}.decision-scroll td:last-child{white-space:normal;min-width:250px}.mini-chart-cols{display:grid;grid-template-columns:1fr 1fr;gap:26px}.pnltable table{min-width:390px}.stats-cell{display:block;font-size:13px}.stats-cell .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px}.footer{border-top:1px solid var(--line);padding:17px 0;color:var(--soft);font-size:11px;display:flex;justify-content:space-between;gap:18px;flex-wrap:wrap}.footer #rules{font-size:11px;line-height:1.6}.rules-section{max-width:850px}#lessons p{font-size:13px;color:#b8c9dd;line-height:1.8}.jump{font-size:12px;color:var(--blue);text-decoration:none}.jump:hover{text-decoration:underline}.blip{animation:blip .75s ease-out}@keyframes blip{0%{background:#23544966}100%{background:transparent}}.negative-shift{animation:redblip .75s ease-out}@keyframes redblip{0%{background:#5b263466}100%{background:transparent}}@media(prefers-reduced-motion:reduce){*,*:before,*:after{animation-duration:.01ms!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
+@media(max-width:1150px){.market-strip{grid-template-columns:repeat(3,1fr);row-gap:17px}.strip-item:nth-child(3){border:0}.strip-item:nth-child(4){padding-left:0}.major-grid{grid-template-columns:1fr 1fr;gap:16px}.activity-grid{grid-template-columns:1fr}.frame-inner{padding:0 20px 60px}}
+@media(max-width:850px){.major-grid,.analytics-grid,.portfolio-grid,.mini-chart-cols{grid-template-columns:1fr}.app-top{flex-wrap:wrap;min-height:60px}.app-status{gap:9px}.time-info span:first-child,#cycleNext{display:none}.account{align-items:flex-start;flex-direction:column;gap:18px}.period-wrap{align-items:flex-start}.period-note{text-align:left}.major-grid{gap:23px}}
+@media(max-width:600px){.frame{margin-left:0}.frame-inner{padding:0 15px 60px}.rail{transform:translateX(-100%);width:224px}.rail.expanded{transform:translateX(0)}.rail .rail-text,.rail .nav-label,.rail .nav-text{opacity:1}.rail.expanded~.frame{margin-left:0}.mobile-nav{display:inline-flex;background:transparent;border:0;color:var(--ink);font-size:25px;cursor:pointer;margin-right:7px}.app-brand em{display:none}.app-top{margin-bottom:15px}.app-status{margin-left:auto}.status-live{font-size:11px}#ver{display:none}.account-balance{font-size:41px}.account-pnl{font-size:18px}.periods button{padding:7px 9px;font-size:11px}.market-strip{grid-template-columns:repeat(3,1fr);padding:14px 0;gap:10px 0}.strip-item{padding:0 8px}.strip-label{font-size:10px}.strip-value{font-size:14px}.major-grid{gap:18px}.equity-plot{height:208px}.chart-surface{padding:7px}.order-entry summary{grid-template-columns:81px 50px 49px minmax(0,1fr);gap:6px;font-size:12px}.order-fee{display:none}.metrics-detail .grid{grid-template-columns:repeat(2,minmax(0,1fr))}.section-block{margin-bottom:21px;padding-top:17px}.app-top .time-info{display:none}}
+.split-table{width:100%;border-collapse:collapse;margin-top:6px}.split-table th,.split-table td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}.split-table th:first-child,.split-table td:first-child{text-align:left}.split-table th{color:var(--soft);font-weight:500;font-size:12px}.split-table tr.tot td{font-weight:700}.up{color:var(--green)}.down{color:var(--red)}.core-tag{font-size:11px;color:var(--amber);border:1px solid #6b4a1d;border-radius:5px;padding:0 5px;margin-left:6px}
+</style></head><body>
+<nav class="rail" id="rail" aria-label="Navigation principale">
+  <div class="rail-head"><span class="mark">K</span><span class="rail-text">KRAKEN <span style="color:var(--blue)">SIM</span><small>SIMULATION · V1.1</small></span></div>
+  <div class="nav-list">
+    <a class="rail-link is-active" href="#overview" title="Vue d'ensemble"><span class="nav-icon">◉</span><span class="nav-text">Vue d'ensemble</span></a>
+    <a class="rail-link" href="#market" title="Marché BTC"><span class="nav-icon">⌁</span><span class="nav-text">Marché BTC</span></a>
+    <a class="rail-link" href="#portfolio" title="Portefeuille"><span class="nav-icon">◈</span><span class="nav-text">Portefeuille</span></a>
+    <a class="rail-link" href="#activity" title="Ordres et activité"><span class="nav-icon">≡</span><span class="nav-text">Ordres et activité</span></a>
+    <a class="rail-link" href="#signals" title="Indicateurs"><span class="nav-icon">▤</span><span class="nav-text">Indicateurs</span></a>
+    <a class="rail-link" href="#analysis" title="Analyse détaillée"><span class="nav-icon">◫</span><span class="nav-text">Analyse détaillée</span></a>
+  </div>
+  <button class="nav-control" id="navToggle" type="button" aria-label="Déployer le menu" aria-expanded="false"><span class="nav-icon">☰</span><span class="nav-text">Réduire / déployer</span></button>
+</nav>
+<div class="frame"><div class="frame-inner">
+ <header class="app-top"><div style="display:flex;align-items:center"><button class="mobile-nav" id="mobileToggle" type="button" aria-label="Ouvrir le menu">☰</button><div class="app-brand"><strong>Kraken <span>Sim</span></strong><em>Tableau de bord · Trading fictif</em></div></div><div class="app-status"><span class="status-live"><i class="dot on"></i> Simulation active</span><span class="time-info"><span>Cycle :</span><b id="cycleElapsed">—</b></span><span id="cycleNext">—</span><span id="ver">V1.1</span><span id="uptime"></span></div></header>
+ <div id="overview"></div><div class="top-provenance"><div id="head"></div><div id="stateSrc">État : instantané intégré…</div></div><div id="kill"></div>
+ <section class="account" aria-label="Solde de la simulation"><div><div class="account-label">Solde total du portefeuille</div><div class="account-balance" id="accountValue">—</div><div class="account-pnl"><span id="accountChange">—</span><span id="accountChangePct" class="pctval">—</span></div><div class="account-caption" id="accountCaption">Variation nette de la simulation</div></div><div class="period-wrap"><div class="eyebrow">Gains / pertes · Période</div><div class="periods" id="equityPeriods" role="group" aria-label="Période de performance"><button type="button" data-period="1d">1j</button><button type="button" data-period="7d">7j</button><button type="button" data-period="1m">1 mois</button><button type="button" data-period="6m">6 mois</button><button type="button" data-period="1y">1 an</button><button type="button" data-period="all" class="active">Tout</button></div><div class="period-note" id="periodNote">Historique des cycles disponible</div></div></section>
+ <section class="market-strip" aria-label="Résumé du compte"><div class="strip-item"><div class="strip-label">Liquidités</div><div class="strip-value" id="briefCash">—</div></div><div class="strip-item"><div class="strip-label">Exposition totale</div><div class="strip-value" id="briefExposure">—</div></div><div class="strip-item"><div class="strip-label">P&L net total</div><div class="strip-value" id="briefPnl">—</div></div><div class="strip-item"><div class="strip-label">Drawdown actuel</div><div class="strip-value" id="briefDd">—</div></div><div class="strip-item"><div class="strip-label">Frais cumulés</div><div class="strip-value" id="briefFees">—</div></div><div class="strip-item"><div class="strip-label">Transactions</div><div class="strip-value" id="briefTrades">—</div></div></section>
+ <section class="section-block" id="split" aria-label="Portefeuille vs socle conservé"><div class="section-title-row"><h2>Portefeuille vs socle de départ conservé</h2><span>Un seul portefeuille ; référence = socle gardé sans toucher</span></div><div class="scroll" id="splitTable"></div><div class="sub" id="splitNote"></div></section><section class="major-grid" id="market" aria-label="Graphiques principaux"><div class="chart-panel"><div class="section-head"><h2>Évolution du portefeuille</h2><span class="sub" id="equityRangeLabel">Depuis le démarrage</span></div><div class="chart-surface"><div class="equity-plot" id="equityPlot" role="img" aria-label="Courbe de valeur du portefeuille"></div><div class="axis-caption" id="equityChartNote">Courbe basée sur les cycles de la simulation</div></div></div><div class="chart-panel" id="live"><div class="section-head"><h2>Marché BTC / USD</h2><span class="sub"><i class="dot" id="dot"></i> Kraken en direct</span></div><div class="btc-price"><b id="lp">…</b><span id="lch"></span></div><div id="lst">Connexion au flux Kraken…</div><div class="btc-controls"><span class="sub">Cours BTC</span><div class="zoom" role="group" aria-label="Période du graphique BTC"><button data-range="1j" type="button" class="active">1j</button><button data-range="7j" type="button">7j</button><button data-range="1m" type="button">1m</button><button data-range="3m" type="button">3m</button><button data-range="6m" type="button">6m</button><button data-range="1a" type="button">1a</button><button data-range="all" type="button">Tout</button></div></div><div class="chart-surface"><div class="chartwrap" id="lchart"></div></div><details class="quiet-details"><summary>Voir le cours BTC relevé à chaque cycle</summary><div id="bchart"></div></details></div></section>
+ <section class="section-block" id="portfolio"><div class="section-title-row"><h2>Portefeuille</h2><span>Positions revalorisées sur les prix publics Kraken</span></div><div class="panel-lite" style="margin-bottom:22px"><h3>Socle de départ <span class="core-tag">achat initial, vendable</span></h3><div class="scroll" id="corePos"></div></div><div class="portfolio-grid"><div class="panel-lite"><h3>Positions</h3><div class="scroll" id="pos"></div></div><div class="panel-lite"><h3>Répartition des actifs</h3><div id="allocationVisual"></div><div class="source-only" id="alloc"></div></div></div><div class="exit-wrap"><div class="section-head"><h3>Conditions de vente</h3><span class="sub">Simulation des critères au prochain cycle</span></div><div class="risk-table scroll"><table><thead><tr><th>Position</th><th>Stop suiveur</th><th>EMA50</th><th>Régime BTC</th><th>Détention min.</th><th>Décision</th></tr></thead><tbody id="sellConditions"><tr><td colspan="6">Aucune position ouverte.</td></tr></tbody></table></div></div></section>
+ <section class="section-block" id="activity"><div class="section-title-row"><h2>Activité de trading</h2><a class="jump" href="#analysis">Analyses complémentaires</a></div><div class="activity-grid"><div class="panel-lite"><div class="section-head"><h3>Journal des ordres</h3><span class="sub" id="orderCount">—</span></div><div class="activity-list" id="ordersVisual"></div><div class="source-only" id="jr"></div></div><div class="panel-lite"><div class="section-head"><h3>Signaux du dernier cycle</h3><span class="sub">Score sur 5</span></div><div class="signal-list" id="signalBars"></div><div class="signals-legend">Régime BTC : <strong id="btcRegime">—</strong>. Les signaux ne sont pas des ordres.</div></div></div></section>
+ <section class="section-block" id="signals"><div class="section-title-row"><h2>Analyse des marchés</h2><span id="inddot" class="dot"></span></div><details class="detail-panel insights-table" open><summary>Indicateurs complets et confirmations</summary><div><div class="sub" id="indsrc"></div><div class="scroll" id="ind"></div><div id="indst"></div></div></details></section>
+ <section class="section-block" id="analysis"><div class="section-title-row"><h2>Analyse & performance</h2><span>Comparaisons calculées à partir des cycles disponibles</span></div><div class="analytics-grid"><div class="panel-lite"><div class="section-head"><h3>Simulation vs références</h3><span class="sub">Valeur en $</span></div><div class="chart-surface"><div class="small-plot" id="compareVisual"></div><div class="comparison-key"><span><i style="background:var(--blue)"></i>Simulation</span><span><i style="background:var(--amber)"></i>BTC conservé</span><span><i style="background:var(--purple)"></i>Panier BTC/ETH</span></div></div><div class="source-only" id="cmp"></div></div><div class="panel-lite"><div class="section-head"><h3>Drawdown</h3><span class="sub">Seuil de sécurité : 30 %</span></div><div class="chart-surface"><div class="small-plot" id="drawdownVisual"></div><div class="axis-caption">Repli depuis le point haut de la simulation</div></div><div class="source-only" id="dd"></div></div></div><div class="mini-chart-cols" style="margin-top:26px"><div class="panel-lite pnltable"><h3>Résultats par crypto</h3><div class="scroll" id="pnl"></div></div><div class="panel-lite stats-cell"><h3>Statistiques des trades</h3><div id="ts"></div></div></div><div class="detail-panel" style="margin-top:24px"><details><summary>Décisions récentes du bot</summary><div class="scroll decision-scroll" id="dec"></div></details></div><div class="detail-panel metrics-detail"><details><summary>Tous les indicateurs financiers</summary><div id="metrics" class="grid"></div></details></div><div class="detail-panel backtest-body"><details><summary>Stratégies et backtests</summary><div id="strat" class="scroll"></div></details></div><div class="detail-panel backtest-body"><details><summary>Validation walk-forward</summary><div id="wf" class="scroll"></div></details></div><div class="detail-panel" id="lessonsCard"><details><summary>Leçons de la semaine</summary><div id="lessons"></div></details></div><div class="detail-panel"><details><summary>Paramètres et règles de simulation</summary><div id="rules" class="sub"></div></details></div></section>
+ <footer class="footer"><span>Kraken Sim · Interface V1.1 · Trading spot fictif, aucun ordre réel</span><span>Données publiques Kraken · Horaires Europe/Paris</span></footer>
+</div></div>
+<script>
+const D = __DATA__;
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const usd = v => v == null ? "n.d." : v.toLocaleString("fr-FR", {minimumFractionDigits: 2, maximumFractionDigits: 2}) + " $";
+const pct = v => v == null ? "n.d." : (v >= 0 ? "+" : "") + v.toLocaleString("fr-FR", {minimumFractionDigits: 2, maximumFractionDigits: 2}) + " %";
+const cls = v => v > 0 ? "up" : v < 0 ? "down" : "";
+const parisFmt = new Intl.DateTimeFormat("fr-FR", {timeZone: "Europe/Paris", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit"});
+function chart(series, labels, opts = {}) {
+  const W = 900, H = opts.h || 220, P = 48; const all = series.flatMap(s => s.v).filter(x => x != null);
+  if (!all.length) return '<div class="sub">Pas encore de données.</div>';
+  let lo = opts.lo ?? Math.min(...all), hi = opts.hi ?? Math.max(...all); if (hi - lo < 1e-9) { const p = Math.abs(hi) * 0.01 || 1; lo -= p; hi += p; }
+  const n = Math.max(...series.map(s => s.v.length)); const x = i => P + (n < 2 ? (W - 2 * P) / 2 : i * (W - 2 * P) / (n - 1)); const y = v => H - 24 - (v - lo) / (hi - lo) * (H - 40);
+  const f = opts.fmt || (v => Math.round(v).toLocaleString("fr-FR"));
+  let g = ""; for (let k = 0; k <= 3; k++) { const v = lo + (hi - lo) * k / 3; g += `<line x1="${P}" x2="${W - 8}" y1="${y(v)}" y2="${y(v)}" stroke="#30363d"/><text x="4" y="${y(v) + 4}" fill="#8b949e" font-size="11">${f(v)}</text>`; }
+  const step = Math.max(1, Math.floor(n / 6)); labels.forEach((l, i) => { if (i % step === 0 || i === n - 1) g += `<text x="${x(i)}" y="${H - 6}" fill="#8b949e" font-size="11" text-anchor="middle">${esc(l)}</text>`; });
+  for (const s of series) { const pts = s.v.map((v, i) => v == null ? null : `${x(i)},${y(v)}`).filter(Boolean);
+    g += pts.length > 1 ? `<polyline fill="none" stroke="${s.c}" stroke-width="2" ${s.dash ? 'stroke-dasharray="6 4"' : ""} points="${pts.join(" ")}"/>` : pts.map(p => `<circle cx="${p.split(",")[0]}" cy="${p.split(",")[1]}" r="4" fill="${s.c}"/>`).join(""); }
+  return `<div class="legend">${series.map(s => `<span><i style="background:${s.c}"></i>${esc(s.n)}</span>`).join("")}</div><svg viewBox="0 0 ${W} ${H}">${g}</svg>`;
+}
+const table = (cols, rows) => `<table><tr>${cols.map(c => `<th>${esc(c)}</th>`).join("")}</tr>${rows.map(r => `<tr>${r.map(c => `<td>${c}</td>`).join("")}</tr>`).join("")}</table>`;
+const metric = (v, l, c = "") => `<div class="m"><b class="${c}">${v}</b><span>${l}</span></div>`;
+
+const qf = v => Number(v >= 100 ? v.toFixed(2) : v.toPrecision(6)).toLocaleString("fr-FR", {maximumFractionDigits: 8});
+function renderSplit() {
+  const K = D.core || {positions: []}, T = D.total || {};
+  const row = (n, c0, v, p, pp, x = "") => `<tr class="${x}"><td>${n}</td><td>${usd(c0)}</td><td>${usd(v)}</td><td class="${cls(p)}">${p >= 0 ? "+" : ""}${usd(p)}</td><td class="${cls(pp)}">${pct(pp)}</td></tr>`;
+  $("splitTable").innerHTML = `<table class="split-table"><tr><th>Référence</th><th>Capital initial</th><th>Valeur</th><th>P&L</th><th>P&L %</th></tr>${row("Portefeuille V1.1 (unique)", T.C0, T.equity, T.pnl, T.pnl_pct, "tot")}${K.bench != null ? row("Socle de départ conservé + liquidités", D.C0, K.bench, K.bench - D.C0, K.bench_pct) : ""}</table>`;
+  $("splitNote").textContent = K.bench != null ? `Écart vs socle conservé : ${T.equity - K.bench >= 0 ? "+" : ""}${usd(T.equity - K.bench)}. Socle de départ acheté le ${K.start} pour ${usd(K.cost)} (dont ${usd(K.fees)} de frais maker) ; ces positions sont gérées par la stratégie comme les autres.` : "Socle non encore acheté.";
+  $("corePos").innerHTML = K.positions.length ? table(["Actif", "Qté initiale", "Prix d'achat", "Frais", "Encore détenu", "Prix", "Valeur si conservé"], K.positions.map(p => [esc(p.asset), qf(p.qty), usd(p.buy_price), usd(p.fee), Math.round(p.held_pct) + " %", usd(p.price), usd(p.value)])) : '<div class="sub">Aucun socle de départ.</div>';
+}
+function renderSim() {
+renderSplit();
+$("head").textContent = `Stratégie de tendance multi-indicateurs simulée sur les prix publics Kraken, à partir de ${usd(D.C0)}. Aucun ordre réel. Montants en USD, heure de Paris. Données sim au ${D.as_of}, ${D.n_cycles} cycle(s) horaire(s) · ${D.version}`;
+if (D.killed) $("kill").innerHTML = '<div class="card down"><b>Coupe-circuit déclenché</b> : drawdown de 30 % atteint depuis C0, trading arrêté.</div>';
+$("metrics").innerHTML = [
+  metric(usd(D.equity), "Équité"), metric(pct(D.net_return_pct), "Rendement net", cls(D.net_return_pct)),
+  metric(pct(D.vs_btc_pct), "vs BTC conservé (" + pct(D.btc_return_pct) + ")", cls(D.vs_btc_pct)), metric(pct(D.basket_return_pct), "Panier 50/50 BTC/ETH", cls(D.basket_return_pct)),
+  metric("-" + D.max_dd_pct.toFixed(2).replace(".", ",") + " %", "Drawdown max"), metric("-" + D.cur_dd_pct.toFixed(2).replace(".", ",") + " %", "Drawdown actuel"),
+  metric(usd(D.cash), "Liquidités · exposition " + D.exposure_pct.toFixed(1).replace(".", ",") + " %"), metric(String(D.n_trades), "Transactions"),
+  metric(usd(D.pnl_gross), "Gain brut (avant frais)", cls(D.pnl_gross)), metric("−" + usd(D.fees), "Frais payés"), metric(usd(D.pnl_net), "Gain net", cls(D.pnl_net)),
+  metric(D.invested_pct.toFixed(1).replace(".", ",") + " %", `Temps investi · ${(100 - D.invested_pct).toFixed(1).replace(".", ",")} % en liquidités`),
+  metric(D.win_rate_pct == null ? "n.d." : Math.round(D.win_rate_pct) + " %", "Taux de réussite"), metric(usd(D.C0), "Capital de départ C0")].join("");
+const ct = D.curve.map(p => p.t);
+$("cmp").innerHTML = chart([{n: "Simulation", c: "#58a6ff", v: D.curve.map(p => p.sim)}, {n: "BTC conservé", c: "#f7931a", v: D.curve.map(p => p.btc)}, {n: "Panier 50/50 BTC/ETH", c: "#d2a8ff", v: D.curve.map(p => p.basket)}, {n: "Liquidités (C0)", c: "#8b949e", dash: 1, v: D.curve.map(p => p.cash)}], ct, {fmt: v => Math.round(v).toLocaleString("fr-FR") + " $"});
+$("dd").innerHTML = chart([{n: "Drawdown", c: "#f85149", v: D.dd_series.map(p => p.dd)}, {n: "Seuil 30 %", c: "#8b949e", dash: 1, v: D.dd_series.map(() => 30)}], D.dd_series.map(p => p.t), {lo: 0, hi: 35, fmt: v => v.toFixed(0) + " %"});
+$("bchart").innerHTML = chart([{n: "BTCUSD (cycles)", c: "#f7931a", v: D.btc_series.map(p => p.p)}], D.btc_series.map(p => p.t), {h: 160, fmt: v => Math.round(v).toLocaleString("fr-FR") + " $"});
+$("jr").innerHTML = D.journal.length ? "<ul>" + D.journal.map(j => `<li>${esc(j)}</li>`).join("") + "</ul>" : '<div class="sub">Aucun ordre simulé pour l\'instant : aucune crypto n\'a encore réuni 4 confirmations sur 5 avec un régime BTC haussier.</div>';
+$("pnl").innerHTML = D.pnl_by_asset.length ? table(["Crypto", "Total", "Réalisé", "Latent", "Frais"], D.pnl_by_asset.map(r => [esc(r.asset), `<span class="${cls(r.total)}">${usd(r.total)}</span>`, usd(r.real), usd(r.unreal), usd(r.fees)])) : '<div class="sub">Pas encore de P&amp;L : aucune position ouverte ni clôturée.</div>';
+const T = D.trade_stats;
+$("ts").innerHTML = T.best ? `<div class="grid">${metric(usd(T.best.pnl), "Meilleur · " + esc(T.best.asset), cls(T.best.pnl))}${metric(usd(T.worst.pnl), "Pire · " + esc(T.worst.asset), cls(T.worst.pnl))}${metric(usd(T.avg_win), "Gain moyen (" + T.n_win + ")")}${metric(usd(T.avg_loss), "Perte moyenne (" + T.n_loss + ")")}</div>` : '<div class="sub">Aucun trade clôturé pour l\'instant.</div>';
+$("pos").innerHTML = D.positions.length ? table(["Actif", "Qté", "Prix moyen", "Prix", "Valeur", "P&L"], D.positions.map(p => [esc(p.asset) + (p.origin ? ' <small>(achat initial)</small>' : ""), p.qty.toPrecision(6), usd(p.avg), usd(p.price), usd(p.value), `<span class="${cls(p.pnl_pct)}">${pct(p.pnl_pct)}</span>`])) : '<div class="sub">Tout en liquidités.</div>';
+$("alloc").innerHTML = table(["Poste", "Valeur", "Part"], D.allocation.map(a => [esc(a.label), usd(a.value), (a.value / D.equity * 100).toFixed(1).replace(".", ",") + " %"]));
+$("dec").innerHTML = table(["Heure", "Actif", "Action", "Raison"], D.decisions.map(d => [esc(d.t), esc(d.asset), esc(d.action), esc(d.reason)]));
+}
+renderSplit();
+renderSim();
+const t0 = new Date(D.start_iso);
+function tick() { const s = Math.floor((Date.now() - t0) / 1000), d = Math.floor(s / 86400), h = Math.floor(s % 86400 / 3600), m = Math.floor(s % 3600 / 60);
+  $("uptime").textContent = `En service depuis ${d ? d + " j " : ""}${h} h ${m} min (démarrage ${D.start_paris})`; }
+tick(); setInterval(tick, 30000);
+const ck = b => b ? '<span class="up">✓ oui</span>' : '<span class="down">✗ non</span>';
+/*IND_START*/
+// Recalcul identique à backtest.ind() (cycle.py) : bougies journalières CLÔTURÉES (dernière bougie en cours exclue),
+// lissages « Wilder 14 » = EMA 27 initialisée sur la 1re valeur, volume en $ (volume × clôture).
+function emaJ(x, n) { const k = 2 / (n + 1), o = [x[0]]; for (let i = 1; i < x.length; i++) o.push(o[i - 1] + k * (x[i] - o[i - 1])); return o; }
+function indLast(rows) { // rows = résultat Kraken OHLC brut [t,o,h,l,c,vwap,vol,count]
+  const R = rows.slice(0, -1), H = R.map(a => +a[2]), L = R.map(a => +a[3]), C = R.map(a => +a[4]), V = R.map(a => +a[6] * +a[4]), n = C.length;
+  if (n < 61) return null;
+  const tr = [H[0] - L[0]], up = [0], dn = [0], ch = [0];
+  for (let i = 1; i < n; i++) {
+    tr.push(Math.max(H[i] - L[i], Math.abs(H[i] - C[i - 1]), Math.abs(L[i] - C[i - 1])));
+    const u = H[i] - H[i - 1], d = L[i - 1] - L[i];
+    up.push(u > d ? Math.max(u, 0) : 0); dn.push(d > u ? Math.max(d, 0) : 0); ch.push(C[i] - C[i - 1]);
+  }
+  const atr = emaJ(tr, 27), sp = emaJ(up, 27), sm = emaJ(dn, 27);
+  const pdi = sp.map((a, i) => atr[i] ? 100 * a / atr[i] : 0), mdi = sm.map((a, i) => atr[i] ? 100 * a / atr[i] : 0);
+  const adx = emaJ(pdi.map((a, i) => a + mdi[i] ? 100 * Math.abs(a - mdi[i]) / (a + mdi[i]) : 0), 27);
+  const g = emaJ(ch.map(c => Math.max(c, 0)), 27), l = emaJ(ch.map(c => Math.max(-c, 0)), 27);
+  const e12 = emaJ(C, 12), e26 = emaJ(C, 26), m = C.map((_, i) => e12[i] - e26[i]), sg = emaJ(m, 9), e20 = emaJ(C, 20), e50 = emaJ(C, 50);
+  const i = n - 1, avg = k => { let s = 0; for (let j = n - k; j < n; j++) s += V[j]; return s / k; };
+  const v7 = avg(7), v30 = avg(30);
+  return {c: C[i], e20: e20[i], e50: e50[i], mh: m[i] - sg[i], rsi: l[i] ? 100 - 100 / (1 + g[i] / l[i]) : 100, adx: adx[i], pdi: pdi[i], mdi: mdi[i], vr: v30 ? v7 / v30 : null, mom: (C[i] / C[i - 30] - 1) * .5 + (C[i] / C[i - 7] - 1) * .5, last: +R[i][0]};
+}
+function toRow(asset, x, regime) {
+  const trend = x.c > x.e50 && x.e20 > x.e50, macd = x.mh > 0, rsi_ok = x.rsi > 50 && x.rsi < 75, adx_ok = x.adx > 20 && x.pdi > x.mdi, vol = x.vr != null && x.vr > 1;
+  return {asset, trend, macd, rsi_ok, rsi: x.rsi, adx_ok, adx: x.adx, pdi: x.pdi, mdi: x.mdi, vol, vol_ratio: x.vr, macd_hist: x.mh, ema_pct: (x.c / x.e50 - 1) * 100, mom: x.mom, regime,
+          score: trend + macd + rsi_ok + adx_ok + vol};
+}
+/*IND_END*/
+const nf = (v, d) => v == null ? "n.d." : v.toLocaleString("fr-FR", {minimumFractionDigits: d, maximumFractionDigits: d});
+const sgn = (v, d) => v == null ? "n.d." : (v >= 0 ? "+" : "−") + nf(Math.abs(v), d);
+const cell = (ok, t) => `<span class="${ok ? "up" : "down"}">${t} (${ok ? "oui" : "non"})</span>`;
+function renderInd(rows, src, live) {
+  rows = rows.slice().sort((a, b) => b.score - a.score || (b.mom || 0) - (a.mom || 0));
+  $("ind").innerHTML = table(["Crypto", "Clôture vs EMA50", "MACD − signal", "RSI 14", "ADX (+DI/−DI)", "Vol. 7j/30j", "Score", "Régime BTC"],
+    rows.map(r => [esc(r.asset), cell(r.trend, sgn(r.ema_pct, 1) + " %"), cell(r.macd, r.macd_hist == null ? "n.d." : (r.macd_hist >= 0 ? "+" : "−") + Number(Math.abs(r.macd_hist).toPrecision(3)).toLocaleString("fr-FR", {maximumFractionDigits: 10})),
+      cell(r.rsi_ok, nf(r.rsi, 1)), cell(r.adx_ok, `${nf(r.adx, 0)} (${nf(r.pdi, 0)}/${nf(r.mdi, 0)})`), cell(r.vol, r.vol_ratio == null ? "n.d." : "×" + nf(r.vol_ratio, 2)),
+      `<b class="${r.score >= 4 && r.trend ? "up" : ""}">${r.score}/5</b>`, ({on: "haussier", neutral: "neutre", off: "baissier"})[D.btc_regime_state] || (r.regime ? "haussier" : "baissier")]));
+  $("indsrc").textContent = "Achat si régime BTC haussier + tendance validée (clôture et EMA20 > EMA50) + au moins 4/5. Volume = moyenne 7 j ÷ moyenne 30 j (en $). Source : " + src;
+  $("inddot").className = live ? "dot on" : "dot";
+}
+renderInd(D.indicators, D.indicators_src + " (instantané intégré)", false);
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+async function ohlcDaily(pair) { const r = await (await fetch(`https://api.kraken.com/0/public/OHLC?pair=${pair}&interval=1440`)).json();
+  if (r.error && r.error.length) throw new Error(r.error.join(",")); return r.result[Object.keys(r.result).find(k => k !== "last")]; }
+let indBusy = false;
+async function liveInd() {
+  if (indBusy) return; indBusy = true;
+  const note = "indicatif : la simulation ne décide qu'au cycle horaire";
+  try {
+    const cache = {}, get = async p => cache[p] || (cache[p] = await ohlcDaily(p));
+    const b = indLast(await get(D.ind_btc_pair)); if (!b) throw new Error("BTC");
+    const regime = b.c > b.e50, rows = [], fails = [];
+    for (const u of D.ind_live) {
+      await sleep(400); // étalement : ~1 requête / 0,4 s, bien sous la limite publique Kraken
+      try { const x = indLast(await get(u.pair)); if (x) rows.push(toRow(u.asset, x, regime)); else fails.push(u.asset); } catch (e) { fails.push(u.asset); }
+    }
+    if (!rows.length) throw new Error("vide");
+    const day = new Date(b.last * 1000).toLocaleDateString("fr-FR", {timeZone: "UTC", day: "2-digit", month: "2-digit"});
+    renderInd(rows, `direct, API publique Kraken (dernière bougie journalière clôturée : ${day} UTC)`, true);
+    $("indst").textContent = `Mis à jour ${parisFmt.format(new Date())} (heure de Paris), toutes les 60 s · ${note}` + (fails.length ? ` · indisponible : ${fails.join(", ")}` : "");
+  } catch (e) {
+    renderInd(D.indicators, D.indicators_src + " (instantané intégré : recalcul direct indisponible)", false);
+    $("indst").textContent = `Échec du recalcul direct à ${parisFmt.format(new Date())} (heure de Paris) ; nouvel essai dans 60 s · ${note}`;
+  } finally { indBusy = false; }
+}
+const NAMES = {A: "A · rotation momentum (ancienne)", B: "B · confluence 5 indicateurs (retenue)", C: "C · EMA + MACD + RSI", D: "D · confluence 3/5", BTC: "BTC acheter-conserver"};
+const p1 = v => (v * 100).toFixed(1).replace(".", ",") + " %";
+function strat(per) {
+  $("strat").innerHTML = `<ol><li>Régime : BTC clôture au-dessus de son EMA50 journalière.</li><li>Tendance (obligatoire) : clôture > EMA50 et EMA20 > EMA50.</li><li>MACD (12, 26, 9) au-dessus du signal.</li><li>RSI 14 entre 50 et 75.</li><li>ADX 14 > 20 avec +DI > −DI.</li><li>Volume 7 j > 30 j.</li><li>Top 3 par momentum, 33 % chacun ; sortie stop 3×ATR, clôture &lt; EMA50 ou régime baissier.</li></ol>
+  <div class="seg" style="margin:10px 0">${Object.keys(D.backtest.rows).map(k => `<button class="${k === per ? "on" : ""}" onclick="strat('${k}')">${k}</button>`).join("")}</div>
+  <div class="sub">Période : ${esc(D.backtest.periods[per])}</div>` + table(["Variante", "Rendement", "Drawdown max", "Transactions", "Frais (% C0)", "Réussite"], D.backtest.rows[per].map(r => [NAMES[r.v], `<span class="${cls(r.ret)}">${p1(r.ret)}</span>`, "-" + p1(r.mdd), r.trades, p1(r.fees), r.win == null ? "n.d." : Math.round(r.win * 100) + " %"]));
+}
+strat("hors-échantillon");
+const WFN = {B: "B · univers mensuel", Bfixe: "B · 10 cryptos actuelles", BTC: "BTC conservé", EW: "Panier égal"};
+const wfc = x => `<span class="${cls(x.ret)}">${p1(x.ret)}</span> / -${p1(x.mdd)}`;
+function wfr(e) {
+  const W = D.walkforward[e];
+  $("wf").innerHTML = `<div class="warn" style="border:1px solid #b8860b;background:#2a2410;padding:10px;border-radius:8px;margin-bottom:10px"><b>Backtest initial trop optimiste.</b> le backtest initial (+51,6 % sur la période complète, +39,7 % hors échantillon) était trop optimiste, à cause du biais du survivant (univers = les 10 cryptos dominantes d'aujourd'hui). Avec un univers reconstruit chaque mois (top 20 par volume à la date), le walk-forward donne une estimation réaliste d'environ +5 % (−7 % avec des frais de 0,80 %) et un drawdown max d'environ 60 %, au-delà du coupe-circuit de 30 %. Biais résiduel : les cryptos retirées de Kraken n'ont plus de données publiques. La stratégie B est conservée telle quelle.</div>
+  <div class="seg" style="margin:10px 0">${[["040","Frais 0,40 %"],["080","Frais 0,80 %"]].map(([k,l]) => `<button class="${k === e ? "on" : ""}" onclick="wfr('${k}')">${l}</button>`).join("")}</div>
+  <div class="sub">Test 3 mois après 6 mois d'apprentissage, roulant ; rendement net / drawdown max. Période ${esc(W.period)}.</div>` +
+  table(["Test", WFN.B, WFN.Bfixe, WFN.BTC, WFN.EW], [...W.folds.map(f => [esc(f.test), wfc(f.res.B), wfc(f.res.Bfixe), wfc(f.res.BTC), wfc(f.res.EW)]), ["<b>Agrégé</b>", wfc(W.agg.B), wfc(W.agg.Bfixe), wfc(W.agg.BTC), wfc(W.agg.EW)]]);
+}
+wfr("040");
+if (D.lessons.length) $("lessons").innerHTML = D.lessons.map(l => { const [h, ...b] = l.split("\n"); return `<p><b>${esc(h)}</b><br>${esc(b.join(" "))}</p>`; }).join(""); else $("lessonsCard").remove();
+$("rules").textContent = `Socle de départ : 500 $ BTC, 300 $ ETH, 200 $ XRP achetés le 25/10 à 11h33 (limite maker), devenus des positions normales : stop suiveur, sortie risk-off, sortie de tendance et rotation s'appliquent (sortie de tendance et rotation après 48 h de détention depuis l'achat initial). Un seul portefeuille de ${usd(D.C0)}, 3 positions max à 33 % du total ; une position < ½ cible n'occupe pas d'emplacement et peut être renforcée en régime haussier. univers ${D.universe.join(", ")} (paires USD disponibles en France). Régime BTC à hystérésis EMA50 ± 0,15×ATR14 (haussier / neutre / baissier), achat seulement en régime haussier, tendance + au moins 4/5 confirmations, classement momentum ½·30 j + ½·7 j. Conservation tant que rang ≤ ${D.keep_rank || 4}, détention min. ${D.min_hold_h || 48} h, challenger +10 %, stop suiveur ${D.atr_mult || 3}×ATR. Ordres post-only (maker) remplis seulement si les transactions publiques croisent la limite ; palier de frais Kraken sur le volume simulé 30 j (actuellement maker ${((D.fees_tier || {}).maker * 100 || 0).toLocaleString("fr-FR")} % / taker ${((D.fees_tier || {}).taker * 100 || 0).toLocaleString("fr-FR")} %). Décision journalière vers 00:10 UTC, cycles horaires à hh:10 UTC, coupe-circuit à −30 % du C0 total. Paper trading : aucun ordre réel.`;
+
+// ---------- Direct : API publique Kraken (CORS OK) + WebSocket v2 ----------
+let live = [], lastLive = 0, open24 = null;
+// V1.04 zoom : [intervalle Kraken (min), bougies, libellé] ; 720 bougies max côté Kraken
+const ZOOM = {"1j": [5, 288, "5 min"], "7j": [60, 168, "1 h"], "1m": [240, 180, "4 h"], "3m": [240, 540, "4 h"], "6m": [1440, 183, "1 j"], "1a": [1440, 365, "1 j"], "all": [10080, 720, "1 sem."]};
+let zr = "1j";
+const ZLAB = t => { const d = new Date(t * 1000), iv = ZOOM[zr][0];
+  return iv < 1440 && zr === "1j" ? d.toLocaleTimeString("fr-FR", {timeZone: "Europe/Paris", hour: "2-digit", minute: "2-digit"})
+       : iv < 1440 ? d.toLocaleString("fr-FR", {timeZone: "Europe/Paris", day: "2-digit", month: "2-digit", hour: "2-digit"}) + "h"
+       : d.toLocaleDateString("fr-FR", {timeZone: "Europe/Paris", day: "2-digit", month: "2-digit", year: "2-digit"}); };
+function drawLive() {
+  $("lchart").innerHTML = chart([{n: `BTCUSD (bougies ${ZOOM[zr][2]}, direct)`, c: "#f7931a", v: live.map(p => p[1])}], live.map(p => ZLAB(p[0])), {h: 200, fmt: v => Math.round(v).toLocaleString("fr-FR") + " $"});
+}
+function setPrice(p, src) {
+  lastLive = Date.now(); $("lp").textContent = usd(p); $("dot").className = "dot on";
+  if (open24) { const ch = (p / open24 - 1) * 100; $("lch").innerHTML = `<span class="${cls(ch)}">${pct(ch)}</span> depuis l'ouverture du jour (UTC)`; }
+  $("lst").textContent = `Mis à jour ${parisFmt.format(new Date())} (heure de Paris) · source : ${src}`;
+  if (live.length) { const now = Math.floor(Date.now() / (ZOOM[zr][0] * 60000)) * ZOOM[zr][0] * 60; if (live[live.length - 1][0] < now) { live.push([now, p]); live.shift(); } else live[live.length - 1][1] = p; }
+}
+async function pollTicker() {
+  try { const r = await (await fetch("https://api.kraken.com/0/public/Ticker?pair=XBTUSD")).json(); const t = Object.values(r.result)[0];
+    open24 = +t.o; if (Date.now() - lastLive > 8000) setPrice(+t.c[0], "REST Ticker"); } catch (e) { if (Date.now() - lastLive > 20000) { $("dot").className = "dot"; $("lst").textContent = "Direct indisponible (réseau) ; nouvel essai…"; } }
+}
+async function loadOhlc() {
+  try { const z = zr, [iv, n] = ZOOM[z]; const r = await (await fetch(`https://api.kraken.com/0/public/OHLC?pair=XBTUSD&interval=${iv}`)).json(); const k = Object.keys(r.result).find(x => x !== "last");
+    if (z !== zr) return; live = r.result[k].slice(-n).map(a => [a[0], +a[4]]); drawLive(); } catch (e) { $("lchart").innerHTML = '<div class="sub">Graphique direct indisponible.</div>'; }
+}
+function ws() {
+  try { const s = new WebSocket("wss://ws.kraken.com/v2");
+    s.onopen = () => s.send(JSON.stringify({method: "subscribe", params: {channel: "ticker", symbol: ["BTC/USD"]}}));
+    s.onmessage = e => { const m = JSON.parse(e.data); if (m.channel === "ticker" && m.data && m.data[0]) setPrice(+m.data[0].last, "WebSocket v2"); };
+    s.onclose = () => setTimeout(ws, 5000);
+  } catch (e) {}
+}
+loadOhlc(); pollTicker(); ws();
+setInterval(pollTicker, 5000); setInterval(drawLive, 5000); setInterval(loadOhlc, 60000);
+setTimeout(liveInd, 1500); setInterval(liveInd, 60000);
+</script><script>
+// ---------- V1.04 : état live publié, compteur de cycle, zoom, conditions de sortie ----------
+(function(){
+for (const id of ['ind','jr','pnl','pos','alloc','dec','strat','wf']) { const el = $(id); if (el) el.classList.add('scroll'); }
+$("ver").textContent = D.version || "V1.1";
+const STATE_URL = location.hostname.endsWith("github.io") ? "state/public_state.json" : "https://raw.githubusercontent.com/cyrillaferrere/kraken-sim-state/main/state.json";
+const SNAP = JSON.parse(JSON.stringify({equity: D.equity, positions: D.positions}));
+let liveBid = {}, liveInd = {}, stateNote = "instantané intégré";
+// --- compteur depuis le dernier cycle (horodatage exact de l'état) ---
+function updateCycle() {
+  const at = new Date(D.last_cycle_iso), now = Date.now(), s = Math.max(0, Math.floor((now - at) / 1000));
+  const h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), sec = s % 60;
+  $("cycleElapsed").textContent = `${h} h ${String(m).padStart(2, "0")} min ${String(sec).padStart(2, "0")} s`;
+  // prochain cycle : prochain hh:10 (Paris = UTC + heures entières) après max(dernier cycle + 30 min, maintenant)
+  const base = new Date(Math.max(now, at.getTime() + 30 * 60000)); const n = new Date(base); n.setUTCMinutes(10, 0, 0); if (n <= base) n.setUTCHours(n.getUTCHours() + 1);
+  $("cycleNext").innerHTML = `<small>Dernier cycle : ${parisFmt.format(at)} · prochain estimé ~${n.toLocaleTimeString("fr-FR", {timeZone: "Europe/Paris", hour: "2-digit", minute: "2-digit"})} (± 15 min, heure de Paris)</small>`;
+}
+updateCycle(); setInterval(updateCycle, 1000);
+// --- zoom graphique BTC ---
+document.querySelectorAll(".zoom button").forEach(b => { b.disabled = false; b.title = `Bougies Kraken ${ZOOM[b.dataset.range][2]}`;
+  b.onclick = () => { zr = b.dataset.range; document.querySelectorAll(".zoom button").forEach(x => x.classList.toggle("active", x === b)); $("lchart").innerHTML = '<div class="sub">Chargement…</div>'; loadOhlc(); }; });
+// --- revalorisation live des positions (bid Kraken, comme la sim) ---
+function revalue() {
+  const K = D.core || {positions: []}; if (!D.positions.length && !K.positions.length) return;  // K = socle de référence (valeur si conservé), déjà inclus dans D.positions
+  let pv = 0, kv = 0;
+  for (const p of K.positions) { const b = liveBid[p.pair]; if (b) { p.price = b; p.value = p.qty * b; p.pnl = p.value - p.cost; p.pnl_pct = p.pnl / p.cost * 100; } kv += p.value; }
+  for (const p of D.positions) { const b = liveBid[p.pair]; if (b) { p.price = b; p.value = p.qty * b; p.pnl_pct = (b / p.avg - 1) * 100; } pv += p.value; }
+  D.equity = D.cash + pv; D.exposure_pct = pv / D.equity * 100;
+  if (K.positions.length) { K.value = kv; K.pnl = kv - K.C0; K.pnl_pct = K.pnl / K.C0 * 100; K.bench = kv + D.C0 - K.C0; K.bench_pct = (K.bench / D.C0 - 1) * 100; }
+  if (D.total) { D.total.equity = D.equity; D.total.pnl = D.equity - D.total.C0; D.total.pnl_pct = D.total.pnl / D.total.C0 * 100; } D.net_return_pct = (D.equity / D.C0 - 1) * 100; D.pnl_net = D.equity - D.C0; D.pnl_gross = D.pnl_net + D.fees;
+  D.vs_btc_pct = D.net_return_pct - D.btc_return_pct; D.allocation = (D.positions.map(p => ({label: p.asset, value: p.value}))).concat([{label: "Liquidités", value: D.cash}]);
+  for (const r of D.pnl_by_asset) { const p = D.positions.find(q => q.asset === r.asset); if (p) { r.unreal = p.qty * (p.price - p.avg); r.total = r.real + r.unreal; } }
+}
+async function pollPositions() {
+  const pairs = [...new Set(D.positions.concat((D.core || {}).positions || []).map(p => p.pair).filter(Boolean))]; if (!pairs.length) return;
+  try { const r = await (await fetch("https://api.kraken.com/0/public/Ticker?pair=" + pairs.join(","))).json();
+    for (const [k, t] of Object.entries(r.result || {})) liveBid[k] = +t.b[0];
+    for (const p of pairs) if (!liveBid[p]) { const k = Object.keys(r.result || {}).find(x => x.replace(/^X|Z(?=USD$)/g, "") === p.replace(/^X|Z(?=USD$)/g, "")); if (k) liveBid[p] = liveBid[k]; }
+    revalue(); renderSim(); renderExit(); stamp(`positions revalorisées en direct (bid Kraken) à ${parisFmt.format(new Date())}`);
+  } catch (e) { stamp("revalorisation directe indisponible, valeurs du cycle"); }
+}
+// --- indicateurs de sortie (bougies journalières clôturées, même calcul que la sim) ---
+async function pollExitInd() {
+  if (!D.positions.length) return;
+  try { const b = indLast(await ohlcDaily(D.ind_btc_pair)); if (b) liveInd.__regime = b.c > b.e50;
+    for (const p of D.positions) { const x = indLast(await ohlcDaily(p.asset === "BTC" ? D.ind_btc_pair : (p.asset === "DOGE" ? "XDGUSD" : p.asset + "USD"))); if (x) liveInd[p.asset] = x; }
+    renderExit(); } catch (e) {}
+}
+const yn = (sell, txt) => `<span class="${sell ? "down" : "up"}">${txt}<br><b>${sell ? "oui" : "non"}</b></span>`;
+function renderExit() {
+  const T = $("sellConditions"); if (!T) return;
+  if (!D.positions.length) { T.innerHTML = '<tr><td colspan="6" style="color:var(--mute)">Aucune position ouverte.</td></tr>'; return; }
+  const reg = liveInd.__regime ?? D.btc_regime, hold = D.min_hold_h || 48;
+  T.innerHTML = D.positions.map(p => {
+    const x = liveInd[p.asset], close = x ? x.c : p.close, e50 = x ? x.e50 : p.ema50;
+    const dist = p.stop ? (p.price / p.stop - 1) * 100 : null, stopHit = p.stop != null && p.price <= p.stop;
+    const below = close != null && e50 != null && close < e50;
+    const held = (Date.now() - new Date(p.entry_iso)) / 3600000, left = Math.max(0, hold - held);
+    const regOff = D.btc_regime_state ? D.btc_regime_state === 'off' : reg === false;
+    const trendExit = regOff || (below && (!p.origin || left <= 0));
+    const decision = stopHit ? '<b class="down">Vente (stop)</b>' : trendExit ? '<b class="down">Vente au prochain cycle</b>' : below ? '<b>Sortie différée (détention min. 48 h)</b>' : '<b class="up">Conserver</b>';
+    return `<tr><td>${esc(p.asset)}${p.test ? ' <small>(test)</small>' : ''}</td>
+      <td>${yn(stopHit, `stop ${usd(p.stop)} · bid ${usd(p.price)} · distance ${dist == null ? "n.d." : pct(dist)}<br><small>Stop touché ?</small>`)}</td>
+      <td>${yn(below, `clôture ${usd(close)} vs EMA50 ${usd(e50)} (${close && e50 ? pct((close / e50 - 1) * 100) : "n.d."})<br><small>Sous EMA50 ?</small>`)}</td>
+      <td>${yn(reg === false, `${reg == null ? "n.d." : reg ? "haussier" : "baissier"}<br><small>Régime baissier ?</small>`)}</td>
+      <td>${yn(left <= 0, `détenu ${nf(held, 1)} h · reste ${nf(left, 1)} h<br><small>Durée min. écoulée ?</small>`)}</td>
+      <td>${decision}</td></tr>`; }).join("");
+}
+renderExit();
+function stamp(extra) { $("stateSrc").textContent = `État de la sim : ${stateNote} · cycle du ${D.as_of}` + (extra ? ` · ${extra}` : ""); }
+// --- état publié (toutes les 60 s) ; repli sur l'instantané intégré ---
+async function pollState() {
+  try { const r = await fetch(STATE_URL + "?t=" + Date.now(), {cache: "no-store"}); if (!r.ok) throw new Error(r.status);
+    const S = await r.json();
+    if (S.last_cycle_iso && new Date(S.last_cycle_iso) >= new Date(D.last_cycle_iso)) { Object.assign(D, S); stateNote = `état publié chargé ${parisFmt.format(new Date())}`; renderSim(); updateCycle(); }
+    else stateNote = "état publié plus ancien que l'instantané, instantané conservé";
+  } catch (e) { stateNote = "instantané intégré (état publié injoignable)"; }
+  stamp(); pollPositions();
+}
+pollState(); setInterval(pollState, 60000); setInterval(pollPositions, 20000);
+setTimeout(pollExitInd, 4000); setInterval(pollExitInd, 300000);
+})();
+
+
+/* V1.1 — couche de présentation uniquement, ajoutée après les scripts du moteur sans les modifier. */
+(function v11Presentation(){
+  const el = id => document.getElementById(id);
+  const fmtMoney = value => Number.isFinite(+value) ? Number(value).toLocaleString('fr-FR',{minimumFractionDigits:2,maximumFractionDigits:2})+' $' : '—';
+  const fmtPct = value => Number.isFinite(+value) ? (value>0?'+':'')+Number(value).toLocaleString('fr-FR',{minimumFractionDigits:2,maximumFractionDigits:2})+' %' : '—';
+  const fmtShort = value => Number.isFinite(+value) ? Number(value).toLocaleString('fr-FR',{maximumFractionDigits:0})+' $' : '—';
+  const color = v => v>0?'var(--green)':v<0?'var(--red)':'var(--ink)';
+  const safe = v => String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const PERIODS = {'1d':{ms:864e5,label:'1 jour'},'7d':{ms:7*864e5,label:'7 jours'},'1m':{ms:30*864e5,label:'1 mois'},'6m':{ms:183*864e5,label:'6 mois'},'1y':{ms:365*864e5,label:'1 an'},'all':{ms:Infinity,label:'Depuis le démarrage'}};
+  let currentPeriod='all',lastEquity=null,lastRenderKey='',inUpdate=false;
+  function epochParis(t){
+    const m=String(t||'').match(/^(\d{1,2})\/(\d{1,2})\s+(\d{1,2})h(\d{2})/);if(!m)return NaN;
+    const yr = new Date(D.last_cycle_iso||D.start_iso||Date.now()).getUTCFullYear();
+    const v = Date.UTC(yr,Number(m[2])-1,Number(m[1]),Number(m[3]),Number(m[4]));
+    const tzParts = new Intl.DateTimeFormat('en-US',{timeZone:'Europe/Paris',timeZoneName:'shortOffset'}).formatToParts(new Date(v));
+    const tz = tzParts.find(x=>x.type==='timeZoneName')?.value||'GMT+1';const mt=tz.match(/GMT([+-])(\d{1,2})(?::(\d{2}))?/);
+    const diff=mt?(mt[1]==='-'?-1:1)*(+mt[2]*60 + +(mt[3]||0)):60;
+    return v-diff*60000;
+  }
+  function points(){
+    const raw=(Array.isArray(D.curve)?D.curve:[]).map(p=>({...p,_t:epochParis(p.t)})).filter(p=>Number.isFinite(p._t)&&Number.isFinite(+p.sim)).sort((a,b)=>a._t-b._t);
+    if(raw.length){const last=raw[raw.length-1];raw[raw.length-1]={...last,sim:D.equity};}
+    return raw;
+  }
+  function availableFor(period,raw){
+    if(period==='all')return {data:raw,start:D.C0,partial:false,baseline:raw[0]?raw[0]._t:NaN};
+    if(!raw.length)return {data:[],start:NaN,partial:true,baseline:NaN};
+    const now=Date.now(),cutoff=now-PERIODS[period].ms;
+    let before=null;for(const p of raw)if(p._t<=cutoff)before=p;
+    const newer=raw.filter(p=>p._t>=cutoff);
+    const sliced=before?[before,...newer]:newer.length?newer:raw.slice(-1);
+    const partial=!before,first=sliced[0];
+    return {data:sliced.length?sliced:raw,start:first?+first.sim:NaN,partial,baseline:first?first._t:NaN};
+  }
+  const stamp=t=>Number.isFinite(t)?new Date(t).toLocaleString('fr-FR',{timeZone:'Europe/Paris',day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}):'date inconnue';
+  function svgChart(series,labels,{height=205,shade=false,minValue=null,maxValue=null,suffix='$',zero=false}={}){
+    const W=860,H=height,L=63,R=18,T=16,B=30, pw=W-L-R,ph=H-T-B;
+    const all=series.flatMap(s=>s.vals).filter(x=>Number.isFinite(x));
+    if(!all.length)return '<div class="empty-message">Historique indisponible pour le moment.</div>';
+    let lo=minValue??Math.min(...all),hi=maxValue??Math.max(...all);
+    if(hi-lo<.001){const pad=Math.abs(hi)*.002||1;lo-=pad;hi+=pad}
+    else if(minValue==null&&maxValue==null){const pad=(hi-lo)*.12;lo-=pad;hi+=pad}
+    const X=i=>L+(labels.length<=1?pw/2:i*pw/(labels.length-1));
+    const Y=v=>T+ph*(hi-v)/(hi-lo);
+    const fid='g'+Math.random().toString(36).slice(2,9);
+    let markup=`<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="Graphique des performances">`;
+    if(shade) markup+=`<defs><linearGradient id="${fid}" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stop-color="#75b5ff" stop-opacity=".19"/><stop offset="100%" stop-color="#75b5ff" stop-opacity="0"/></linearGradient></defs>`;
+    for(let i=0;i<=3;i++){const v=lo+(hi-lo)*i/3, y=Y(v);markup+=`<line x1="${L}" y1="${y}" x2="${W-R}" y2="${y}" stroke="#2a3d53" stroke-width=".8"/><text x="${L-9}" y="${y+4}" fill="#88a1b8" font-size="12" text-anchor="end">${safe(suffix==='%'?v.toFixed(0)+' %':Math.round(v).toLocaleString('fr-FR')+' $')}</text>`}
+    const step=Math.max(1,Math.ceil(labels.length/5));labels.forEach((l,i)=>{if(i%step===0||i===labels.length-1){markup+=`<text x="${X(i)}" y="${H-6}" fill="#829bb3" font-size="12" text-anchor="middle">${safe(l)}</text>`}});
+    series.forEach((s,si)=>{const pts=s.vals.map((v,i)=>Number.isFinite(v)?[X(i),Y(v)]:null).filter(Boolean);if(!pts.length)return;
+      if(shade&&si===0&&pts.length>1){markup+=`<path d="M${pts[0][0]},${T+ph} L${pts.map(p=>p.join(',')).join(' L')} L${pts[pts.length-1][0]},${T+ph}Z" fill="url(#${fid})"/>`}
+      if(pts.length===1)markup+=`<circle cx="${pts[0][0]}" cy="${pts[0][1]}" r="4" fill="${s.col}"/>`;
+      else markup+=`<polyline points="${pts.map(p=>p.join(',')).join(' ')}" fill="none" stroke="${s.col}" stroke-width="${si===0?2.6:1.8}" ${s.dash?'stroke-dasharray="5 6"':''} stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>`;
+    });
+    markup+='</svg>';return markup;
+  }
+  function setField(id,v,col){const n=el(id);if(!n)return;n.textContent=v;if(col)n.style.color=col}
+  function header(){
+    const old=lastEquity,newValue=+D.equity;
+    setField('accountValue',fmtMoney(newValue));
+    if(old!=null&&Math.abs(old-newValue)>.004){const n=el('accountValue');n.classList.remove('blip','negative-shift');void n.offsetWidth;n.classList.add(newValue<old?'negative-shift':'blip')}
+    lastEquity=newValue;
+    const raw=points(),data=availableFor(currentPeriod,raw),base=data.start;
+    const delta=Number.isFinite(base)?newValue-base:NaN;
+    const percentage=Number.isFinite(base)&&base!==0?delta/base*100:NaN;
+    setField('accountChange',Number.isFinite(delta)?(delta>0?'+':'')+fmtMoney(delta):'—',color(delta));
+    setField('accountChangePct',fmtPct(percentage),color(percentage));
+    const note=el('periodNote'),caption=el('accountCaption');
+    if(currentPeriod==='all'){
+      note.textContent=`Du capital initial au dernier état · ${D.n_cycles??'—'} cycles`;note.classList.remove('partial');
+      caption.textContent='Gain / perte net(te) depuis le démarrage, frais inclus';
+    } else if(data.partial){
+      note.textContent=`Historique partiel : calcul depuis le ${stamp(data.baseline)} (pas ${PERIODS[currentPeriod].label} complet${PERIODS[currentPeriod].label.endsWith('s')?'s':''})`;
+      note.classList.add('partial');caption.textContent='Variation calculée sur les données disponibles, frais inclus';
+    } else {note.textContent=`Période complète : ${PERIODS[currentPeriod].label}`;note.classList.remove('partial');caption.textContent='Variation de valeur du portefeuille sur la période sélectionnée';}
+    el('equityRangeLabel').textContent=PERIODS[currentPeriod].label;
+    setField('briefCash',fmtMoney(D.cash));setField('briefExposure',fmtPct(D.exposure_pct));
+    setField('briefPnl',(D.pnl_net>0?'+':'')+fmtMoney(D.pnl_net),color(D.pnl_net));
+    setField('briefDd','−'+fmtPct(Math.abs(+D.cur_dd_pct||0)).replace('+',''));
+    setField('briefFees',fmtMoney(D.fees));setField('briefTrades',String(D.n_trades??'—'));
+    const selected=data.data;
+    el('equityPlot').innerHTML=svgChart([{vals:selected.map(x=>+x.sim),col:'#75b5ff'}],selected.map(p=>stamp(p._t)),{shade:true,height:228});
+    el('equityChartNote').textContent=(data.partial?'Période partielle · ':'')+'Équité revalorisée au dernier cours disponible · horodatage des cycles';
+  }
+  function allocations(){
+    const items=(D.allocation||[]).filter(a=>Number(a.value)>0),total=Number(D.equity)||items.reduce((s,x)=>s+x.value,0);
+    if(!items.length||!total){el('allocationVisual').innerHTML='<div class="empty-message">Aucune allocation disponible.</div>';return}
+    const cols=['#75b5ff','#3cdaa8','#a88bf5','#ffac43','#ff6b7d','#9caec4'];
+    const bars=items.map((a,i)=>`<span style="width:${Math.max(0,Math.min(100,100*a.value/total))}%;background:${cols[i%cols.length]}"></span>`).join('');
+    const rows=items.map((a,i)=>`<div class="allocation-row"><i style="background:${cols[i%cols.length]}"></i><span>${safe(a.label)}</span><small>${fmtMoney(a.value)}</small><b>${(100*a.value/total).toLocaleString('fr-FR',{maximumFractionDigits:1})} %</b></div>`).join('');
+    el('allocationVisual').innerHTML=`<div class="allocation-track">${bars}</div>${rows}`;
+  }
+  function orders(){
+    const log=Array.isArray(D.journal)?D.journal:[],structured=Array.isArray(D.orders)?D.orders:[];
+    const rows=log.length?log.map((j,i)=>{
+      const text=String(j).replace(/[\u202f\u00a0]/g,' ');
+      const time=(text.match(/(?:Le\s+)?(\d{2}\/\d{2}\s+\d{2}h\d{2})/i)||[])[1]||'—';
+      const action=/vendu|vendue|vente|vend\s/i.test(text)?'VENTE':/achet|achat/i.test(text)?'ACHAT':'ÉVÉNEMENT';
+      const match=text.match(/(?:achet[eé]|vendu|vendue)\s+([\d\s.,]+)\s+([A-Z]{2,10})\b/i);
+      const asset=match?.[2]||((text.match(/\b(BTC|XMR|ETH|DOGE|SOL|XRP|ADA|ZEC|NEAR|SUI|HYPE|TAO)\b/i)||[])[1]||'—');
+      const total=(text.match(/\bsoit\s+([\d\s.,]+)\s*\$/i)||[])[1]||'';
+      const frais=(text.match(/frais\s+([\d\s.,]+)\s*\$/i)||[])[1]||'';
+      return {time,action:/\[SOCLE\]/.test(text)?'ACHAT INITIAL':action,asset,total,frais,text};
+    }):structured.map(o=>({time:o.t||'—',action:/ach|buy/i.test(o.side)?'ACHAT':/vend|sell/i.test(o.side)?'VENTE':'ÉVÉNEMENT',asset:(o.pair||'').replace(/^XXBTZUSD$/,'BTC').replace(/^XDGZUSD$/,'DOGE').replace(/^X|ZUSD$/g,'')||'—',total:o.qty&&o.price?fmtMoney(o.qty*o.price):'',frais:o.fee!=null?fmtMoney(o.fee):'',text:o.reason||''}));
+    el('orderCount').textContent=`${rows.length} événement${rows.length>1?'s':''}`;
+    el('ordersVisual').innerHTML=rows.length?rows.map(o=>`<details class="order-entry"><summary><span class="order-date">${safe(o.time)}</span><span class="order-action ${o.action==='VENTE'?'down':o.action.startsWith('ACHAT')?'up':''}">${safe(o.action)}</span><span class="order-asset">${safe(o.asset)}</span><span class="order-sum">${o.total?safe(o.total)+' $':'Voir le détail'}</span><span class="order-fee">${o.frais?'Frais '+safe(o.frais)+' $':''}</span></summary><div class="order-detail">${safe(o.text)}${o.frais?`<div style="margin-top:6px;color:var(--soft)">Frais : ${safe(o.frais)} $</div>`:''}</div></details>`).join(''):'<div class="empty-message">Aucun ordre enregistré pour le moment.</div>';
+  }
+  function signals(){
+    const rows=(Array.isArray(D.indicators)?D.indicators:[]).slice().sort((a,b)=>b.score-a.score||(b.mom||0)-(a.mom||0));
+    el('signalBars').innerHTML=rows.length?rows.slice(0,7).map(r=>`<div class="signal-row"><strong>${safe(r.asset)}</strong><div class="score-track"><div class="score-fill ${r.score>=4?'strong':''}" style="width:${Math.max(0,Math.min(100,Number(r.score)*20))}%"></div></div><span class="signal-score ${r.score>=4?'up':''}">${r.score}/5</span></div>`).join(''):'<div class="empty-message">Aucun signal disponible.</div>';
+    const rs=D.btc_regime_state||(D.btc_regime?'on':'off');el('btcRegime').textContent=({on:'haussier',neutral:'neutre (pas de nouvel achat)',off:'baissier'})[rs]||'inconnu';
+    el('btcRegime').style.color=rs==='on'?'var(--green)':rs==='neutral'?'var(--amber)':'var(--red)';
+  }
+  function otherCharts(){
+    const raw=points(), labels=raw.map(p=>stamp(p._t));
+    el('compareVisual').innerHTML=svgChart([
+      {vals:raw.map(p=>+p.sim),col:'#75b5ff'},
+      {vals:raw.map(p=>+p.btc),col:'#ffac43'},
+      {vals:raw.map(p=>+p.basket),col:'#a88bf5'}
+    ],labels,{height:200});
+    const dds=(D.dd_series||[]).map(p=>Number(p.dd)).filter(Number.isFinite);
+    const max=Math.max(35,...dds);
+    el('drawdownVisual').innerHTML=svgChart([
+      {vals:dds,col:'#ff6b7d'},
+      {vals:dds.map(()=>30),col:'#8795aa',dash:true}
+    ],(D.dd_series||[]).map(x=>x.t),{height:200,minValue:0,maxValue:max,suffix:'%'});
+  }
+  function refresh(){if(inUpdate)return;inUpdate=true;try{header();allocations();orders();signals();otherCharts()}catch(e){console.warn('V1.1 UI update:',e)}finally{inUpdate=false}}
+  const rail=el('rail'),toggle=el('navToggle'),mobile=el('mobileToggle');
+  function toggleNav(){const expanded=rail.classList.toggle('expanded');toggle.setAttribute('aria-expanded',String(expanded));toggle.setAttribute('aria-label',expanded?'Réduire le menu':'Déployer le menu')}
+  toggle.addEventListener('click',toggleNav);mobile.addEventListener('click',toggleNav);
+  document.querySelectorAll('.rail-link').forEach(a=>a.addEventListener('click',()=>{document.querySelectorAll('.rail-link').forEach(x=>x.classList.toggle('is-active',x===a));if(window.innerWidth<=600)rail.classList.remove('expanded')}));
+  el('equityPeriods').querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>{currentPeriod=b.dataset.period;el('equityPeriods').querySelectorAll('button').forEach(x=>x.classList.toggle('active',x===b));refresh()}));
+  // La source officielle du cycle met à jour #metrics à chaque revalorisation et chargement du state.json.
+  const metrics=el('metrics');new MutationObserver(()=>{if(!inUpdate)refresh()}).observe(metrics,{childList:true});
+  refresh();
+})();
+</script></body></html>

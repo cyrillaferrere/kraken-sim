@@ -1,0 +1,119 @@
+{
+ "C0": 6605.1,
+ "C0_source": "fallback: Cyril's Kraken value 24/10/2026 14:36 UTC (MCP connector exposes no live balance)",
+ "start": "24/10 20:01",
+ "as_of": "24/10 20:01",
+ "slot": "2026102418",
+ "killed": false,
+ "equity": 6605.1,
+ "cash": 6605.1,
+ "exposure_pct": 0.0,
+ "net_return_pct": 0.0,
+ "btc_hold": 6575.383703075763,
+ "btc_return_pct": -0.44989927365577387,
+ "vs_btc_pct": 0.44989927365577387,
+ "vs_cash_pct": 0.0,
+ "max_dd_pct": 0,
+ "cur_dd_pct": 0.0,
+ "fees": 0,
+ "n_trades": 0,
+ "n_closed": 0,
+ "win_rate_pct": null,
+ "n_cycles": 1,
+ "universe": [
+  "XBT",
+  "ETH",
+  "SOL",
+  "XRP",
+  "ZEC",
+  "NEAR",
+  "SUI",
+  "HYPE",
+  "TAO",
+  "XDG"
+ ],
+ "curve": [
+  {
+   "t": "24/10 20:01",
+   "sim": 6605.1,
+   "btc": 6575.383703075763,
+   "cash": 6605.1
+  }
+ ],
+ "positions": [],
+ "orders": [],
+ "allocation": [
+  {
+   "label": "Cash",
+   "value": 6605.1
+  }
+ ],
+ "decisions": [
+  {
+   "t": "24/10 20:01",
+   "asset": "ALL",
+   "action": "cash",
+   "reason": "no asset in uptrend with positive momentum -> stay in cash"
+  },
+  {
+   "t": "24/10 20:01",
+   "asset": "XDG",
+   "action": "signal",
+   "reason": "mom=-9.38% trend=DOWN (close vs MA50d 0.0876721, MA50 4h 0.0797495)"
+  },
+  {
+   "t": "24/10 20:01",
+   "asset": "TAO",
+   "action": "signal",
+   "reason": "mom=-9.50% trend=DOWN (close vs MA50d 273.493, MA50 4h 266.479)"
+  },
+  {
+   "t": "24/10 20:01",
+   "asset": "HYPE",
+   "action": "signal",
+   "reason": "mom=-11.08% trend=DOWN (close vs MA50d 85.4504, MA50 4h 78.817)"
+  },
+  {
+   "t": "24/10 20:01",
+   "asset": "SUI",
+   "action": "signal",
+   "reason": "mom=-2.91% trend=DOWN (close vs MA50d 0.97823, MA50 4h 0.994814)"
+  },
+  {
+   "t": "24/10 20:01",
+   "asset": "NEAR",
+   "action": "signal",
+   "reason": "mom=-0.10% trend=DOWN (close vs MA50d 4.17625, MA50 4h 4.93527)"
+  },
+  {
+   "t": "24/10 20:01",
+   "asset": "ZEC",
+   "action": "signal",
+   "reason": "mom=-9.67% trend=DOWN (close vs MA50d 1292.82, MA50 4h 1189.98)"
+  },
+  {
+   "t": "24/10 20:01",
+   "asset": "XRP",
+   "action": "signal",
+   "reason": "mom=-7.66% trend=DOWN (close vs MA50d 1.40918, MA50 4h 1.3115)"
+  },
+  {
+   "t": "24/10 20:01",
+   "asset": "SOL",
+   "action": "signal",
+   "reason": "mom=-6.55% trend=DOWN (close vs MA50d 109.624, MA50 4h 104.365)"
+  },
+  {
+   "t": "24/10 20:01",
+   "asset": "ETH",
+   "action": "signal",
+   "reason": "mom=-6.89% trend=DOWN (close vs MA50d 2548.34, MA50 4h 2412.73)"
+  },
+  {
+   "t": "24/10 20:01",
+   "asset": "XBT",
+   "action": "signal",
+   "reason": "mom=-2.49% trend=DOWN (close vs MA50d 81777, MA50 4h 81872.4)"
+  }
+ ]
+}

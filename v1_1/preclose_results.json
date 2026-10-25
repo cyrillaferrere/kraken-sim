@@ -1,0 +1,23 @@
+{
+ "window": "23/09/2026 \u2013 23/10/2026",
+ "res": {
+  "0": {
+   "signaux": 101,
+   "remplis": 101,
+   "remplis_derniere_heure": 0,
+   "perf_moy_jusqua_cloture": -0.006000810696075737
+  },
+  "30": {
+   "signaux": 101,
+   "remplis": 101,
+   "remplis_derniere_heure": 0,
+   "perf_moy_jusqua_cloture": -0.006000810696075737
+  },
+  "60": {
+   "signaux": 101,
+   "remplis": 101,
+   "remplis_derniere_heure": 0,
+   "perf_moy_jusqua_cloture": -0.006000810696075737
+  }
+ }
+}

@@ -1,0 +1,48 @@
+name: kraken-sim cycle (papier, aucun ordre réel)
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "render = rendu seul sans cycle de trading ; cycle = cycle papier complet"
+        default: render
+        type: choice
+        options: [render, cycle]
+  # CRON DÉSACTIVÉ tant que le moteur local tourne. Pour activer, décommenter la ligne suivante :
+  # schedule: [{cron: "10 * * * *"}]
+concurrency:
+  group: kraken-sim
+  cancel-in-progress: false
+permissions:
+  contents: write
+env:
+  TZ: Europe/Paris
+  # Heures de Paris (à hh:10) où le cycle planifié tourne ; filtre indépendant de l'heure d'été/hiver.
+  PARIS_HOURS: "01 04 08 10 12 14 16 18 20 22"
+  SIM_NO_REMOTE: "1"
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12"}
+      - name: Filtre heure de Paris
+        id: f
+        run: |
+          H=$(date +%H); echo "Heure Paris: $(date '+%d/%m %H:%M %Z')"
+          if [ "${{ github.event_name }}" != "schedule" ] || [[ " $PARIS_HOURS " == *" $H "* ]]; then echo "go=1" >> $GITHUB_OUTPUT; else echo "go=0" >> $GITHUB_OUTPUT; echo "Hors créneau, rien à faire"; fi
+      - name: Cycle papier
+        if: steps.f.outputs.go == '1' && (github.event_name == 'schedule' || inputs.mode == 'cycle')
+        run: python3 cycle_v11.py
+      - name: Rendu
+        if: steps.f.outputs.go == '1'
+        run: python3 render_page.py && cp dashboard.html index.html
+      - name: Commit état
+        if: steps.f.outputs.go == '1'
+        run: |
+          git config user.name "kraken-sim-bot"; git config user.email "kraken-sim-bot@users.noreply.github.com"
+          git add -A sim.db state dashboard.html index.html page_contents.txt
+          git diff --cached --quiet || git commit -m "état sim $(date '+%d/%m %Hh%M') ($GITHUB_EVENT_NAME)"
+          git pull --rebase -X ours -q || true
+          git push
