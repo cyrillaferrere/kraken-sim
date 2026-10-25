@@ -48,6 +48,13 @@
 ### Infra
 - `guard.yml` : nouveau contrôle `perimetre-gpt6` (PR depuis `ux/*`, `feature/*`, `fix/*` : échec si chemins moteur/stratégie/sim.yml/état modifiés). Impact décisions : aucun.
 
+## [Stratégie V1.2] — 25/10/2026 — Kraken Bot (SPEC) / GPT-6 (paramètres expérimentaux)
+### Fonctionnel
+- Spécification et critères de rejet pre-enregistrés par Grok Bot avant backtest ; `strategy/v1_2/params.json` fige les hypothèses des candidats A Donchian, B dual momentum, C BTC/ETH tendance, D V1.1 hebdomadaire.
+- Les scénarios frais F1 et F2, l'univers point-in-time, les limites d'exposition et le kill-switch de la SPEC sont documentés séparément de la stratégie V1.1.
+### Backtest
+- **Non exécuté / aucun résultat** au moment de ce commit : le backtest V1.2 sera implémenté et évalué hors échantillon avant toute sélection ou mise en fonctionnement.
+
 ## [Moteur V1.3] — 25/10/2026 — GPT-6 (préprod V1.2, infrastructure)
 ### Infrastructure
 - Branche strategy/v1.2 depuis develop + state-v12 dans kraken-sim-preprod. Aucune exécution de cycle ni modification main.
