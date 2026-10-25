@@ -1,3 +1,5 @@
+> **RACCORDEMENT V1.2 EN PR (non activé) :** [Kraken public et issues Grok](docs/BRANCHEMENT_KRAKEN_GROK_V12.md). Vérification manuelle sans ordre : `python3 v12_live_bridge.py --check-market --max-pairs 8`. La vraie IT Grok, l'ordonnancement et le dashboard ne tournent pas encore.
+
 > **ÉTAPE V1.2 — correction des 6 P1 Grok :** [simulation PAPER synthétique 30 jours](docs/REVIEW_GROK_P1_30J_V12.md), `python3 cycle_v12.py --dry-run --out /tmp/kraken-v12-test`. Les ordres sont **fictifs et hors ligne** ; **aucune IT Grok, aucun cron ni ordre réel activé**. `--cycle` reste bloqué.
 
 > **Autonomie Grok V1.2 :** [décision A/B/C/D, sécurité indépendante et apprentissage](docs/GROK_AUTONOME_V12_ETAPE1.md). La liaison réelle à Grok et au collecteur Kraken reste à construire ; aucune promotion LIVE automatique.

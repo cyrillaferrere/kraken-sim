@@ -28,6 +28,13 @@
 - `tests/test_v12_paper_engine_30d.py`, `tests/test_v12_cli_dry_run.py` : couverture du flux à blanc, garde-fous, sortie C indépendante de Grok et refus d'activation. Voir `docs/REVIEW_GROK_P1_30J_V12.md`.
 - **Aucun résultat historique réel, aucun ordre réel, aucune fusion ni IT Grok lancée**. Le collecteur Kraken et le canal authentifié GitHub Issue ne sont pas branchés.
 
+### Connexion Grok IT ↔ marché Kraken — code prêt, AUCUNE activation
+- `v12_kraken_public.py` : collecte Kraken REST **publique** (AssetPairs, Ticker, OHLC clos), top spot USD préfiltré par volume, bid/ask et USDC/USD, sans identifiants de trading ni fichiers d'archives volumineux. Préfiltre 24 h non exhaustif ; contrôles de fraîcheur obligatoires.
+- `v12_grok_issues.py` : lecture d'issues `IT V1.2` labellisées `it-decision` avec ID numérique d'auteur autorisé ; vérification JSON strict et SHA de synthèse avant admission indépendante.
+- `v12_live_bridge.py` : raccord code collecteur → contrôles/positions PAPER → décision issue → validation, avec protections exécutées avant lecture GitHub ; aucun ordre en cas d'IT manquante. CLI de **vérification seulement** `--check-market`, sans démarrage de cycles.
+- `tests/test_v12_real_bridge.py` : simulateurs réseau Kraken et GitHub, refus de mauvaises issues/SHA, données OHLC ouvertes, pannes GitHub ; aucune transaction réelle.
+- [Procédure et prérequis restants](docs/BRANCHEMENT_KRAKEN_GROK_V12.md). Ni cron IT, ni collecte récurrente, ni merge, ni publication/déploiement, ni nouveau site.
+
 ### Suite aux corrections P1 de Grok Bot (branche, sans cycles)
 - **Étape autonomie Grok V1.2 (sur PR, sans cycle)** : `v12_autonomy.py` reçoit une décision structurée et rejette tout signal/poids A/B/C/D non conforme, avec données Kraken fraîchement clôturées, frais F2, sans short ni levier, limite de corrélation et kill-switch indépendants. La politique/modèle actifs sont imposés par le futur orchestrateur, jamais par Grok.
 - `v12_grok_gateway.py` : mode **prévalidation uniquement** et journalisation d'une proposition Grok ou indisponibilité, sans appel effectif au modèle ni exécution d'ordre.

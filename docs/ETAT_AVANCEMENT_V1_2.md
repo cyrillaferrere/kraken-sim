@@ -55,6 +55,12 @@ La [vision d'architecture autonomie et apprentissage](VISION_AUTONOMIE_APPRENTIS
 - [Procédure, limites et commande `--dry-run`](REVIEW_GROK_P1_30J_V12.md). **Ni Grok Bot, ni Kraken public, ni GitHub Issues ne sont encore connectés au moteur autonomisé.** Les données de 30 jours sont inventées exclusivement pour les tests techniques.
 - La refonte UX de préprod reste un chantier distinct après finalisation du contrat de données.
 
+## Raccordement API Kraken publique / issues Grok (code non activé)
+- Collecteur `v12_kraken_public.py` : API publiques Kraken uniquement, quote USDC/USD, historique OHLC journalier clos, préfiltre volume avant filtres V1.2.
+- Lecteur `v12_grok_issues.py` : auteur vérifié par ID numérique, label, JSON, SHA. `v12_live_bridge.py` raccorde la lecture avec `PaperEngine`; les protections de risque tournent avant toute requête GitHub et ne dépendent pas de Grok.
+- Tests déterministes hors réseau `tests/test_v12_real_bridge.py`. **Aucun cron, aucune IT Grok programmée, aucun test effectif sur cours live n'ont été exécutés par la CI.**
+- [Préparation avant activation](BRANCHEMENT_KRAKEN_GROK_V12.md). Le dashboard V1.2 préprod est toujours à revoir.
+
 ## Blocages à traiter avant tout backtest OFFICIEL
 
 - **Historique exhaustif manquant** : aucun dossier contenant tous les CSV Kraken USD historiques, leur manifeste SHA-256, le catalogue de cotation et les cryptos délistées n'a été fourni à la PR. Impossible de produire honnêtement un bilan financier validé.
