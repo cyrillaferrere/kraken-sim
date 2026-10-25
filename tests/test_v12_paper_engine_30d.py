@@ -78,6 +78,12 @@ class TestPaperEngine30Days(unittest.TestCase):
                                   slot="DAY00")
                 self.assertEqual(sum(e["action"]=="MAKER_POSTED" for e in first["events"]),2)
                 self.assertEqual(len(engine.wallet().positions),0)  # maker not magically filled
+                # Separate next cron (not next daily mark), still within the 26h IT TTL.
+                # Maker wasn't crossed in public trades, so the remaining quantity is taker.
+                retry=at(start,5)
+                settled=engine.tick(retry,retry["observed_at"],slot="DAY00B")
+                self.assertEqual(sum(x["action"]=="TAKER_FALLBACK" for x in settled["events"]),2,settled)
+                self.assertEqual(len(engine.wallet().positions),2)
                 # 30 historical calendar days are advanced in seconds on SYNTHETIC OHLC.
                 for day in range(1,31):
                     m=market_day(base,day,crash=day>=15)
@@ -104,7 +110,7 @@ class TestPaperEngine30Days(unittest.TestCase):
                     self.assertEqual(same["status"],"DRY_RUN")
                 report=engine.report()
                 self.assertEqual(report["kind"],"SYNTHETIC_OFFLINE_PAPER_ONLY")
-                self.assertEqual(report["marks"],32)
+                self.assertEqual(report["marks"],33)
                 self.assertTrue(report["risk_lock"])
                 self.assertEqual(report["kill_count"],1)
                 self.assertEqual(report["portfolio"]["positions"],{})
