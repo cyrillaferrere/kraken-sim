@@ -150,7 +150,9 @@ def run_experiment(data,label,pset,risk,costs,tier="F2",start=None,end=None,
         # A delisting value is only used on or after its public dated event.
         for asset in list(portfolio.positions):
             meta=metadata.get(asset,{})
-            removed=meta.get("status")=="delisted" and meta.get("delisted_at") and day>=meta["delisted_at"]
+            removed=(meta.get("status")=="delisted" and bool(meta.get("delisted_at")) and
+                     datetime.fromisoformat(day.replace("Z","+00:00")) >=
+                     datetime.fromisoformat(meta["delisted_at"].replace("Z","+00:00")))
             if removed:
                 last=next((b for b in reversed(history.get(asset,[])) if not b.get("imputed")),None)
                 if last is None:
