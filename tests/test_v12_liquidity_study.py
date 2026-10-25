@@ -5,7 +5,7 @@ from research_liquidity_v12 import analyze,FIXED
 def fixture(vol_btc=6000000,vol_eth=1500000,eur_rate=1.10):
     base=date(2026,8,1);rows=[]
     for i in range(32):
-        day=(base+timedelta(days=i)).isoformat()
+        day=(base+timedelta(days=i)).isoformat()+"T00:00:00Z"
         for a,v in (("BTC",vol_btc),("ETH",vol_eth)):
             for q in ("USDC","USD","EUR"):
                 rows.append({"asof":day,"asset":a,"quote":q,
@@ -34,7 +34,7 @@ class TestResearch(unittest.TestCase):
     def test_c_requires_complete_cross_market_point_in_time(self):
         doc=fixture()
         doc["observations"]=[r for r in doc["observations"]
-                             if not (r["asset"]=="ETH" and r["quote"]=="EUR" and r["asof"]=="2026-08-12")]
+                             if not (r["asset"]=="ETH" and r["quote"]=="EUR" and r["asof"]=="2026-08-12T00:00:00Z")]
         r=analyze(doc)
         self.assertFalse(r["observations"][0]["assets"]["ETH"]["eligible"]["C_global_5m"])
         self.assertIsNone(r["observations"][0]["assets"]["ETH"]["global_median"])
@@ -48,6 +48,6 @@ class TestResearch(unittest.TestCase):
         self.assertEqual(r["mean_eligible_pairs"]["C_global_5m"],0)
     def test_missing_contiguous_history_not_imputed(self):
         doc=fixture()
-        doc["observations"]=[r for r in doc["observations"] if r["asof"]!="2026-08-15"]
+        doc["observations"]=[r for r in doc["observations"] if r["asof"]!="2026-08-15T00:00:00Z"]
         self.assertEqual(analyze(doc)["evaluated_days"],0)
 if __name__=="__main__":unittest.main()
