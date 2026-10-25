@@ -54,3 +54,16 @@ class PageRender(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+class TestUsdcPortfolioLine(unittest.TestCase):
+    def test_portfolio_always_lists_usdc_line_equal_to_cash(self):
+        s = r.build_state(json.loads(json.dumps(REPORT)))
+        usdc = [p for p in s["portfolio"] if p["asset"] == "USDC"]
+        self.assertEqual(len(usdc), 1)
+        self.assertEqual(usdc[0]["value_usdc"], s["cash"])
+        self.assertEqual(usdc[0]["qty"], s["cash"])
+        self.assertEqual(s["portfolio"][0]["asset"], "USDC")
+    def test_weights_with_position(self):
+        rows = r.build_portfolio(6000.0, [{"asset": "BTC", "qty": 0.01, "value": 2000.0}])
+        self.assertEqual([x["weight_pct"] for x in rows], [75.0, 25.0])
+        self.assertEqual(r.build_portfolio(6605.10, [])[0]["weight_pct"], 100.0)

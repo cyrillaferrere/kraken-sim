@@ -19,6 +19,7 @@
 - `v12_kraken_public.py` : univers = XXX/USDC `online` de `AssetPairs?country_code=FR`, hors stablecoins (USDT…) et liste EEE restreinte, spread ≤ 0,3 %. Voie de conversion XXX/USD ÷ USDC/USD supprimée (`usdc_quote`, `pairs_usd`). Bougies des signaux = OHLC XXX/USDC ; < 220 bougies → `insufficient_history`, données null, exclues des entrées. Régime BTC sur BTC/USDC.
 - Gateway moteur (`v12_paper_engine.admit_batch`) : rejet `REJECTED_COMPLIANCE` de toute décision hors USDC, stablecoin, actif restreint, levier/marge, vente à découvert (SELL > position), paire non éligible ou historique insuffisant. Indépendant de Grok.
 - `v12_init_check.py` / `render_v12_page.py` : bloc `compliance` publié ; page `/v12/` affiche « Conformité UE/MiCA » et le nombre de paires USDC éligibles (UX V1.2.1 du cockpit V1.2, ligne d'info USDC/USD retirée).
+- Portefeuille (précision Cyril) : l'USDC est compté comme une crypto. `public_state_v12.json` expose `portfolio` = ligne USDC (quantité = valeur = cash, poids %) + positions ; la page `/v12/` affiche le tableau « Portefeuille » (Actif, Quantité, Valeur USDC, Poids, Rôle) — UX V1.2.2. USDC reste devise de compte/refuge, exclu des signaux et des entrées ; `cash_usdc` conservé dans le moteur.
 ### Infra
 - Tests : `tests/test_v12_eu_compliance.py` (USD, USDT, short, levier, historique null, univers 100 % USDC), test gateway dans `test_v12_paper_engine_30d.py` ; `test_v12_usdc_quote.py` supprimé (conversion retirée).
 

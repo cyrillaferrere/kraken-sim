@@ -18,6 +18,16 @@ from export_v12 import normalize  # noqa: E402
 TEMPLATE = ROOT / "dashboard_v12_cockpit_template.html"
 
 
+def build_portfolio(cash, positions, equity=None):
+    """USDC compté comme une crypto : ligne USDC (= cash, devise de compte et actif refuge,
+    exclu des signaux) toujours présente, puis les positions. Poids en % de la valeur totale."""
+    rows = [{"asset": "USDC", "qty": cash, "value_usdc": cash, "role": "devise de compte / refuge"}]
+    rows += [{"asset": p["asset"], "qty": p["qty"], "value_usdc": p["value"], "role": "position"} for p in positions]
+    total = sum(r["value_usdc"] or 0.0 for r in rows)
+    for r in rows:
+        r["weight_pct"] = round((r["value_usdc"] or 0.0) / total * 100, 2) if total > 0 else None
+    return rows
+
 def _f(v):
     if v is None:
         return None
@@ -42,6 +52,7 @@ def build_state(report):
         {"asset": k, "qty": _f((v or {}).get("qty")), "value": _f((v or {}).get("value_usdc"))}
         for k, v in sorted((report.get("positions") or {}).items())
     ]
+    portfolio = build_portfolio(cash, positions, equity)
     signals = {}
     for key in "ABCD":
         s = (report.get("signals") or {}).get(key)
@@ -62,7 +73,7 @@ def build_state(report):
     data = report.get("data") or {}
     raw = {
         "equity": equity, "cash": cash, "C0": _f(report.get("initial_capital_usdc")),
-        "positions": positions, "orders": [], "pending_orders": [],
+        "positions": positions, "portfolio": portfolio, "orders": [], "pending_orders": [],
         "pending_count": report.get("orders"),
         "decisions": decisions, "as_of": ts, "last_cycle_iso": ts,
         "usdc_hold_usdc": _f(bench.get("usdc_hold_usdc")),
