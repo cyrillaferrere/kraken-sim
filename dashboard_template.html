@@ -512,7 +512,7 @@ setTimeout(pollExitInd, 4000); setInterval(pollExitInd, 300000);
   function safeHistoryFile(meta){
     const month=String(meta?.month||'');
     const file=String(meta?.file||'');
-    if(!/^\\d{4}-\\d{2}$/.test(month))return null;
+    if(!/^[0-9]{4}-[0-9]{2}$/.test(month))return null;
     if(file!==month+'.json'&&file!=='state/history/'+month+'.json')return null;
     return month+'.json';
   }
@@ -576,7 +576,7 @@ setTimeout(pollExitInd, 4000); setInterval(pollExitInd, 300000);
       replayCycle.disabled=!replayRows.length;replayBody.textContent=replayRows.length?'Sélectionner un cycle pour afficher son instantané.':'Aucun cycle enregistré dans ce mois.';
     }catch(e){replayBody.textContent='Impossible de charger les cycles de ce mois. Réessayer en sélectionnant à nouveau le mois.';}
   });
-  replayCycle.addEventListener('change',()=>renderReplay(replayRows[Number(replayCycle.value)]||null));
+  replayCycle.addEventListener('change',()=>renderReplay(replayCycle.value===''?null:replayRows[Number(replayCycle.value)]||null));
   el('replayReturn').addEventListener('click',()=>{replayCycle.value='';renderReplay(null);el('overview').scrollIntoView({behavior:'smooth'});});
   el('uxOrderFilter').addEventListener('change',orders);
   el('uxOrderSearch').addEventListener('input',orders);
