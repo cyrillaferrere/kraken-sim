@@ -1,6 +1,6 @@
-# Spécification UX — Dashboard (UX/UI V1.1)
+# Spécification UX — Dashboard (UX/UI V1.1.1)
 
-Fichier unique : `dashboard_template.html`. Version : `const VERSION_UX = "V1.1";`. Propriétaire : **GPT6** (PR `ux/*` vers `develop`, fusionnées par GPT6 dès guard vert ; jamais sur `main`). Contrat d'interface : `GARDE_FOUS.md`.
+Fichier unique : `dashboard_template.html`. Version : `const VERSION_UX = "V1.1.1";`. Propriétaire : **GPT6** (PR `ux/*` vers `develop`, fusionnées par GPT6 dès guard vert ; jamais sur `main`). Contrat d'interface : `GARDE_FOUS.md`.
 
 ## 1. Structure
 - **En-tête** (`app-top`) : marque, statut, bandeau `#versions` « Moteur : Vx · Stratégie : Vy · UX/UI : Vz » (obligatoire), heures de cycle / live.
@@ -34,3 +34,15 @@ Règles : chaque bloc live affiche « LIVE : prix Kraken (bid) à HH:MM:SS » ; 
 **Ids (69)** : `accountCaption`, `accountChange`, `accountChangePct`, `accountValue`, `activity`, `alloc`, `allocationVisual`, `analysis`, `bchart`, `briefCash`, `briefDd`, `briefExposure`, `briefFees`, `briefPnl`, `briefTrades`, `btcRegime`, `cmp`, `compareVisual`, `corePos`, `cycleElapsed`, `cycleNext`, `dd`, `dec`, `dot`, `drawdownVisual`, `equityChartNote`, `equityPeriods`, `equityPlot`, `equityRangeLabel`, `head`, `ind`, `inddot`, `indsrc`, `indst`, `jr`, `kill`, `lch`, `lchart`, `lessons`, `lessonsCard`, `live`, `lp`, `lst`, `market`, `metrics`, `mobileToggle`, `navToggle`, `orderCount`, `ordersVisual`, `overview`, `periodNote`, `pnl`, `portfolio`, `pos`, `rail`, `rules`, `sellConditions`, `signalBars`, `signals`, `split`, `splitNote`, `splitTable`, `stateSrc`, `strat`, `ts`, `uptime`, `ver`, `versions`, `wf`
 
 **Clés de `D` utilisées (51)** : `C0`, `allocation`, `as_of`, `atr_mult`, `backtest`, `basket_return_pct`, `btc_regime`, `btc_regime_state`, `btc_return_pct`, `btc_series`, `cash`, `core`, `cur_dd_pct`, `curve`, `dd_series`, `decisions`, `equity`, `exposure_pct`, `fees`, `fees_tier`, `ind_btc_pair`, `ind_live`, `indicators`, `indicators_src`, `invested_pct`, `journal`, `keep_rank`, `killed`, `last_cycle_iso`, `lessons`, `max_dd_pct`, `min_hold_h`, `n_cycles`, `n_trades`, `net_return_pct`, `orders`, `pnl_by_asset`, `pnl_gross`, `pnl_net`, `positions`, `snapshot`, `start_iso`, `start_paris`, `total`, `trade_stats`, `universe`, `version`, `version_engine`, `vs_btc_pct`, `walkforward`, `win_rate_pct`
+
+
+## 5. UX V1.1.1 — cockpit et replay en consultation
+- Le solde et la variation nette gardent leur priorité ; les périodes incomplètes restent signalées. La comparaison au socle est accessible sur demande.
+- Le panneau `#uxExplainer` reformule le régime BTC **du dernier cycle** depuis `D.btc_regime_state`, comme information **sur clôture**, sans créer de nouveau signal.
+- Le journal `#ordersVisual` propose recherche libre `#uxOrderSearch` et filtre achat/vente/autres `#uxOrderFilter`. Aucun ordre n'est modifié.
+- Typographie agrandie, écrans étroits améliorés, détails techniques préservés ; tous les identifiants contractuels sont maintenus.
+- Le bloc `#replay` charge à la demande le **schéma 1** de `docs/HISTORY_SCHEMA.md` : index puis fichier JSON mensuel public sélectionné.
+- Source historique : `https://raw.githubusercontent.com/cyrillaferrere/kraken-sim/main/state/history/` (production officielle, lecture seule). Aucun moteur, cycle, calcul d'ordre ou écriture n'est déclenché.
+- La lecture d'un cycle passé est délimitée dans un panneau nommé **REPLAY**, qui n'affiche **pas de prix LIVE historique**. Le reste de la page continue de montrer l'état courant. `Retour au direct` ferme le détail historique et remonte à la vue d'ensemble.
+- Les cycles incomplets (`complete:false`), les champs absents (`missing`) et les historiques non encore publiés sont explicitement signalés : « Donnée non enregistrée », jamais des valeurs inventées.
+- Impact sur les décisions de trading, les stops, le capital et l'état moteur : **aucun**.
