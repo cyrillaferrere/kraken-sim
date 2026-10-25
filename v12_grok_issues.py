@@ -48,8 +48,13 @@ def parse_decision_issue(issue,authorized_user_id):
         raise InboxError("MISSING_ISSUE_NUMBER")
     return {"issue_number":issue["number"],"batch":batch}
 
-def fetch_latest(authorized_user_id,token,opener=None):
-    """Return latest valid IT, or None. No GitHub write permissions necessary."""
+def fetch_recent(authorized_user_id,token,opener=None):
+    """Read all recent IT issues, oldest first; do not discard earlier ITs.
+
+    Last 40 OPEN labelled issues are scanned at each invocation. Replays are
+    idempotent in PaperEngine by decision_id. More than 40 in a fetch is not
+    yet covered by this bridge; use a future cursor/pagination before launch.
+    """
     if not token:raise InboxError("GITHUB_READ_TOKEN_REQUIRED")
     if type(authorized_user_id) is not int or authorized_user_id<=0:
         raise InboxError("AUTHORIZED_GROK_AUTHOR_ID_REQUIRED")
@@ -72,8 +77,15 @@ def fetch_latest(authorized_user_id,token,opener=None):
     except (OSError,ValueError,TypeError) as exc:
         raise InboxError("GITHUB_ISSUES_READ_FAILED") from exc
     if not isinstance(issues,list):raise InboxError("GITHUB_ISSUES_INVALID")
+    matches=[]
     for issue in issues:
         if issue.get("user",{}).get("id")!=authorized_user_id:continue
-        try:return parse_decision_issue(issue,authorized_user_id)
+        try:matches.append(parse_decision_issue(issue,authorized_user_id))
         except InboxError:continue
-    return None
+    matches.reverse()  # GitHub response was newest first.
+    return matches
+
+def fetch_latest(authorized_user_id,token,opener=None):
+    """Compatibility helper used by earlier single-IT tests."""
+    all_its=fetch_recent(authorized_user_id,token,opener=opener)
+    return all_its[-1] if all_its else None
