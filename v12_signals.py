@@ -88,13 +88,19 @@ def candidate_c(bars,params):
             "target_weight":target,"vol20":sigma}
 
 def candidate_d(bars,btc,params):
-    if not usable_signal_window(bars,61) or not usable_signal_window(btc,61): return {"entry":False,"exit":False,"reason":"warmup"}
-    d=confluence_v11(bars)
-    bc=confluence_v11(btc)
-    at=atr(btc,20)
-    close=float(btc[-1]["close"])
-    e50=bc["ema50"]; k=float(params["btc_hysteresis_atr"])
-    regime="on" if close>e50+k*at else ("off" if close<e50-k*at else "neutral")
+    """V1.1 confluence and ATR14 from the ORIGINAL V1.1 backtest.ind().
+    Only rotation frequency, sizing and point-in-time universe may differ.
+    """
+    if not usable_signal_window(bars,61) or not usable_signal_window(btc,61):
+        return {"entry":False,"exit":False,"reason":"warmup"}
+    from v12_v11_compat import entry_score
+    d=entry_score(bars)
+    bc=entry_score(btc)
+    close=bc["close"]
+    e50=bc["ema50"]
+    k=float(params["btc_hysteresis_atr"])
+    band=k*bc["atr14"]
+    regime="on" if close>e50+band else ("off" if close<e50-band else "neutral")
     return {"entry":regime=="on" and d["trend"] and d["score"]>=4,
-            "exit":regime=="off" or float(bars[-1]["close"])<d["ema50"],
-            "score":d["mom"],"btc_regime":regime}
+            "exit":regime=="off" or d["close"]<d["ema50"],
+            "score":d["mom"],"btc_regime":regime,"atr14":d["atr14"]}
