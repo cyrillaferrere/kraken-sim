@@ -32,6 +32,13 @@
 - `v12_v11_replay.py` et tests : reproduction déterministe du comportement réel du moteur V1.1 sur une fixture d'API synthétique, sans réseau ni écriture vers la production. **Ce n'est pas une baseline historique**.
 - [Procédure sources et contraintes](DONNEES_ET_REPLAY_V1_2.md), y compris les limites d'une comparaison OHLC quotidienne.
 
+## Nouvelle orientation produit — autonomie et apprentissage Grok Bot
+Cyril confirme que la finalité est de démontrer la fiabilité de Grok Bot, qui doit prendre des décisions de trading autonome en PAPER et apprendre avec des données d'exécution réelles et historisées, avant tout accès éventuel à son portefeuille réel aujourd'hui en USDC.
+
+La [vision d'architecture autonomie et apprentissage](VISION_AUTONOMIE_APPRENTISSAGE.md) distingue **agent décideur**, **contrôleur de risque non modifiable par l'agent**, **moteur d'exécution paper**, et **évaluateur / promotion de nouvelles politiques**. Les stratégies A/B/C/D deviennent des comparateurs ; elles ne limitent pas Grok à une simple rotation automatique entre quatre algorithmes.
+
+**Changement de priorité (non déployé)** : finaliser d'abord la boucle de décision autonome PAPER, le suivi des USDC, la couche de risque, les journaux et la preuve d'intégration Grok ; conserver les archives massives et les backtests rétrospectifs exhaustifs en chantier complémentaire. Aucune décision de commencer un cycle ou d'activer un workflow n'est prise par le présent document.
+
 ## Blocages à traiter avant tout backtest OFFICIEL
 
 - **Historique exhaustif manquant** : aucun dossier contenant tous les CSV Kraken USD historiques, leur manifeste SHA-256, le catalogue de cotation et les cryptos délistées n'a été fourni à la PR. Impossible de produire honnêtement un bilan financier validé.
