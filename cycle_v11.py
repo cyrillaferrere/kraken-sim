@@ -263,6 +263,9 @@ def main():
     c.execute("INSERT INTO equity(slot,ts,equity,cash,btc_hold,exposure,core_value,strat_equity) VALUES(?,?,?,?,?,?,?,?)", (slot, ts, eq, cash, btch, exp, cv, seq))
     c.execute("INSERT INTO cycles(slot,ts,status,note,mode,strategy_version) VALUES(?,?,?,?,?,?)", (slot, ts, "ok", note, mode, STRATEGY_VERSION))
     c.commit()
+    try:  # export historique replay : un échec ne casse jamais le cycle
+        import history_export; history_export.export_cycle(c, slot, VERSION, STRATEGY_VERSION)
+    except Exception as e: print(f"export historique en échec (cycle conservé) : {e!r}")
     print(f"{VERSION} slot {slot} [{mode}] : total {eq:.2f} $ (réf. socle conservé {cv + float(M("C0")) - float(M("C0_core") or 0):.2f}), liquidités {cash:.2f}, exposition {exp:.0%}, ordres en attente {len(pend)}, BTC hold {btch:.2f}")
 
 if __name__ == "__main__": main()

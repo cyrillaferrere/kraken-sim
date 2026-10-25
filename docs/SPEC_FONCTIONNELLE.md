@@ -77,3 +77,6 @@ Version moteur : fichier `VERSION_ENGINE` (actuellement **V1.1**). Propriétaire
 | `ablation` | résultats de l'ablation V1.1 |
 
 `walkforward`, `backtest`, `lessons`, `C0_source` : seulement dans `D` (page), pas dans `state.json`.
+
+## Historique par cycle (replay, Moteur V1.2)
+À la fin de chaque cycle réussi, le moteur ajoute un instantané en lecture seule dans `state/history/AAAA-MM.json` et met à jour `state/history/index.json` (schema_version 1). L'instantané contient le portefeuille, les positions, le régime BTC, les indicateurs, les décisions, les ordres et la liste `missing` des données absentes. Les cycles passés sont rattrapés en `complete:false` (portefeuille, décisions et ordres seulement). Un échec de l'export n'interrompt jamais le cycle. Schéma détaillé : `docs/HISTORY_SCHEMA.md`.
