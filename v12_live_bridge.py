@@ -48,13 +48,28 @@ def fetch_and_step(engine,authorized_github_user_id,github_read_token,max_pairs=
     invocation, Cyril must approve isolated state storage, token permissions,
     trading policy and use of the PAPER executor. No exchange API keys.
     """
-    from v12_grok_issues import fetch_latest
+    from v12_grok_issues import fetch_latest,InboxError
     if not github_read_token or type(authorized_github_user_id) is not int or authorized_github_user_id<=0:
         raise ValueError("GROK_ISSUE_AUTHORIZATION_REQUIRED")
     snapshot=collect(max_pairs=max_pairs)
-    # An issue retrieval failure must never produce a fabricated trade.
-    verified_issue=fetch_latest(authorized_github_user_id,github_read_token)
-    return paper_step(engine,snapshot,snapshot["observed_at"],verified_issue)
+    # Independent stop and risk management runs FIRST, even if GitHub is down.
+    result=paper_step(engine,snapshot,snapshot["observed_at"])
+    try:
+        issue=fetch_latest(authorized_github_user_id,github_read_token)
+    except InboxError:
+        result["it_status"]="GITHUB_UNAVAILABLE_NO_NEW_DECISIONS"
+        return result
+    if issue is None:
+        result["it_status"]="NO_GROK_IT"
+        return result
+    try:
+        result["it_decisions"]=engine.admit_batch(issue["batch"],snapshot["observed_at"])
+        result["it_status"]="GROK_IT_PROCESSED"
+        result["it_issue_number"]=issue["issue_number"]
+    except (ValueError,TypeError,KeyError) as exc:
+        result["it_status"]="GROK_IT_REJECTED"
+        result["it_error"]=str(exc)
+    return result
 
 def main(argv=None):
     parser=argparse.ArgumentParser()
