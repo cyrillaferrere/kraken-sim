@@ -15,7 +15,7 @@
 ### Fonctionnel
 - **Précision utilisateur (sans modification de stratégie)** : Grok Bot réalise ses analyses **par IT à fréquence variable, possiblement 10 fois par jour ou davantage**. La recommandation d'IT quotidienne vers 02h30 n'est **pas une exigence utilisateur** et ne doit plus guider l'ordonnanceur.
 - Grok dispose **déjà d'un connecteur Kraken**. Il analyse le marché, prend les décisions de gestion fictive selon la V1.2 et apprend de ses résultats ; le moteur PAPER est un système d'exécution, de comptabilité, de risques et de vérification indépendante des cours.
-- **Aucun changement de paramètres V1.2, de code d'exécution, de cron, de V1.1 ou de production**. Documentation et PR uniquement.
+- **Correctif technique multi-IT** : `v12_grok_issues.py` traite désormais les issues récentes en lot, dans l'ordre, et `v12_live_bridge.py` soumet toutes les IT valides au moteur (idempotence par `decision_id`) au lieu de ne retenir que la dernière. Test de 12 IT sur une seule collecte. Ce correctif ne change ni les paramètres V1.2, ni le cron, ni V1.1, ni la production.
 
 ## [Stratégie V1.2] — 25/10/2026 — Kraken Bot (SPEC) / GPT-6 (paramètres expérimentaux)
 ### Fonctionnel
