@@ -145,23 +145,65 @@ class PaperEngine:
         out["pending_exposure_usd"]=str(reserved)
         return out
 
+    # Per-pair exclusion policy (moteur V1.4): an invalid / too-wide quote
+    # excludes ONLY that pair for the tick. Global pause only when BTC or ETH
+    # are invalid, or when fewer than min_valid_pairs() remain usable.
+    MAX_SPREAD=d("0.003")
+    MANDATORY=("BTC","ETH")
+    MIN_VALID_PAIRS_CAP=10
+
+    @classmethod
+    def min_valid_pairs(cls,quoted):
+        """N = max(2, min(10, ceil(quoted/2))): 10 for the 40-pair universe."""
+        return max(2,min(cls.MIN_VALID_PAIRS_CAP,(quoted+1)//2))
+
     def _market_quotes(self,snapshot,now,holdings):
         if snapshot.get("status")!="PAPER" or snapshot.get("source")!="trusted-public-kraken":
             raise ValueError("MARKET_SNAPSHOT_NOT_TRUSTED")
         quotes=snapshot.get("quotes",{})
-        required=set(holdings)
-        for a in required:
+        for a in holdings:
             if a not in quotes:raise ValueError("HELD_ASSET_MISSING_QUOTE")
-        out={}
+        out={};excluded={};held_marks={}
         for asset,q in quotes.items():
-            moment=utc(q["as_of"])
-            if now-moment>timedelta(minutes=5) or moment>now:
-                raise ValueError("QUOTE_NOT_FRESH_FOR_EXECUTION")
-            bid,ask=d(q["bid"]),d(q["ask"])
-            if bid<=0 or ask<bid or (ask-bid)/((ask+bid)/2)>d("0.003"):
-                raise ValueError("QUOTE_INVALID_FOR_EXECUTION")
-            out[asset]={"bid":bid,"ask":ask}
+            reason=None
+            try:
+                moment=utc(q["as_of"])
+                bid,ask=d(q["bid"]),d(q["ask"])
+                if now-moment>timedelta(minutes=5) or moment>now:
+                    reason="QUOTE_NOT_FRESH_FOR_EXECUTION"
+                elif bid<=0 or ask<bid:
+                    reason="QUOTE_INVALID_FOR_EXECUTION"
+                elif (ask-bid)/((ask+bid)/2)>self.MAX_SPREAD:
+                    reason="SPREAD_TOO_WIDE"
+            except (ValueError,TypeError,KeyError,ArithmeticError):
+                reason="QUOTE_INVALID_FOR_EXECUTION";bid=d(0)
+            if reason is None:
+                out[asset]={"bid":bid,"ask":ask};continue
+            if asset in self.MANDATORY:
+                raise ValueError(reason if reason!="SPREAD_TOO_WIDE" else "QUOTE_INVALID_FOR_EXECUTION")
+            info={"reason":reason}
+            try:info["spread"]=str(((d(q["ask"])-d(q["bid"]))/((d(q["ask"])+d(q["bid"]))/2)).quantize(d("0.00001")))
+            except Exception:pass
+            if asset in holdings:
+                # Held position kept under protection; valued at its last bid if positive.
+                info["held"]=True
+                if bid>0:held_marks[asset]=bid
+            excluded[asset]=info
+        need=self.min_valid_pairs(len(quotes))
+        if len(out)<need:
+            raise ValueError("TOO_FEW_VALID_PAIRS_%d_OF_%d"%(len(out),need))
+        self.last_exclusions=excluded
+        self.last_held_marks=held_marks
         return out
+
+    def _marks(self,quotes,holdings):
+        prices={a:q["bid"] for a,q in quotes.items()}
+        for a in holdings:
+            if a not in prices:
+                if a not in getattr(self,"last_held_marks",{}):
+                    raise ValueError("HELD_ASSET_UNVALUED")
+                prices[a]=self.last_held_marks[a]
+        return prices
 
     def _fee(self,liquidity):
         return d(SPEC["COSTS"]["F2"][liquidity])
@@ -211,7 +253,8 @@ class PaperEngine:
             raise ValueError("SYNTHESIS_SNAPSHOT_TIMESTAMP_MISMATCH")
         p=self.wallet()
         quotes=self._market_quotes(snapshot,t,p.positions)
-        equity=p.equity({a:q["bid"] for a,q in quotes.items()})
+        excluded=dict(self.last_exclusions)
+        equity=p.equity(self._marks(quotes,p.positions))
         from v12_signals import (
             candidate_a,candidate_b,candidate_c,candidate_d,
             closed_candles,point_in_time_universe)
@@ -231,7 +274,7 @@ class PaperEngine:
                 sig=candidate_c(arr,SPEC["CANDIDATES"]["C"])
                 signals["C"].append({"asset":asset,"entry":bool(sig["entry"]),
                     "exit":bool(sig["exit"]),"max_weight":round(float(sig["target_weight"]),4)})
-        for asset,series in list(universe.items())[:20]:
+        for asset,series in [(a,v) for a,v in universe.items() if a in quotes][:20]:
             a=candidate_a(series,btc,SPEC["CANDIDATES"]["A"])
             b=candidate_b(series,btc,SPEC["CANDIDATES"]["B"])
             dd=candidate_d(series,btc,SPEC["CANDIDATES"]["D"])
@@ -249,6 +292,7 @@ class PaperEngine:
                  "quotes":{a:{"bid":str(v["bid"]),"ask":str(v["ask"])}
                            for a,v in list(quotes.items())[:20]},
                  "signals":signals,
+                 "excluded_pairs":{a:v["reason"] for a,v in list(excluded.items())[:40]},
                  "positions":{a:{"qty":str(v["qty"]),"avg_cost":str(v["avg_cost"])}
                               for a,v in p.positions.items()},
                  "equity_usd":str(equity),
@@ -472,7 +516,10 @@ class PaperEngine:
             p=self.wallet()
             try:
                 quotes=self._market_quotes(snapshot,moment,p.positions)
-                equity=p.equity({a:q["bid"] for a,q in quotes.items()})
+                equity=p.equity(self._marks(quotes,p.positions))
+                if self.last_exclusions:
+                    events.append({"action":"PAIRS_EXCLUDED_THIS_TICK",
+                                   "pairs":self.last_exclusions})
             except (ValueError,TypeError,KeyError) as exc:
                 self.conn.execute("INSERT INTO cycles VALUES(?,?,?,?)",
                                   (slot,moment.isoformat(),"PAUSED_MISSING_MARKET",str(exc)))
@@ -501,7 +548,7 @@ class PaperEngine:
                 # Risk-managed holdings stay under independent monitoring
                 # even if Grok misses its daily IT.
                 events.append({"action":"RISK_LOCK_OR_PAUSE_NO_NEW_ORDERS"})
-            equity=p.equity({a:q["bid"] for a,q in quotes.items()})
+            equity=p.equity(self._marks(quotes,p.positions))
             self._put("wallet",self._wallet_json(p))
             usdc=None;btc_ref=None
             usdc_quote=snapshot.get("usdc_usd")
