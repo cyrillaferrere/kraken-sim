@@ -138,19 +138,32 @@ def build_config(dst,archive,q3=None):
           "checksum_provenance":"Kraken SHA256 complete ZIP on official support article",
           "parts_checksum_source":BASE_URL+"OHLCVT_Full_PARTS_SHA256SUMS.txt"}
     config={"status":"DOWNLOADED_NOT_HISTORICALLY_CERTIFIED","archives":[item]}
+    out=dst/"ARCHIVES.json"
+    if out.exists():
+        config=json.loads(out.read_text(encoding="utf-8"))
+        archives=config.get("archives",[])
+        if (config.get("status")!="DOWNLOADED_NOT_HISTORICALLY_CERTIFIED" or
+            not archives or archives[0].get("sha256")!=FULL_SHA256 or
+            Path(archives[0].get("file","")).resolve()!=archive.resolve()):
+            raise ValueError("ARCHIVES_CONFIG_CONFLICT: refusing to replace reviewed evidence")
+        if not q3:
+            return out  # Verified full archive is already recorded. Resume is idempotent.
     if q3:
         file=Path(q3).expanduser().resolve()
         if not file.is_file() or file.name!=Q3_NAME:
             raise ValueError("Q3_INPUT_MUST_BE_OFFICIAL_NAMED_ZIP")
-        config["archives"].append({
-            "file":str(file),"sha256":sha256(file),
+        candidate={"file":str(file),"sha256":sha256(file),
             "source_url":BASE_URL+Q3_NAME,"retrieved_utc":now,
             "checksum_provenance":"Local fingerprint only; no independent published checksum supplied",
-            "checksum_independently_attested":False})
+            "checksum_independently_attested":False}
+        existing=[a for a in config["archives"] if a.get("source_url")==BASE_URL+Q3_NAME]
+        if existing:
+            if (existing[0].get("file")!=candidate["file"] or
+                existing[0].get("sha256")!=candidate["sha256"]):
+                raise ValueError("ARCHIVES_Q3_CONFLICT: refusing silent replacement")
+            return out
+        config["archives"].append(candidate)
     config["warning"]="Hash verification alone DOES NOT certify pair coverage, delistings or data provenance."
-    out=dst/"ARCHIVES.json"
-    if out.exists():
-        raise ValueError("ARCHIVES_CONFIG_EXISTS: refusing to overwrite a review")
     tmp=dst/".ARCHIVES.json.tmp"
     try:
         tmp.write_text(json.dumps(config,indent=2,ensure_ascii=False)+"\n",encoding="utf-8")
