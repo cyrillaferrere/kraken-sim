@@ -33,6 +33,6 @@ En cas d'égalité, choisir la solution la plus simple ; si aucune nouvelle opti
 
 `python3 research_liquidity_v12.py --input /chemin/observations.json --output /chemin/rapport.json`
 
-Format : `{"observations":[{"asof":"2026-08-01","asset":"BTC","quote":"USDC","daily_volume_quote":10000000,"fx_to_usdc":1,"bid":100,"ask":100.1,"closed_daily_bars":250}, ...]}`. Le taux `fx_to_usdc` est propre à la paire et à la date ; le contenu peut comprendre USD/EUR/USDC. La sortie est un **diagnostic de couverture, pas un résultat de trading**. Le script échoue plutôt que de combler une journée manquante, n'utilise jamais des observations futures, et signale explicitement que **les critères d'exécution et OOS ne sont PAS vérifiés**.
+Format : `{"observations":[{"asof":"2026-08-01T00:00:00Z","asset":"BTC","quote":"USDC","daily_volume_quote":10000000,"fx_to_usdc":1,"bid":100,"ask":100.1,"closed_daily_bars":250}, ...]}`. Le taux `fx_to_usdc` est propre à la paire et à la date ; le contenu peut comprendre USD/EUR/USDC. La sortie est un **diagnostic de couverture, pas un résultat de trading**. Le script échoue plutôt que de combler une journée manquante, n'utilise jamais des observations futures, et signale explicitement que **les critères d'exécution et OOS ne sont PAS vérifiés**.
 
 **État au 25 octobre 2026 :** pas de fichier d'observations historiques attestées USD/EUR/USDC, pas de captures de carnets représentatives et pas de backtests OOS exécutés dans cette livraison. Aucun résultat de rendement ou recommandation chiffrée de nouveau seuil n'est donc présenté.
