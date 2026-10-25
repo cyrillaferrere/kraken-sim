@@ -80,11 +80,20 @@ jobs:
             git diff "$B"...HEAD -- CHANGELOG.md | grep -q "^+## \[Stratégie $NEW\]" || { echo "::error::journal strategie V1.2 manquant"; exit 1; }
             git diff "$B"...HEAD -- CHANGELOG.md | grep -qi "backtest" || { echo "::error::statut backtest absent du journal"; exit 1; }
           fi
-          if echo "$FILES" | grep -Eq '^(cycle_v11\.py|cycle\.py|backtest\.py|page_data\.py|render_page\.py|cycle_v12\.py|export_v12\.py|backtest_v12\.py|v12_isolation\.py|v12_accounting\.py|v12_execution\.py|v12_signals\.py|v12_indicators\.py|v12_data\.py|v12_history\.py)$'; then
+          if echo "$FILES" | grep -Eq '^(cycle_v11\.py|cycle\.py|backtest\.py|page_data\.py|render_page\.py)$'; then
             OLD=$(git show $B:VERSION_ENGINE); NEW=$(cat VERSION_ENGINE)
-            [ "$OLD" != "$NEW" ] || { echo "::error::moteur/données modifiés sans incrémenter VERSION_ENGINE ($OLD)"; exit 1; }
-            git diff $B...HEAD -- CHANGELOG.md | grep -q "^+## \[Moteur $NEW\]" || { echo "::error::CHANGELOG.md : ajouter une entrée '## [Moteur $NEW] — …'"; exit 1; }
-            echo "Moteur $OLD -> $NEW OK"
+            [ "$OLD" != "$NEW" ] || { echo "::error::V1.1 engine code changed without VERSION_ENGINE increment"; exit 1; }
+            git diff $B...HEAD -- CHANGELOG.md | grep -q "^+## \[Moteur $NEW\]" || { echo "::error::Missing V1.1 engine changelog"; exit 1; }
+          fi
+          if echo "$FILES" | grep -Eq '^(cycle_v12\.py|export_v12\.py|backtest_v12\.py|v12_[a-z0-9_]+\.py)$'; then
+            OLD_SHARED=$(git show $B:VERSION_ENGINE)
+            NEW_SHARED=$(cat VERSION_ENGINE)
+            [ "$OLD_SHARED" = "$NEW_SHARED" ] || { echo "::error::V1.2 must never alter V1.1 VERSION_ENGINE"; exit 1; }
+            OLD_V12=$(git show $B:VERSION_ENGINE_V12 2>/dev/null || true)
+            NEW_V12=$(cat VERSION_ENGINE_V12)
+            [ -n "$NEW_V12" ] && [ "$OLD_V12" != "$NEW_V12" ] || { echo "::error::V1.2 engine changes require independent VERSION_ENGINE_V12 increment"; exit 1; }
+            git diff $B...HEAD -- CHANGELOG.md | grep -q "^+## \[Moteur $NEW_V12\]" || { echo "::error::Missing V1.2 engine changelog"; exit 1; }
+            echo "Moteur expérimental $OLD_V12 -> $NEW_V12 ; moteur partagé inchangé"
           fi
   contrat:
     runs-on: ubuntu-latest
