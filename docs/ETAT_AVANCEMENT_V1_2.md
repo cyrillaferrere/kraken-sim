@@ -23,6 +23,11 @@
 8. Export V1.2 avec les clés du contrat, données inconnues à `null`, source et horodatage UTC/Paris ; template V1.2 indépendant testable localement, sans réseau.
 9. Tests sur l'isolation et tous les fichiers `state/**`, version moteur, boucle de comptes, remises en cash, invariance aux données futures des quatre candidats, sécurité du workflow.
 
+## Étapes données / rejeu engagées (25/10/2026)
+- `prepare_kraken_history_v12.py` et tests : fusion/déduplication des CSV officiels après téléchargement sur un stockage externe, vérification SHA-256 et contrôle des paires. Le résultat demeure `MANIFEST.draft.json` tant que la couverture historique n'est pas prouvée.
+- `v12_v11_replay.py` et tests : reproduction déterministe du comportement réel du moteur V1.1 sur une fixture d'API synthétique, sans réseau ni écriture vers la production. **Ce n'est pas une baseline historique**.
+- [Procédure sources et contraintes](DONNEES_ET_REPLAY_V1_2.md), y compris les limites d'une comparaison OHLC quotidienne.
+
 ## Blocages à traiter avant tout backtest OFFICIEL
 
 - **Historique exhaustif manquant** : aucun dossier contenant tous les CSV Kraken USD historiques, leur manifeste SHA-256, le catalogue de cotation et les cryptos délistées n'a été fourni à la PR. Impossible de produire honnêtement un bilan financier validé.
