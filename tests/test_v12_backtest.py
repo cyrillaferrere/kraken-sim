@@ -30,6 +30,33 @@ class TestExploratoryBacktest(unittest.TestCase):
         self.assertLessEqual(min(v["cash"] for v in a["curve"]),6605.1)
         self.assertGreaterEqual(min(v["cash"] for v in a["curve"]),0)
         self.assertEqual(a["status"],"EXPERIMENTAL_NOT_OOS_VALIDATED")
+    def test_stale_held_asset_fails_closed_instead_of_frozen_mark(self):
+        data={"BTC":candles(),"ETH":candles(offset=25)[:302]}
+        with self.assertRaisesRegex(ValueError,"HELD_ASSET_STALE"):
+            run_experiment(data,"C",C,RISK,FEES,
+                           start=data["BTC"][270]["end"],end=data["BTC"][310]["end"])
+    def test_delisted_asset_forced_exit_with_slippage_penalty(self):
+        data={"BTC":candles(),"ETH":candles(offset=25)[:302]}
+        meta={"ETH":{"status":"delisted","delisted_at":data["BTC"][302]["end"]}}
+        result=run_experiment(data,"C",C,RISK,FEES,metadata=meta,
+                              start=data["BTC"][270]["end"],end=data["BTC"][310]["end"])
+        self.assertTrue(any(x["reason"]=="DELIST_FORCED_LAST_PRINT" for x in result["orders"]))
+        self.assertGreaterEqual(result["total_costs_usd"],result["fees_usd"])
+        self.assertGreater(result["slippage_usd"],0)
+    def test_maker_partial_and_next_day_taker(self):
+        data={"BTC":candles(),"ETH":candles(offset=25)}
+        for bars in data.values():
+            for b in bars:
+                b["low"]=b["close"]-3
+                b["volume"]=0.001
+        result=run_experiment(data,"C",C,RISK,FEES,
+                              common={"maker_fill_participation_hypothesis":0.5},
+                              start=data["BTC"][270]["end"],end=data["BTC"][300]["end"])
+        kinds=[o["liquidity"] for o in result["orders"]]
+        self.assertIn("maker",kinds)
+        self.assertIn("taker",kinds)
+        self.assertGreater(result["maker_nonfilled"],0)
+        self.assertGreaterEqual(min(row["cash"] for row in result["curve"]),0)
     def test_requires_btc(self):
         with self.assertRaises(ValueError):
             run_experiment({"ETH":candles()},"C",C,RISK,FEES)
