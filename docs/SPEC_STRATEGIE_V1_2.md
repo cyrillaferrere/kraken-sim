@@ -132,3 +132,16 @@ Par candidat et baseline, à F1 et F2, en OOS concaténé, par pli, par fenêtre
 - % de plis positifs, carte de sensibilité de la grille ;
 - résultat de chaque critère du §5 (passe/échoue, valeur) et décision finale.
 Sortie machine-lisible : `backtest_v12_results.json` (hash du manifeste de données, commit, versions).
+
+## 8. Contraintes zone euro et devise (ajout du 25/10/2026)
+Demande de Cyril (résident français, zone euro). Mises en œuvre dans le Moteur V1.6.1 : `v12_compliance.py`, sources détaillées dans [CONFORMITE_UE_V1_2.md](CONFORMITE_UE_V1_2.md).
+- **Devise de compte : USDC.** Tous les montants (equity, cash, valeurs, frais, P&L) sont exprimés en USDC. Il n'y a aucune conversion depuis l'USD.
+- **Univers :** uniquement les paires **XXX/USDC** `online` et accessibles en France (`AssetPairs?country_code=FR`), avec un spread ≤ 0,3 %. Signaux et bougies sont calculés sur l'OHLC XXX/USDC.
+- **MiCA :**
+  - USDT est exclu, car Kraken l'a retiré du trading pour les clients EEE. Les autres stablecoins non conformes et les actifs restreints dans l'EEE (dont XMR) sont exclus aussi.
+  - **Spot long uniquement** : ni levier, ni marge, ni futures, ni vente à découvert. C'est un choix de prudence du projet, appliqué par la gateway moteur (`REJECTED_COMPLIANCE`), indépendamment de Grok.
+- **L'USDC compte comme une crypto du portefeuille :**
+  - il apparaît toujours comme une ligne (actif, quantité, valeur en USDC, poids %) sur la page `/v12/` et dans `public_state_v12.json`, à côté des positions ;
+  - il reste la devise de compte et l'actif refuge, et il est exclu des signaux et des entrées.
+- **Données manquantes :** une donnée absente ou un historique insuffisant (< 220 bougies journalières closes) est publié à `null`, jamais imputé. La paire est marquée `insufficient_history` et exclue des entrées. Le régime BTC utilise BTC/USDC.
+- **Versions en 3 chiffres (x.y.z) :** le troisième chiffre est réservé aux correctifs, le deuxième à une vraie mise à jour (ex. ce changement = Moteur V1.6.1, UX V1.2.2). Le `VERSION_ENGINE` partagé de la V1.1 n'est pas concerné.
