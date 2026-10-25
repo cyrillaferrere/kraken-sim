@@ -24,6 +24,7 @@ import shutil
 import tempfile
 import urllib.error
 import urllib.request
+import zipfile
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -85,6 +86,10 @@ def get_part(dst,filename,expected,timeout=60):
             raise ValueError("EXISTING_PART_HASH_MISMATCH: "+filename)
         return final,"cached"
     partial=dst/(filename+".partial")
+    if partial.exists() and sha256(partial)==expected:
+        # An interrupted process may have finished bytes before atomic rename.
+        os.replace(partial,final)
+        return final,"recovered"
     offset=partial.stat().st_size if partial.exists() else 0
     req=urllib.request.Request(BASE_URL+filename,headers={
         "User-Agent":"Kraken-Sim-V12-public-dataset/1.0",
@@ -152,6 +157,8 @@ def build_config(dst,archive,q3=None):
         file=Path(q3).expanduser().resolve()
         if not file.is_file() or file.name!=Q3_NAME:
             raise ValueError("Q3_INPUT_MUST_BE_OFFICIAL_NAMED_ZIP")
+        if not zipfile.is_zipfile(file):
+            raise ValueError("Q3_INPUT_NOT_A_ZIP")
         candidate={"file":str(file),"sha256":sha256(file),
             "source_url":BASE_URL+Q3_NAME,"retrieved_utc":now,
             "checksum_provenance":"Local fingerprint only; no independent published checksum supplied",
