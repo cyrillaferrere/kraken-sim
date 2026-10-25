@@ -7,7 +7,7 @@ def candles(n=300,delta=1,offset=0):
     out=[]
     for i in range(n):
         px=100+offset+i*delta
-        out.append({"end":(BASE+timedelta(days=i+1)).isoformat(),"high":px+1,
+        out.append({"end":(BASE+timedelta(days=i+1)).isoformat(),"high":px+0.25,
                     "low":max(0.01,px-1),"close":px,"open":px,"volume":100000})
     return out
 class TestSignals(unittest.TestCase):
@@ -16,7 +16,7 @@ class TestSignals(unittest.TestCase):
         btc=candles()
         a={"BTC":btc,"ADA":candles(offset=80)}
         b=point_in_time_universe(a,t)
-        self.assertEqual(list(b),["ADA","BTC"]) if False else self.assertEqual(set(b),{"BTC","ADA"})
+        self.assertEqual(set(b),{"BTC","ADA"})
         self.assertEqual(b,point_in_time_universe({"BTC":btc[:250],"ADA":a["ADA"][:250]},t))
         with self.assertRaises(ValueError):
             closed_candles([btc[0],btc[0]],t)
