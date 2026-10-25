@@ -8,14 +8,17 @@ import urllib.parse
 import urllib.request
 from datetime import datetime,timedelta,timezone
 from v12_accounting import d
-from v12_autonomy import SPEC
+from decimal import Decimal
+from v12_autonomy import SPEC,min_median_volume_usdc
+from v12_liquidity import book_summary,median_volume_usdc_30d,parse_depth
 from v12_compliance import (COUNTRY_CODE,MIN_HISTORY_DAILY,QUOTE,base_of,pair_rejection,spread_ok)
 
 API="https://api.kraken.com/0/public/"
 EXCLUDED=set(SPEC["UNIVERSE"]["exclusions"])
 RENAMES={"XBT":"BTC","XXBT":"BTC","XDG":"DOGE"}
+MANDATORY=("BTC","ETH")
 
-VALUATION_METHOD=("UE/MiCA (Moteur V1.6.1): Kraken XXX/USDC only (AssetPairs country_code=FR, status online, "
+VALUATION_METHOD=("UE/MiCA (Moteur V1.6.2): Kraken XXX/USDC only (AssetPairs country_code=FR, status online, "
     "spread <= 0.3 %%), no USD conversion. Daily bars (signals, ratios) from XXX/USDC OHLC; "
     "pairs with fewer than %d closed daily bars are insufficient_history (bars null, never imputed).")%MIN_HISTORY_DAILY
 
@@ -25,7 +28,7 @@ def clock():
     return datetime.now(timezone.utc)
 
 def call(endpoint,params=None,opener=None):
-    if endpoint not in ("AssetPairs","Ticker","OHLC"):
+    if endpoint not in ("AssetPairs","Ticker","OHLC","Depth"):
         raise KrakenMarketError("NON_PUBLIC_ENDPOINT")
     uri=API+endpoint+"?"+urllib.parse.urlencode(params or {})
     if opener is None:
@@ -63,7 +66,7 @@ def ticker_row(data,key):
         raise KrakenMarketError("MISSING_TICKER_DATA_"+key) from exc
     if bid<=0 or ask<bid or close<=0 or volume<0:
         raise KrakenMarketError("INVALID_TICKER_"+key)
-    return {"bid":str(bid),"ask":str(ask),"usd_volume":volume*close}
+    return {"bid":str(bid),"ask":str(ask),"usdc_volume_24h":volume*close}
 
 def daily_bars(data,key,asof):
     values=data.get(key)
@@ -102,7 +105,9 @@ def collect(max_pairs=40,opener=None):
         try:price=ticker_row(tickers,key)
         except KrakenMarketError:rejected[asset]="NO_TICKER";continue
         if not spread_ok(price["bid"],price["ask"]):rejected[asset]="SPREAD_ABOVE_0_3_PCT";continue
-        shortlist.append((price["usd_volume"],asset,key,info,price))
+        # Ticker 24 h : seulement pour ordonner la présélection (économie d'appels),
+        # l'éligibilité dépend de la MÉDIANE 30 j des bougies OHLC (ci-dessous).
+        shortlist.append((price["usdc_volume_24h"],asset,key,info,price))
     shortlist.sort(key=lambda row:(-row[0],row[1]))
     selected=shortlist[:max_pairs]
     for important in ("BTC","ETH"):
@@ -111,10 +116,31 @@ def collect(max_pairs=40,opener=None):
             if match is None:raise KrakenMarketError("MANDATORY_USDC_PAIR_ABSENT_"+important)
             selected.append(match)
     histories={};quotes={};insufficient={};history={}
+    volumes={};books={};books_summary={}
+    threshold=Decimal(str(min_median_volume_usdc()))
     for _,asset,key,pair,price in selected:
         values,received=call("OHLC",{"pair":key,"interval":1440},opener=opener)
         candles=daily_bars(values,key,received)
         n=len(candles)
+        median=median_volume_usdc_30d(candles)
+        volumes[asset]=float(median) if median is not None else None
+        if asset not in MANDATORY:
+            if median is None:
+                rejected[asset]="VOLUME_MEDIAN_30D_UNAVAILABLE";continue
+            if median<threshold:
+                rejected[asset]="VOLUME_MEDIAN_30D_BELOW_MIN";continue
+        try:
+            depth,depth_received=call("Depth",{"pair":key,"count":500},opener=opener)
+            book=parse_depth(depth,key)
+        except KrakenMarketError:
+            book=None
+        if book is None:
+            books[asset]=None;books_summary[asset]=book_summary(None)
+        else:
+            books[asset]={"bids":[[str(p),str(q)] for p,q in book["bids"]],
+                          "asks":[[str(p),str(q)] for p,q in book["asks"]],
+                          "as_of":depth_received.isoformat()}
+            books_summary[asset]=dict(book_summary(book),as_of=depth_received.isoformat())
         if n<MIN_HISTORY_DAILY:
             insufficient[asset]=n
             history[asset]={"pair":asset+"/"+QUOTE,"closed_bars":n,"status":"insufficient_history",
@@ -133,6 +159,9 @@ def collect(max_pairs=40,opener=None):
     eligible=sorted(quotes)
     return {"status":"PAPER","source":"trusted-public-kraken",
             "observed_at":observed.isoformat(),"quotes":quotes,"daily_bars":histories,
+            "books":books,
+            "liquidity":{"min_median_daily_volume_usdc":float(threshold),
+                "median_volumes_usdc_30d":volumes,"books":books_summary},
             "usdc_usd":None,"quote_currency":QUOTE,
             "valuation_method":VALUATION_METHOD,"trades":{},"data_origin":"KRAKEN_PUBLIC_API",
             "compliance":{"regime":"UE/MiCA","country_code":COUNTRY_CODE,"quote":QUOTE,
@@ -141,7 +170,7 @@ def collect(max_pairs=40,opener=None):
                 "rejected":dict(sorted(rejected.items())),
                 "btc_regime_source":"BTC/USDC",
                 "btc_regime_history":{"closed_bars":btc_n,"sufficient":btc_n>=MIN_HISTORY_DAILY}},
-            "universe_note":"XXX/USDC only (country_code=FR); 30d median signal still required"}
+            "universe_note":"XXX/USDC only (country_code=FR); eligibility = 30d median daily USDC volume (OHLC) >= threshold"}
 
 def overview(snapshot):
     return {"asof":snapshot["observed_at"],"market":"Kraken public",

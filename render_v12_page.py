@@ -100,6 +100,8 @@ def build_state(report):
             "compliance": report.get("compliance"),
         },
         "compliance": report.get("compliance"),
+        # Moteur V1.6.2 : bloc facultatif lu par le dashboard (PR #22) ; absent -> null.
+        "liquidity_monitor": report.get("liquidity_monitor"),
     }
     return normalize(raw)
 

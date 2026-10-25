@@ -47,6 +47,10 @@ class TestPublicBridge(unittest.TestCase):
                     bar(base,300),bar(base+86400,301),
                     bar(int(current.timestamp())//86400*86400,999),
                 ],"last":0}}).encode()
+            if endpoint=="Depth":
+                key=params["pair"][0]
+                return json.dumps({"error":[],"result":{key:{
+                    "bids":[["299.9","10",0]],"asks":[["300.1","10",0]]}}}).encode()
             raise AssertionError("FORBIDDEN_PATH")
         snapshot=collect(max_pairs=2,opener=opener)
         self.assertEqual(snapshot["data_origin"],"KRAKEN_PUBLIC_API")
@@ -64,6 +68,10 @@ class TestPublicBridge(unittest.TestCase):
         self.assertTrue(all("XXBTZUSD" not in u for u in requests if "OHLC" in u))
         self.assertEqual(overview(snapshot)["orders_sent"],0) if "orders_sent" in overview(snapshot) else None
         self.assertTrue(all("/0/public/" in url for url in requests))
+        # V1.6.2 : carnet lu via /0/public/Depth ; < 30 bougies -> médiane null, jamais 0
+        self.assertTrue(any("/0/public/Depth" in u for u in requests))
+        self.assertIsNone(snapshot["liquidity"]["median_volumes_usdc_30d"]["BTC"])
+        self.assertEqual(snapshot["liquidity"]["books"]["BTC"]["best_bid"],299.9)
     def test_no_private_or_dangerous_endpoint(self):
         with self.assertRaises(KrakenMarketError):
             call("AddOrder")

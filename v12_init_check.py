@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""V1.2 pre-production INIT + CHECK, HOLD only, zero order (moteur V1.6.1).
+"""V1.2 pre-production INIT + CHECK, HOLD only, zero order (moteur V1.6.2).
 
 Account currency: USDC (Moteur V1.6). Cash, equity, PnL, fees, peak and
 positions are in USDC; quotes come from v12_kraken_public (XXX/USDC only,
@@ -25,6 +25,7 @@ from pathlib import Path
 
 from v12_autonomy import SPEC,STRATEGY_ID
 from v12_isolation import state_dir
+from v12_liquidity import monitor as liquidity_monitor
 
 C0="6605.10"
 QUOTE="USDC"
@@ -143,6 +144,10 @@ def run(state,collector=None,clock=None,max_pairs=40):
               "benchmark":{"usdc_hold_usdc":rep["initial_cash_usd"],"usdc_hold_return_pct":0},
               "migration":migration,
               "compliance":snapshot.get("compliance"),
+              "liquidity_monitor":liquidity_monitor(engine.liquidity_metrics(),
+                  (snapshot.get("liquidity") or {}).get("books"),now,
+                  eligible_count=len((snapshot.get("compliance") or {}).get("eligible") or []) if snapshot.get("compliance") else None,
+                  volumes=(snapshot.get("liquidity") or {}).get("median_volumes_usdc_30d")),
               "live_orders":0,"api_keys_used":False}
         finally:
             engine.close()
