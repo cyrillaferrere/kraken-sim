@@ -36,6 +36,8 @@ def market_day(base,day,crash=False):
     source["usdc_usd"]={"source":"trusted-public-kraken",
        "bid":"0.9950" if day>=20 else "0.9995",
        "ask":"0.9970" if day>=20 else "1.0005","as_of":moment}
+    source["compliance"]={"regime":"UE/MiCA","quote":"USDC","spot_long_only":True,
+                          "eligible":sorted(source["quotes"]),"insufficient_history":[]}
     return source
 
 def at(market,hours=0):
@@ -199,3 +201,24 @@ class TestPaperEngine30Days(unittest.TestCase):
             finally:engine.close()
 if __name__=="__main__":
     unittest.main()
+
+class TestGatewayEuCompliance(unittest.TestCase):
+    def test_gateway_rejects_non_compliant_pairs_without_order(self):
+        base,model=fixture()
+        with tempfile.TemporaryDirectory() as td:
+            engine=PaperEngine(td)
+            try:
+                start=market_day(base,0)
+                engine.tick(start,start["observed_at"],slot="START")
+                syn=engine.build_synthesis(start,start["observed_at"])
+                bad=[grok_decision(model,start,"eu-usd","BTC",9),grok_decision(model,start,"eu-usdt","USDT",9),
+                     grok_decision(model,start,"eu-short","ETH",9)]
+                bad[0]["asset"]="BTC/USD";bad[2]["action"]="SELL"
+                it={"it_id":"it-eu","synthesis_sha256":syn["synthesis_sha256"],"decisions":bad}
+                t=(utc(start["observed_at"])+timedelta(minutes=30)).isoformat()
+                res=engine.admit_batch(it,t)
+                self.assertEqual([r["accepted"] for r in res],[False,False,False])
+                self.assertEqual([r["reason"] for r in res],["COMPLIANCE_QUOTE_NOT_USDC",
+                    "COMPLIANCE_STABLECOIN_FORBIDDEN","COMPLIANCE_SHORT_SELLING_FORBIDDEN"])
+                self.assertEqual(engine.conn.execute("SELECT COUNT(*) FROM orders").fetchone()[0],0)
+            finally:engine.close()

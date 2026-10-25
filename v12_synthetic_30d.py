@@ -54,6 +54,8 @@ def market_at(base,day,hours=0):
     result["usdc_usd"]={"source":"trusted-public-kraken",
                         "bid":bid,"ask":ask,"as_of":moment.isoformat()}
     result["trades"]={}
+    result["compliance"]={"regime":"UE/MiCA","quote":"USDC","spot_long_only":True,
+                          "eligible":sorted(result["quotes"]),"insufficient_history":[]}
     return result
 
 def proposal(market,identity,asset,qty,ttl=26*3600):

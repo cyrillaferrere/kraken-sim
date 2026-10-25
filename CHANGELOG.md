@@ -12,6 +12,16 @@
 > - Versions sur `develop` : **moteur partagé V1.2 · stratégie V1.1 · UX/UI V1.1.2**. En PR expérimentale seulement : **moteur V1.3 (`VERSION_ENGINE_V12`) · stratégie V1.2**, sans fusion ni cycle.
 
 
+## [Moteur V1.6.1] — 25/10/2026 23h55 (Paris) — Kraken Bot (VERSION_ENGINE_V12, moteur expérimental V1.2)
+> Numérotation : désormais à 3 chiffres (x.y.z). VERSION_ENGINE partagé V1.1 inchangé.
+### Fonctionnel
+- Conformité UE/MiCA (demande Cyril, résident FR) : nouveau `v12_compliance.py` + `docs/CONFORMITE_UE_V1_2.md` (sources datées). Impact décisions : univers réduit aux seules paires XXX/USDC.
+- `v12_kraken_public.py` : univers = XXX/USDC `online` de `AssetPairs?country_code=FR`, hors stablecoins (USDT…) et liste EEE restreinte, spread ≤ 0,3 %. Voie de conversion XXX/USD ÷ USDC/USD supprimée (`usdc_quote`, `pairs_usd`). Bougies des signaux = OHLC XXX/USDC ; < 220 bougies → `insufficient_history`, données null, exclues des entrées. Régime BTC sur BTC/USDC.
+- Gateway moteur (`v12_paper_engine.admit_batch`) : rejet `REJECTED_COMPLIANCE` de toute décision hors USDC, stablecoin, actif restreint, levier/marge, vente à découvert (SELL > position), paire non éligible ou historique insuffisant. Indépendant de Grok.
+- `v12_init_check.py` / `render_v12_page.py` : bloc `compliance` publié ; page `/v12/` affiche « Conformité UE/MiCA » et le nombre de paires USDC éligibles (UX V1.2.1 du cockpit V1.2, ligne d'info USDC/USD retirée).
+### Infra
+- Tests : `tests/test_v12_eu_compliance.py` (USD, USDT, short, levier, historique null, univers 100 % USDC), test gateway dans `test_v12_paper_engine_30d.py` ; `test_v12_usdc_quote.py` supprimé (conversion retirée).
+
 ## [Moteur V1.6] — 25/10/2026 23h30 (Paris) — Kraken Bot (VERSION_ENGINE_V12, moteur expérimental V1.2)
 ### Fonctionnel
 - Devise de compte du portefeuille V1.2 = **USDC** (demande Cyril) : capital de départ 6 605,10 USDC, cash, équité, PnL, frais, pic et positions en USDC (`v12_paper_engine.py` : `quote_currency` persisté, défaut historique USD pour les anciens états). Impact décisions : seuils/montants désormais exprimés en USDC.
