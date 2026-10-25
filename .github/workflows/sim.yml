@@ -32,9 +32,7 @@ jobs:
         with: {python-version: "3.12"}
       - name: Filtre heure de Paris
         id: f
-        run: |
-          H=$(date +%H); echo "Heure Paris: $(date '+%d/%m %H:%M %Z')"
-          if [ "${{ github.event_name }}" != "schedule" ] || [[ " $PARIS_HOURS " == *" $H "* ]]; then echo "go=1" >> $GITHUB_OUTPUT; else echo "go=0" >> $GITHUB_OUTPUT; echo "Hors créneau, rien à faire"; fi
+        run: python3 .github/scripts/paris_filter.py "${{ github.event_name }}" >> $GITHUB_OUTPUT
       - name: Cycle papier
         if: steps.f.outputs.go == '1' && (github.event_name == 'schedule' || inputs.mode == 'cycle')
         run: python3 cycle_v11.py
