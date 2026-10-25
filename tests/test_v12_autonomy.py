@@ -148,6 +148,22 @@ class TestGrokPaperFirewall(unittest.TestCase):
         self.assertFalse(result["accepted"])
         self.assertTrue(any(x in result["reason"] for x in
                             ("EXPOSURE_CAP","ABOVE_CANDIDATE_TARGET_WEIGHT","INSUFFICIENT_CASH_NO_LEVERAGE")),result)
+    def test_candidate_c_cannot_cross_global_cap_even_under_individual_fifty_percent(self):
+        s,dec=fixture()
+        shift=timedelta(days=2) # Saturday -> Monday (rebalancing allowed)
+        for bars in s["daily_bars"].values():
+            for bar in bars:
+                bar["end"]=(utc(bar["end"])+shift).isoformat()
+        stamp=(utc(s["observed_at"])+shift).isoformat()
+        s["observed_at"]=stamp
+        for q in s["quotes"].values():
+            q["as_of"]=stamp
+        dec.update(market_data_asof=stamp,created_at=stamp,asset="ETH",quantity=.7)
+        p=Portfolio(6605.1)
+        p.buy("BTC",10.7,285,.004)
+        p.buy("ETH",8.5,325,.004)
+        result=validate(dec,s,p,stamp)
+        self.assertEqual(result["reason"],"EXPOSURE_CAP",result)
     def test_risk_from_separate_context_cannot_be_overridden_by_market_snapshot(self):
         s,d=fixture()
         engine=risk_fixture(s)
