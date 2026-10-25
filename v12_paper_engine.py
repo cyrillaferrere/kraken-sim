@@ -34,7 +34,7 @@ def _money(value):
     return str(d(value))
 
 class PaperEngine:
-    def __init__(self,root,c0="6605.10"):
+    def __init__(self,root,c0="6605.10",quote_currency="USD"):
         self.root=state_dir(root)
         self.root.mkdir(parents=True,exist_ok=True)
         self.conn=sqlite3.connect(self.root/"paper_engine_v12.db",timeout=30,
@@ -81,6 +81,9 @@ class PaperEngine:
                     self._put("active_policy_version",POLICY)
                     self._put("authorized_model_id",MODEL)
                     self._put("kill_count",0)
+                    self._put("quote_currency",quote_currency)
+        # Legacy wallets created before Moteur V1.6 have no key: they are USD.
+        self.quote_currency=self._get("quote_currency") or "USD"
 
     @contextmanager
     def transaction(self):
@@ -552,7 +555,10 @@ class PaperEngine:
             self._put("wallet",self._wallet_json(p))
             usdc=None;btc_ref=None
             usdc_quote=snapshot.get("usdc_usd")
-            if usdc_quote is not None:
+            if self.quote_currency=="USDC":
+                # Account currency is USDC: "keep the USDC" is constant C0 (0 %).
+                usdc=_money(self._get("initial_capital_usd"))
+            elif usdc_quote is not None:
                 checked_rate(usdc_quote,moment.isoformat())
                 units=self._get("usdc_initial_units")
                 if units is None:

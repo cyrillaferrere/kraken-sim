@@ -30,14 +30,16 @@ def _f(v):
 def build_state(report):
     if report.get("mode") != "INIT_CHECK_HOLD_ONLY":
         raise ValueError("unexpected report mode")
+    if report.get("quote_currency") != "USDC":
+        raise ValueError("V1.2 report must be in USDC (Moteur >= V1.6)")
     if report.get("strategy_version") != "V1.2":
         raise ValueError("foreign strategy rejected")
     ts = report.get("generated_at")
-    equity, cash = _f(report.get("equity_usd")), _f(report.get("cash_usd"))
+    equity, cash = _f(report.get("equity_usdc")), _f(report.get("cash_usdc"))
     guards = report.get("guardrails") or {}
-    peak = _f(guards.get("engine_peak_usd"))
+    peak = _f(guards.get("engine_peak_usdc"))
     positions = [
-        {"asset": k, "qty": _f((v or {}).get("qty")), "value": _f((v or {}).get("value_usd"))}
+        {"asset": k, "qty": _f((v or {}).get("qty")), "value": _f((v or {}).get("value_usdc"))}
         for k, v in sorted((report.get("positions") or {}).items())
     ]
     signals = {}
@@ -59,14 +61,16 @@ def build_state(report):
     bench = report.get("benchmark") or {}
     data = report.get("data") or {}
     raw = {
-        "equity": equity, "cash": cash, "C0": _f(report.get("initial_capital_usd")),
+        "equity": equity, "cash": cash, "C0": _f(report.get("initial_capital_usdc")),
         "positions": positions, "orders": [], "pending_orders": [],
         "pending_count": report.get("orders"),
         "decisions": decisions, "as_of": ts, "last_cycle_iso": ts,
-        "usdc_hold_usd": _f(bench.get("usdc_hold_usd")),
-        "btc_hold_usd": _f(bench.get("btc_hold_usd")),
+        "usdc_hold_usdc": _f(bench.get("usdc_hold_usdc")),
+        "usdc_hold_return_pct": bench.get("usdc_hold_return_pct"),
+        "btc_hold_usdc": _f(bench.get("btc_hold_usdc")),
+        "quote_currency": "USDC", "valuation_method": report.get("valuation_method"),
         "cur_dd_pct": (peak - equity) / peak * 100 if peak and equity is not None else None,
-        "fees_paid_usd": None,
+        "fees_paid_usdc": _f(report.get("fees_paid_usdc")),
         "risk": {"risk_lock": guards.get("risk_lock"), "paused": None,
                  "kill_count": guards.get("kill_count")},
         "candidate_signals": signals,
@@ -81,6 +85,7 @@ def build_state(report):
             "guardrails": guards, "tick": report.get("tick"),
             "synthesis_sha256": report.get("synthesis_sha256"),
             "engine_version_report": report.get("engine_version"),
+            "migration": report.get("migration"),
         },
     }
     return normalize(raw)
