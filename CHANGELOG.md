@@ -9,7 +9,23 @@
 >   `## [Moteur Vx.y] — JJ/MM/AAAA HHhMM (Paris) — Kraken Bot`, `## [Stratégie Vx.y] — … — Kraken Bot` ou `## [UX Vx.y] — JJ/MM/AAAA HHhMM (Paris) — GPT6`
 >   puis les sections utiles : **Fonctionnel / UX-UI / Infra / Corrections**, une ligne par changement (fichier + impact sur les décisions, « aucun » si visuel).
 > - Les commits automatiques « état sim … » ne sont pas journalisés.
-> - Versions actuelles : **Moteur V1.2 · Stratégie V1.1 · UX/UI V1.1.1**.
+> - Versions actuelles : **Moteur V1.2 · Stratégie V1.1 · UX/UI V1.1.2**.
+
+## [UX V1.1.2] — 25/10/2026 15h15 (Paris) — GPT6
+### Correctifs critiques
+- `dashboard_template.html` : suppression du code JavaScript parasite visible après la fermeture du document HTML (régression introduite avec V1.1.1). Les 2 scripts restent valides.
+- `tests/check_template.py` : nouveau contrôle strict interdisant tout contenu après `</html>`. Impact sur les décisions : aucun.
+### UX-UI
+- `dashboard_template.html` : statut plus compact, versions déportées en deuxième ligne, descriptif technique masqué (données conservées) et graphique capital/BTC alignés sur desktop.
+- `dashboard_template.html` : conditions de vente restructurées par actif ; distance au stop, durée restante et décision visibles, détails techniques accessibles à la demande sans modifier le moteur.
+- `dashboard_template.html` : décisions groupées visuellement (actions prioritaires, signaux secondaires) et grille financière répartie en quatre familles.
+- `dashboard_template.html` : sections backtests et walk-forward explicitement signalées comme analyses techniques avancées ; détail du socle conservé.
+### Préproduction
+- `render_preprod.py` : remplacement du grand bandeau rouge par l'identification discrète « Kraken Sim PreProd » en tête du site de préproduction ; aucune modification de la production.
+- `tests/check_preprod.py` : contrat de marquage discret PreProd, interdiction du bandeau rouge.
+### Documentation
+- `docs/SPEC_UX.md` : spécifications UX V1.1.2 et registre des corrections ; le schéma HISTORY et le moteur sont inchangés.
+- Impact sur moteur, stratégie, stops, positions et décisions financières : **aucun**.
 
 ## [UX V1.1.1] — 25/10/2026 15h00 (Paris) — GPT6
 ### UX-UI

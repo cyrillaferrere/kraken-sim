@@ -4,7 +4,8 @@ import os, re, shutil, subprocess, sys, tempfile
 D = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 P = os.environ.get("PREPROD_OUT", os.path.join(D, "_site")) + "/index.html"
 h = open(P).read(); bad = []
-if "PRÉPRODUCTION — NE PAS CONFONDRE AVEC LA SIMULATION OFFICIELLE" not in h: bad.append("bandeau absent")
+if "PreProd</small>" not in h: bad.append("identification discrète PreProd absente")
+if "preprod-banner" in h: bad.append("ancien bandeau rouge toujours présent")
 if 'const STATE_URL = "https://raw.githubusercontent.com/cyrillaferrere/kraken-sim/main/state/public_state.json";' not in h: bad.append("STATE_URL ne pointe pas vers la prod")
 if "__DATA__" in h: bad.append("données non injectées")
 chrome = next((shutil.which(b) for b in ("google-chrome", "google-chrome-stable", "chromium", "chromium-browser") if shutil.which(b)), None)
