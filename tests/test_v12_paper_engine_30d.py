@@ -127,6 +127,33 @@ class TestPaperEngine30Days(unittest.TestCase):
                     self.assertGreaterEqual(counts["rejected"],3)
                 finally:db.close()
             finally:engine.close()
+    def test_c_exit_happens_without_grok_it_and_below_kill_threshold(self):
+        base,_=fixture()
+        with tempfile.TemporaryDirectory() as td:
+            engine=PaperEngine(td)
+            try:
+                m=market_day(base,0)
+                p=engine.wallet()
+                p.buy("BTC",1,200,"0.004")
+                with engine.transaction():
+                    engine._put("wallet",engine._wallet_json(p))
+                    engine.conn.execute("""INSERT INTO position_rules
+                        (asset,candidate,entry_price,high_close,entered_at)
+                        VALUES(?,?,?,?,?)""",("BTC","C","200","200",m["observed_at"]))
+                bars=m["daily_bars"]["BTC"]
+                # Last close breaks EMA200: deterministic exit, no model response.
+                latest=bars[-1]
+                latest["close"]=20
+                latest["low"]=19.5
+                latest["open"]=20
+                latest["high"]=20.5
+                m["quotes"]["BTC"]["bid"]=19.98
+                m["quotes"]["BTC"]["ask"]=20.02
+                report=engine.tick(m,m["observed_at"],slot="C-PROTECTION")
+                self.assertFalse(report["risk_locked"])
+                self.assertIn("PROTECTIVE_SELL",[e["action"] for e in report["events"]])
+                self.assertEqual(engine.wallet().positions,{})
+            finally:engine.close()
     def test_invalid_or_stale_quote_fails_closed(self):
         base,model=fixture()
         with tempfile.TemporaryDirectory() as td:
