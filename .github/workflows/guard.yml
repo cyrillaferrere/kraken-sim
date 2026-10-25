@@ -105,7 +105,7 @@ jobs:
         shell: bash
         run: |
           FILES=$(git diff --name-only "origin/$GITHUB_BASE_REF"...HEAD)
-          BAD=$(echo "$FILES" | grep -E '^(sim\.db|state/|cycle_v11\.py|cycle\.py|strategy/params\.json|\.github/workflows/sim\.yml|page_data\.py|render_page\.py|dashboard_template\.html)$' || true)
+          BAD=$(echo "$FILES" | grep -E '^(sim\.db|cycle_v11\.py|cycle\.py|strategy/params\.json|\.github/workflows/sim\.yml|page_data\.py|render_page\.py|dashboard_template\.html)$|^state/' || true)
           test -z "$BAD" || { echo "::error::V1.1 interdite : $BAD"; exit 1; }
   isolation-v12:
     runs-on: ubuntu-latest
