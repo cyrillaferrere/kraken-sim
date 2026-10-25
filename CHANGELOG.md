@@ -2,14 +2,35 @@
 
 > **Convention d'ajout (obligatoire, vérifiée par `guard.yml`)**
 > - Trois versions **indépendantes** :
->   - **Moteur** : fichier `VERSION_ENGINE` (source unique, exposée dans `state.json` / `D.version_engine`). Incrémentée **uniquement par Kraken Bot** à chaque modif moteur/données/règles.
->   - **Stratégie** : `STRATEGY_VERSION` dans `strategy/params.json` (règles d'achat/vente et paramètres, source unique, exposée dans `state.json` / `D.strategy_version`, enregistrée sur chaque ordre, décision et cycle). Incrémentée **uniquement par Kraken Bot** ; entrée obligatoire avec **paramètres avant/après, justification, résultat de backtest**. GPT6 n'y touche jamais.
+>   - **Moteur** : `VERSION_ENGINE` reste réservé au moteur partagé V1.1 ; `VERSION_ENGINE_V12` est la source indépendante du moteur expérimental V1.2. Chaque flux expose uniquement sa propre version. Pour la V1.2, GPT-6 code avec revue technique Kraken Bot.
+>   - **Stratégie** : la V1.1 est définie par `strategy/params.json` ; les hypothèses expérimentales V1.2 sont isolées dans `strategy/v1_2/params.json` avec `STRATEGY_VERSION=V1.2`. Spécification et revue par Kraken Bot, implémentation déléguée à GPT-6. Les résultats de backtest non encore calculés doivent être explicitement indiqués comme tels.
 >   - **UX/UI** : constante `const VERSION_UX = "Vx.y";` dans `dashboard_template.html`. Incrémentée **uniquement par GPT6** à chaque PR `ux/*`.
 > - Toute modification ajoute une entrée **en tête** du fichier, dans la même PR :
 >   `## [Moteur Vx.y] — JJ/MM/AAAA HHhMM (Paris) — Kraken Bot`, `## [Stratégie Vx.y] — … — Kraken Bot` ou `## [UX Vx.y] — JJ/MM/AAAA HHhMM (Paris) — GPT6`
 >   puis les sections utiles : **Fonctionnel / UX-UI / Infra / Corrections**, une ligne par changement (fichier + impact sur les décisions, « aucun » si visuel).
 > - Les commits automatiques « état sim … » ne sont pas journalisés.
-> - Versions actuelles : **Moteur V1.2 · Stratégie V1.1 · UX/UI V1.1.2**.
+> - Versions sur `develop` : **moteur partagé V1.2 · stratégie V1.1 · UX/UI V1.1.2**. En PR expérimentale seulement : **moteur V1.3 (`VERSION_ENGINE_V12`) · stratégie V1.2**, sans fusion ni cycle.
+
+## [Stratégie V1.2] — 25/10/2026 — Kraken Bot (SPEC) / GPT-6 (paramètres expérimentaux)
+### Fonctionnel
+- Spécification et critères de rejet pre-enregistrés par Grok Bot avant backtest ; `strategy/v1_2/params.json` fige les hypothèses des candidats A Donchian, B dual momentum, C BTC/ETH tendance, D V1.1 hebdomadaire.
+- Les scénarios frais F1 et F2, l'univers point-in-time, les limites d'exposition et le kill-switch de la SPEC sont documentés séparément de la stratégie V1.1.
+### Backtest
+- **Non exécuté / aucun résultat** au moment de ce commit : le backtest V1.2 sera implémenté et évalué hors échantillon avant toute sélection ou mise en fonctionnement.
+
+## [Moteur V1.3] — 25/10/2026 — GPT-6 (préprod V1.2, infrastructure)
+### Corrections P0/P1 (revue Grok Bot PR #7)
+- `.github/workflows/guard.yml` : contrôle exhaustif de `state/**` et gel de `VERSION_ENGINE` dans les branches `strategy/*` ; tests négatifs de chemin protégés.
+- `VERSION_ENGINE_V12` : **V1.3 réservé au moteur V1.2** ; `VERSION_ENGINE` reste à V1.2 comme sur `develop`. Les exports V1.2 n’utilisent que `VERSION_ENGINE_V12`.
+- `v12_isolation.py` : refus des clones V1.1 et des ancêtres contenant `.git`/ `sim.db` ; exceptions contrôlées au checkout d'état `kraken-sim-preprod`.
+### Infrastructure
+- Branche strategy/v1.2 depuis develop + state-v12 dans kraken-sim-preprod. Aucune exécution de cycle ni modification main.
+- cycle_v12.py bloqué en l'attente de SPEC et accord ; v12_isolation.py refuse les chemins d'état production ; export_v12.py impose la source V1.2 et des données réelles.
+- Workflow sim_v12.yml manuel, pas de cron, pin SHA requis, calcul sans secret, publication distincte et limitée à preprod/state-v12.
+- guard.yml : exception explicite strategy/v1.2 pour GPT-6, périmètre stratégie protégeant la V1.1, tests isolation-v12. GARDE_FOUS.md mis à jour.
+### Tests et limites
+- Tests infrastructure : chemin de stockage, idempotence, export minimal, look-ahead des bougies, intégrité statique du code V1.1. Tests trading/risque/backtest non encore implémentés.
+- Aucune performance ni validation économique revendiquée. Première fusion develop et tout workflow sur main soumis à Cyril.
 
 ## [UX V1.1.2] — 25/10/2026 15h15 (Paris) — GPT6
 ### Correctifs critiques
@@ -47,23 +68,6 @@
 - `GARDE_FOUS.md` (Circuit, Périmètre, guard), `README.md`, `docs/SPEC_UX.md`, modèle de PR mis à jour.
 ### Infra
 - `guard.yml` : nouveau contrôle `perimetre-gpt6` (PR depuis `ux/*`, `feature/*`, `fix/*` : échec si chemins moteur/stratégie/sim.yml/état modifiés). Impact décisions : aucun.
-
-## [Stratégie V1.2] — 25/10/2026 — Kraken Bot (SPEC) / GPT-6 (paramètres expérimentaux)
-### Fonctionnel
-- Spécification et critères de rejet pre-enregistrés par Grok Bot avant backtest ; `strategy/v1_2/params.json` fige les hypothèses des candidats A Donchian, B dual momentum, C BTC/ETH tendance, D V1.1 hebdomadaire.
-- Les scénarios frais F1 et F2, l'univers point-in-time, les limites d'exposition et le kill-switch de la SPEC sont documentés séparément de la stratégie V1.1.
-### Backtest
-- **Non exécuté / aucun résultat** au moment de ce commit : le backtest V1.2 sera implémenté et évalué hors échantillon avant toute sélection ou mise en fonctionnement.
-
-## [Moteur V1.3] — 25/10/2026 — GPT-6 (préprod V1.2, infrastructure)
-### Infrastructure
-- Branche strategy/v1.2 depuis develop + state-v12 dans kraken-sim-preprod. Aucune exécution de cycle ni modification main.
-- cycle_v12.py bloqué en l'attente de SPEC et accord ; v12_isolation.py refuse les chemins d'état production ; export_v12.py impose la source V1.2 et des données réelles.
-- Workflow sim_v12.yml manuel, pas de cron, pin SHA requis, calcul sans secret, publication distincte et limitée à preprod/state-v12.
-- guard.yml : exception explicite strategy/v1.2 pour GPT-6, périmètre stratégie protégeant la V1.1, tests isolation-v12. GARDE_FOUS.md mis à jour.
-### Tests et limites
-- Tests infrastructure : chemin de stockage, idempotence, export minimal, look-ahead des bougies, intégrité statique du code V1.1. Tests trading/risque/backtest non encore implémentés.
-- Aucune performance ni validation économique revendiquée. Première fusion develop et tout workflow sur main soumis à Cyril.
 
 ## [Infra] — 25/10/2026 14h05 — Kraken Bot (versions inchangées : Moteur V1.1 · Stratégie V1.1 · UX/UI V1.1)
 ### Infra
