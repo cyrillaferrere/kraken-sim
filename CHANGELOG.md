@@ -12,6 +12,11 @@
 > - Versions sur `develop` : **moteur partagé V1.2 · stratégie V1.1 · UX/UI V1.1.2**. En PR expérimentale seulement : **moteur V1.3 (`VERSION_ENGINE_V12`) · stratégie V1.2**, sans fusion ni cycle.
 
 
+## [Stratégie V1.2] — 26/10/2026 01h00 (Paris) — Kraken Bot (paramètres expérimentaux, accompagne Moteur V1.6.2)
+### Fonctionnel
+- `strategy/v1_2/params.json` : `UNIVERSE.min_median_daily_usdc_volume_30d` = 1 000 000 (ex-`min_median_daily_usd_volume` = 5 000 000) + bloc `LIQUIDITY` (garde-fous Depth, alerte, repli 5 M documenté non automatisé). STRATEGY_VERSION reste V1.2 (stratégie expérimentale non sélectionnée).
+- Backtest : **non recalculé** pour ce seuil (résultats de backtest existants obtenus à 5 M ; à relancer avant toute sélection). Aucun cycle avec ordres lancé.
+
 ## [Moteur V1.6.2] — 26/10/2026 01h00 (Paris) — Kraken Bot (VERSION_ENGINE_V12, moteur expérimental V1.2)
 > Correctif (3e chiffre). Décision Cyril : seuil de liquidité PAPER abaissé à 1 M USDC, avec garde-fous. VERSION_ENGINE partagé V1.1 inchangé.
 ### Fonctionnel
