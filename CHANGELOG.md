@@ -20,6 +20,7 @@
 
 ## [Moteur V1.3] — 25/10/2026 — GPT-6 (préprod V1.2, infrastructure)
 ### Suite aux corrections P1 de Grok Bot (branche, sans cycles)
+- `docs/VISION_AUTONOMIE_APPRENTISSAGE.md` : décision produit de Cyril : Grok Bot devra devenir le décideur autonome PAPER, avec apprentissage mesurable, mémoire persistante, contrôle de risque déterministe indépendant, journalisation et évaluation prospective. Les quatre stratégies A/B/C/D sont aussi des comparateurs ; aucune autorisation de cycle ou de trading LIVE n'est donnée.
 - `fetch_kraken_history_v12.py` : outil en lecture réseau publique **uniquement sur action explicite** (`--download`), avec source Kraken verrouillée, 5 SHA-256 officiels, reprise HTTP Range, ZIP réassemblé vérifié, garde disque et sortie hors dépôt. Une relance n'écrase pas le manifeste et permet l'ajout Q3 sans effacer les preuves archivées.
 - `prepare_kraken_history_v12.py`, `v12_data.py` : URL d'origine contrôlée par `scheme/hostname/path` exact, rejet des OHLC NaN/infini et des dates fractionnaires ; contrôle des archives Q3 conteneur ZIP. 
 - `tests/test_v12_downloader.py` + tests de données : aucun accès réseau pendant les tests, reprise interrompue, serveur ignorant `Range`, SHA erroné, contenu trimestriel invalide, tentative d'URL mimant Kraken et manifeste inchangé au second passage.
