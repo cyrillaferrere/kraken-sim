@@ -20,6 +20,12 @@
 
 ## [Moteur V1.3] — 25/10/2026 — GPT-6 (préprod V1.2, infrastructure)
 ### Suite aux corrections P1 de Grok Bot (branche, sans cycles)
+- **Étape autonomie Grok V1.2 (sur PR, sans cycle)** : `v12_autonomy.py` reçoit une décision structurée et rejette tout signal/poids A/B/C/D non conforme, avec données Kraken fraîchement clôturées, frais F2, sans short ni levier, limite de corrélation et kill-switch indépendants. La politique/modèle actifs sont imposés par le futur orchestrateur, jamais par Grok.
+- `v12_grok_gateway.py` : mode **prévalidation uniquement** et journalisation d'une proposition Grok ou indisponibilité, sans appel effectif au modèle ni exécution d'ordre.
+- `v12_learning.py` : journal SQLite isolé, append-only au niveau applicatif, idempotence et chaîne d'empreintes, évaluation des horizons 1/7/30 jours et propositions de politique uniquement shadow (aucune auto-promotion).
+- `tests/test_v12_autonomy.py`, `tests/test_v12_learning.py`, `tests/test_v12_grok_gateway.py` : refus de faux signaux, sur-exposition, mauvais modèle/politique, quote expirée, tentative de LIVE, collisions d'identifiants et altération de log.
+- `docs/GROK_AUTONOME_V12_ETAPE1.md` : frontière entre les modules de préflight testés et les composants **encore manquants** (invocation Grok authentifiée, collecte public Kraken, exécuteur PAPER, USDC/USD). Aucun cycle V1.2 ni trading réel.
+
 - `docs/VISION_AUTONOMIE_APPRENTISSAGE.md` : décision produit de Cyril : Grok Bot devra devenir le décideur autonome PAPER, avec apprentissage mesurable, mémoire persistante, contrôle de risque déterministe indépendant, journalisation et évaluation prospective. Les quatre stratégies A/B/C/D sont aussi des comparateurs ; aucune autorisation de cycle ou de trading LIVE n'est donnée.
 - `fetch_kraken_history_v12.py` : outil en lecture réseau publique **uniquement sur action explicite** (`--download`), avec source Kraken verrouillée, 5 SHA-256 officiels, reprise HTTP Range, ZIP réassemblé vérifié, garde disque et sortie hors dépôt. Une relance n'écrase pas le manifeste et permet l'ajout Q3 sans effacer les preuves archivées.
 - `prepare_kraken_history_v12.py`, `v12_data.py` : URL d'origine contrôlée par `scheme/hostname/path` exact, rejet des OHLC NaN/infini et des dates fractionnaires ; contrôle des archives Q3 conteneur ZIP. 

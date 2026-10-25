@@ -39,6 +39,12 @@ La [vision d'architecture autonomie et apprentissage](VISION_AUTONOMIE_APPRENTIS
 
 **Changement de priorité (non déployé)** : finaliser d'abord la boucle de décision autonome PAPER, le suivi des USDC, la couche de risque, les journaux et la preuve d'intégration Grok ; conserver les archives massives et les backtests rétrospectifs exhaustifs en chantier complémentaire. Aucune décision de commencer un cycle ou d'activer un workflow n'est prise par le présent document.
 
+## Développement du contrôle autonome PAPER (nouvelle orientation)
+- Le contrat de décision Grok est lié aux quatre candidats **A/B/C/D de la SPEC V1.2**, et non à une stratégie libre inventée en cours de route.
+- `v12_autonomy.py` refuse les décisions qui ne passent pas les signaux ou les limites de risque. `v12_grok_gateway.py` enregistre les résultats sans jamais envoyer d'ordre. `v12_learning.py` stocke des événements pour comparer rétrospectivement les décisions et proposer des politiques shadow.
+- **Grok n'est pas encore connecté** à ces modules, le compte PAPER autonome ne tourne pas, aucune boucle d'apprentissage n'est activée. Documentation : [GROK_AUTONOME_V12_ETAPE1.md](GROK_AUTONOME_V12_ETAPE1.md).
+- La première exécution restera soumise à l'accord distinct de Cyril après tests de l'exécuteur et contrôles de sécurité.
+
 ## Blocages à traiter avant tout backtest OFFICIEL
 
 - **Historique exhaustif manquant** : aucun dossier contenant tous les CSV Kraken USD historiques, leur manifeste SHA-256, le catalogue de cotation et les cryptos délistées n'a été fourni à la PR. Impossible de produire honnêtement un bilan financier validé.
