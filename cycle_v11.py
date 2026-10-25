@@ -16,7 +16,7 @@ from datetime import datetime, timezone, timedelta
 D = os.path.dirname(os.path.abspath(__file__)); sys.path.insert(0, D)
 import cycle as V  # fonctions V1.04 (get, db, meta, depth_ok, STABLE) ; ne lance rien
 from backtest import ind
-VERSION = "V1.1"
+VERSION = (open(os.path.join(D, "VERSION_ENGINE")).read().strip() if os.path.exists(os.path.join(D, "VERSION_ENGINE")) else "V1.1")  # source unique de la version moteur
 K_HYST, KEEP_RANK, MIN_HOLD_H, CHAL = 0.15, 4, 48, 0.10
 TOP_N, W, ATR_MULT, KILL_DD, MAX_SPREAD, MIN_ORDER, SLIP = 3, 0.33, 3.0, 0.30, 0.003, 25.0, 0.0005
 BLOCK_MIN = int(os.environ.get("SIM_BLOCK_MIN", 60))

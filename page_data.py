@@ -69,6 +69,7 @@ out["backtest"] = dict(periods=bt["periods"], rows={k: [dict(v=v, **r) for v, r 
 # ---------- V1.01 ----------
 FEE, SLIP = 0.004, 0.0005
 out["version"] = m.get("version", "V1.04")
+_vf = os.path.join(D, "VERSION_ENGINE"); out["version_engine"] = open(_vf).read().strip() if os.path.exists(_vf) else out["version"]  # version moteur (fichier unique)
 st = datetime.fromisoformat(c.execute("SELECT MIN(ts) FROM cycles").fetchone()[0])
 out["start_iso"] = st.isoformat(); out["start_paris"] = st.astimezone(P).strftime("%d/%m/%Y %Hh%M")
 el = datetime.now(timezone.utc) - st; h = int(el.total_seconds() // 3600)
