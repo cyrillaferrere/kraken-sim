@@ -1,3 +1,5 @@
+> **NOUVEAU — données historiques V1.2 :** [téléchargement manuel, reprenable et sécurisé des archives Kraken](docs/TELECHARGEMENT_KRAKEN_V1_2.md), avec 5 checksums officiels et vérification du ZIP complet. Aucune archive massive n'a été téléchargée par GitHub Actions et aucun cycle V1.2 n'a été lancé. Exception de travail GPT-6 sur `strategy/v1.2` : voir `GARDE_FOUS.md`.
+
 > **Historique V1.2 et V1.1** : [archives Kraken et rejeu hors ligne](docs/DONNEES_ET_REPLAY_V1_2.md). L'importeur ne certifie jamais automatiquement la couverture des actifs historiques ; le rejeu V1.1 sur fixtures synthétiques ne prouve pas une performance passée.
 
 > **Collaboration GPT6 (UX/UI) ↔ Kraken Bot (moteur)** — versions : **Moteur `VERSION_ENGINE`** · **Stratégie `strategy/params.json`** · **UX/UI `VERSION_UX`** (template).

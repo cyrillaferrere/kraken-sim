@@ -16,6 +16,8 @@ Les archives contiennent des CSV sans en-tête `timestamp,open,high,low,close,vo
 
 Données de transactions détaillées (*time and sales*) : https://support.kraken.com/articles/360047543791-downloadable-historical-market-data-time-and-sales- ; les transactions ne prouvent pas l'état historique complet du carnet d'ordres.
 
+Pour éviter les téléchargements manuels non vérifiés des cinq parties, la branche V1.2 inclut désormais `fetch_kraken_history_v12.py`, **désactivé par défaut sans `--download`**. Voir le [mode d'emploi détaillé](TELECHARGEMENT_KRAKEN_V1_2.md). Les archives volumineuses doivent rester hors du dépôt et être contrôlées avant préparation. L'outil ne certifie ni la disponibilité passée des actifs ni leur statut de délistage.
+
 ## Outil d'import local, sans clé Kraken
 
 `prepare_kraken_history_v12.py` :

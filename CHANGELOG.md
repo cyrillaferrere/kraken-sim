@@ -20,6 +20,11 @@
 
 ## [Moteur V1.3] — 25/10/2026 — GPT-6 (préprod V1.2, infrastructure)
 ### Suite aux corrections P1 de Grok Bot (branche, sans cycles)
+- `fetch_kraken_history_v12.py` : outil en lecture réseau publique **uniquement sur action explicite** (`--download`), avec source Kraken verrouillée, 5 SHA-256 officiels, reprise HTTP Range, ZIP réassemblé vérifié, garde disque et sortie hors dépôt. Une relance n'écrase pas le manifeste et permet l'ajout Q3 sans effacer les preuves archivées.
+- `prepare_kraken_history_v12.py`, `v12_data.py` : URL d'origine contrôlée par `scheme/hostname/path` exact, rejet des OHLC NaN/infini et des dates fractionnaires ; contrôle des archives Q3 conteneur ZIP. 
+- `tests/test_v12_downloader.py` + tests de données : aucun accès réseau pendant les tests, reprise interrompue, serveur ignorant `Range`, SHA erroné, contenu trimestriel invalide, tentative d'URL mimant Kraken et manifeste inchangé au second passage.
+- `docs/TELECHARGEMENT_KRAKEN_V1_2.md` : procédure locale Windows/PowerShell étape par étape et rappel du blocage sur listing/delisting historique. **Aucun téléchargement historique réel exécuté** sur GitHub ni depuis cet échange.
+
 - `prepare_kraken_history_v12.py` : inventaire hors ligne des ZIP Kraken complets et 2026 T3, contrôle SHA-256, revue explicite des paires USD, dédoublonnage strict et `MANIFEST.draft.json` non certifié. Tests négatifs ZIP, paires inconnues et contradictions inter-archives.
 - `v12_v11_replay.py` : rejeu du moteur `cycle_v11.py` original à l'aide de snapshots d'API synthétiques, dans SQLite + historique isolés hors dépôt et sans réseau ; toute API manquante fait échouer la référence, même si le moteur enregistre un cycle. Aucun historique 2021–2026 n'est revendiqué.
 - `docs/DONNEES_ET_REPLAY_V1_2.md` : provenance Kraken, somme SHA-256 de l'archive complète, procédures de staging et distinction entre tests déterministes et véritable baseline V1.1.

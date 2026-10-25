@@ -24,6 +24,10 @@
 9. Tests sur l'isolation et tous les fichiers `state/**`, version moteur, boucle de comptes, remises en cash, invariance aux données futures des quatre candidats, sécurité du workflow.
 
 ## Étapes données / rejeu engagées (25/10/2026)
+- `fetch_kraken_history_v12.py` ajouté : liste officielle des cinq parties SHA-256 épinglées, CLI manuel avec option `--download` obligatoire, reprise sur interruption, assemblage ZIP avec checksum officiel, possibilité d'associer le T3 en conservant son statut de hash local non attesté indépendamment ; **aucune archive de plusieurs Go téléchargée**.
+- Vérifications complémentaires : domaine et chemin d'origine Kraken exacts, valeurs OHLC non finies rejetées, timestamp entier et ZIP trimestriel valide ; tests négatifs dédiés.
+- [Mode d'emploi pour préparer les archives sur un disque externe](TELECHARGEMENT_KRAKEN_V1_2.md). Le `MANIFEST.json` officiel validé est toujours absent, car la vérification des listings historiques est requise.
+
 - `prepare_kraken_history_v12.py` et tests : fusion/déduplication des CSV officiels après téléchargement sur un stockage externe, vérification SHA-256 et contrôle des paires. Le résultat demeure `MANIFEST.draft.json` tant que la couverture historique n'est pas prouvée.
 - `v12_v11_replay.py` et tests : reproduction déterministe du comportement réel du moteur V1.1 sur une fixture d'API synthétique, sans réseau ni écriture vers la production. **Ce n'est pas une baseline historique**.
 - [Procédure sources et contraintes](DONNEES_ET_REPLAY_V1_2.md), y compris les limites d'une comparaison OHLC quotidienne.
