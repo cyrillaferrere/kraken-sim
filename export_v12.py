@@ -51,7 +51,7 @@ def normalize(raw):
                generated_utc=now.isoformat(),
                generated_paris=now.astimezone(ZoneInfo("Europe/Paris")).isoformat())
     # UI alias is only computed from an actual observed equity, never a zero/fake.
-    dct["total"]=equity if dct.get("total") is None else dct["total"]
+    dct["total"]=float(equity) if dct.get("total") is None else dct["total"]
     dct["C0"]=6605.10 if dct.get("C0") is None else dct["C0"]
     json.dumps(dct,allow_nan=False)
     return dct
