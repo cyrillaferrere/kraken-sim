@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""V1.2 pre-production INIT + CHECK, HOLD only, zero order (moteur V1.6).
+"""V1.2 pre-production INIT + CHECK, HOLD only, zero order (moteur V1.6.1).
 
 Account currency: USDC (Moteur V1.6). Cash, equity, PnL, fees, peak and
-positions are in USDC; quotes come from v12_kraken_public (XXX/USDC direct,
-else XXX/USD / USDC/USD).
+positions are in USDC; quotes come from v12_kraken_public (XXX/USDC only,
+UE/MiCA guard in v12_compliance.py).
 1. Initialise the PAPER state if absent (6 605,10 USDC cash, peak 6 605,10, no
    trade). An existing USDC state is NEVER overwritten.
    Migration: a legacy USD state (no quote_currency) is re-initialised in USDC
@@ -142,6 +142,7 @@ def run(state,collector=None,clock=None,max_pairs=40):
               "initial_capital_usdc":rep["initial_cash_usd"],
               "benchmark":{"usdc_hold_usdc":rep["initial_cash_usd"],"usdc_hold_return_pct":0},
               "migration":migration,
+              "compliance":snapshot.get("compliance"),
               "live_orders":0,"api_keys_used":False}
         finally:
             engine.close()

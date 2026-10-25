@@ -86,7 +86,9 @@ def build_state(report):
             "synthesis_sha256": report.get("synthesis_sha256"),
             "engine_version_report": report.get("engine_version"),
             "migration": report.get("migration"),
+            "compliance": report.get("compliance"),
         },
+        "compliance": report.get("compliance"),
     }
     return normalize(raw)
 
@@ -96,6 +98,15 @@ def render(state, template=TEMPLATE, state_url="public_state_v12.json"):
     payload = json.dumps(state, ensure_ascii=False, allow_nan=False).replace("</", "<\\/")
     if "__DATA__" not in html or "__STATE_SOURCE__" not in html:
         raise ValueError("template placeholders missing")
+    import html as _h
+    comp = state.get("compliance") or {}
+    elig = comp.get("eligible_pairs") or []
+    eu = "Conformité UE/MiCA : spot XXX/USDC uniquement (country_code=FR), sans USDT, sans levier, marge, futures ni vente à découvert"
+    pairs = (str(len(elig)) + " paires USDC éligibles : " + ", ".join(elig)) if elig else "— (aucune donnée de conformité)"
+    insuf = comp.get("insufficient_history") or []
+    if insuf:
+        pairs += " · historique insuffisant (exclues des entrées) : " + ", ".join(insuf)
+    html = html.replace("__EU_COMPLIANCE__", _h.escape(eu), 1).replace("__EU_PAIRS__", _h.escape(pairs), 1)
     return html.replace("__DATA__", payload, 1).replace("__STATE_SOURCE__", state_url, 1)
 
 

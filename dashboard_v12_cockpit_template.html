@@ -130,7 +130,7 @@ h1,h2,h3,p{margin:0}h1{font-size:29px;letter-spacing:-.9px;font-weight:720;line-
   </section>
   <section id="initcheck" class="section" aria-label="Contrôle init-check V1.2">
    <div class="grid3" style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px">
-    <article class="card"><div class="card-head"><div><h2>Dernier contrôle moteur</h2><p>Mode, données Kraken publiques et ordres</p></div><span id="icMode" class="tag">—</span></div><div class="statline"><span>Décision</span><strong id="icDecision">—</strong></div><div class="statline"><span>Ordres / exécutions / trades</span><strong id="icOrders">—</strong></div><div class="statline"><span>Paires cotées / valides</span><strong id="icPairs">—</strong></div><div class="statline"><span>Info taux USDC/USD (bid / ask)</span><strong id="icUsdc">—</strong></div><div class="statline"><span>Clés API utilisées</span><strong id="icKeys">—</strong></div></article>
+    <article class="card"><div class="card-head"><div><h2>Dernier contrôle moteur</h2><p>Mode, données Kraken publiques et ordres</p></div><span id="icMode" class="tag">—</span></div><div class="statline"><span>Décision</span><strong id="icDecision">—</strong></div><div class="statline"><span>Ordres / exécutions / trades</span><strong id="icOrders">—</strong></div><div class="statline"><span>Paires cotées / valides</span><strong id="icPairs">—</strong></div><div class="statline"><span>Conformité UE/MiCA</span><strong id="icEu">__EU_COMPLIANCE__</strong></div><div class="statline"><span>Paires USDC éligibles</span><strong id="icEuPairs">__EU_PAIRS__</strong></div><div class="statline"><span>Clés API utilisées</span><strong id="icKeys">—</strong></div></article>
     <article class="card"><div class="card-head"><div><h2>Paires exclues ce tick</h2><p>Cotation invalide ou spread trop large</p></div></div><div id="icExcluded"><div class="empty">—</div></div></article>
     <article class="card"><div class="card-head"><div><h2>Garde-fous</h2><p>Paramètres de risque du moteur V1.2</p></div></div><div id="icGuards"><div class="empty">—</div></div></article>
    </div>
@@ -153,7 +153,7 @@ h1,h2,h3,p{margin:0}h1{font-size:29px;letter-spacing:-.9px;font-weight:720;line-
 <script>
 const D = __DATA__;
 const STATE_URL = "__STATE_SOURCE__";
-const VERSION_UX = "V1.2.0";
+const VERSION_UX = "V1.2.1";
 const qs = id => document.getElementById(id);
 const nf = new Intl.NumberFormat("fr-FR",{maximumFractionDigits:2,minimumFractionDigits:2});
 const nfQty = new Intl.NumberFormat("fr-FR",{maximumFractionDigits:8});
@@ -269,7 +269,6 @@ function initCheck(d){
  const dec=arr(ic.decisions);text("icDecision",dec.length?dec.map(x=>(x.action??"—")+" · "+(x.reason??"—")).join(" ; "):"—");
  const n=v=>num(v)===null?"—":val(v,0);text("icOrders",n(ic.orders)+" / "+n(ic.fills)+" / "+n(ic.trades));
  text("icPairs",n(ic.pairs_quoted)+" / "+n(ic.pairs_valid));
- const u=obj(ic.usdc_usd);text("icUsdc",u.bid==null?"—":val(u.bid,4)+" / "+val(u.ask,4));
  text("icKeys",ic.api_keys_used===false?"Non":ic.api_keys_used===true?"OUI":"—");
  const ex=obj(ic.excluded_pairs),ek=Object.keys(ex);
  qs("icExcluded").innerHTML=ic.excluded_pairs==null?'<div class="empty">—</div>':ek.length?ek.map(k=>st(k,(ex[k].reason??"—")+(ex[k].spread!=null?" · spread "+percent(num(ex[k].spread)*100):""))).join(""):'<div class="empty">Aucune paire exclue</div>';

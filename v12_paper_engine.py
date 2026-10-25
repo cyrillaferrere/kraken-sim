@@ -343,6 +343,13 @@ class PaperEngine:
                 continue
             if decision.get("market_data_asof")!=snapshot["observed_at"]:
                 raise ValueError("DECISION_SYNTHESIS_MISMATCH")
+            from v12_compliance import check_decision,ComplianceError
+            try:check_decision(decision,snapshot,p.positions)
+            except ComplianceError as exc:
+                # Garde-fou UE/MiCA moteur : rejet, jamais d'ordre (indépendant de Grok).
+                result.append({"decision_id":identity,"accepted":False,"reason":str(exc),
+                               "status":"REJECTED_COMPLIANCE"})
+                continue
             risk=self._risk(snapshot)
             record=inspect_and_record(decision,snapshot,p,str(self.root),moment,
                                       risk_state=risk,phase="admission")

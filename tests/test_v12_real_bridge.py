@@ -26,12 +26,13 @@ class TestPublicBridge(unittest.TestCase):
         base=int((current-timedelta(days=4)).timestamp())//86400*86400
         def bar(ts,cl):
             return [ts,str(cl),str(cl+2),str(cl-2),str(cl),"0", "100000",5]
-        pairs={"XXBTZUSD":{"wsname":"XBT/USD","status":"online","costmin":"5"},
-               "XETHZUSD":{"wsname":"ETH/USD","status":"online","costmin":"5"},
-               "USDCUSD":{"wsname":"USDC/USD","status":"online","costmin":"5"}}
+        pairs={"XBTUSDC":{"wsname":"XBT/USDC","status":"online","costmin":"5"},
+               "ETHUSDC":{"wsname":"ETH/USDC","status":"online","costmin":"5"},
+               "XXBTZUSD":{"wsname":"XBT/USD","status":"online","costmin":"5"},
+               "USDTUSDC":{"wsname":"USDT/USDC","status":"online","costmin":"5"}}
         tickers={k:{"b":[str(price*.999)],"a":[str(price*1.001)],
                     "c":[str(price)],"v":["1","10000"]}
-                 for k,price in (("XXBTZUSD",300),("XETHZUSD",200),("USDCUSD",1))}
+                 for k,price in (("XBTUSDC",300),("ETHUSDC",200),("XXBTZUSD",300),("USDTUSDC",1))}
         requests=[]
         def opener(request):
             url=request.full_url
@@ -49,11 +50,18 @@ class TestPublicBridge(unittest.TestCase):
             raise AssertionError("FORBIDDEN_PATH")
         snapshot=collect(max_pairs=2,opener=opener)
         self.assertEqual(snapshot["data_origin"],"KRAKEN_PUBLIC_API")
-        self.assertEqual(set(snapshot["daily_bars"]),{"BTC","ETH"})
-        self.assertNotIn("USDC",snapshot["daily_bars"])
-        self.assertEqual(len(snapshot["daily_bars"]["BTC"]),2)
-        self.assertNotIn("999",str(snapshot["daily_bars"]["BTC"]))
-        self.assertEqual(snapshot["usdc_usd"]["bid"],"0.999")
+        # 2 closed USDC bars only: insufficient_history, bars null (never imputed)
+        self.assertEqual(snapshot["daily_bars"],{})
+        c=snapshot["compliance"]
+        self.assertEqual(c["eligible"],["BTC","ETH"])
+        self.assertEqual(c["insufficient_history"],["BTC","ETH"])
+        self.assertEqual(c["history"]["BTC"]["closed_bars"],2)
+        self.assertIsNone(c["history"]["BTC"]["bars"])
+        self.assertFalse(c["btc_regime_history"]["sufficient"])
+        self.assertEqual(c["rejected"]["USDT"],"STABLECOIN_OR_FIAT_EXCLUDED")
+        self.assertTrue(all(q["pair"].endswith("/USDC") for q in snapshot["quotes"].values()))
+        self.assertTrue(any("country_code=FR" in u for u in requests if "AssetPairs" in u))
+        self.assertTrue(all("XXBTZUSD" not in u for u in requests if "OHLC" in u))
         self.assertEqual(overview(snapshot)["orders_sent"],0) if "orders_sent" in overview(snapshot) else None
         self.assertTrue(all("/0/public/" in url for url in requests))
     def test_no_private_or_dangerous_endpoint(self):

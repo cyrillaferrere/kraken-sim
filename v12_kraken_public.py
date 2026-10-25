@@ -9,14 +9,15 @@ import urllib.request
 from datetime import datetime,timedelta,timezone
 from v12_accounting import d
 from v12_autonomy import SPEC
+from v12_compliance import (COUNTRY_CODE,MIN_HISTORY_DAILY,QUOTE,base_of,pair_rejection,spread_ok)
 
 API="https://api.kraken.com/0/public/"
 EXCLUDED=set(SPEC["UNIVERSE"]["exclusions"])
 RENAMES={"XBT":"BTC","XXBT":"BTC","XDG":"DOGE"}
 
-VALUATION_METHOD=("Quotes in USDC: Kraken XXX/USDC ticker when listed online with spread <= 0.3 %; "
-    "otherwise XXX/USD divided by Kraken USDC/USD (bid/ask_usdcusd, ask/bid_usdcusd). "
-    "Daily bars (signals, ratios) stay on XXX/USD.")
+VALUATION_METHOD=("UE/MiCA (Moteur V1.6.1): Kraken XXX/USDC only (AssetPairs country_code=FR, status online, "
+    "spread <= 0.3 %%), no USD conversion. Daily bars (signals, ratios) from XXX/USDC OHLC; "
+    "pairs with fewer than %d closed daily bars are insufficient_history (bars null, never imputed).")%MIN_HISTORY_DAILY
 
 class KrakenMarketError(RuntimeError): pass
 
@@ -42,48 +43,17 @@ def call(endpoint,params=None,opener=None):
         raise KrakenMarketError("PUBLIC_API_ERROR")
     return response["result"],clock()
 
-def pairs_usd(rows):
-    found={}
-    for key,row in rows.items():
-        if not isinstance(row,dict) or row.get("status","online")!="online":continue
-        ws=row.get("wsname","")
-        if not isinstance(ws,str) or not ws.endswith("/USD"):continue
-        asset=RENAMES.get(ws[:-4],ws[:-4])
-        if asset in EXCLUDED or asset.startswith("USD") or "." in asset or not asset.isalnum():
-            continue
-        if asset in found:raise KrakenMarketError("DUPLICATE_ASSET_ALIAS_"+asset)
-        found[asset]=(key,row)
-    if not {"BTC","ETH"}.issubset(found):raise KrakenMarketError("MISSING_BTC_ETH")
-    return found
-
 def pairs_usdc(rows):
-    """Kraken XXX/USDC spot pairs (online), preferred for USDC valuation."""
-    found={}
+    """Kraken XXX/USDC spot pairs: online, FR-accessible, compliant base (v12_compliance)."""
+    found={};rejected={}
     for key,row in rows.items():
-        if not isinstance(row,dict) or row.get("status","online")!="online":continue
-        ws=row.get("wsname","")
-        if not isinstance(ws,str) or not ws.endswith("/USDC"):continue
-        asset=RENAMES.get(ws[:-5],ws[:-5])
-        if asset not in found:found[asset]=(key,row)
-    return found
-
-MAX_DIRECT_SPREAD=d("0.003")
-
-def usdc_quote(asset,usd_price,usdc_pairs,tickers,usdc):
-    """Quote an asset in USDC (account currency of the V1.2 portfolio).
-    1) direct Kraken XXX/USDC ticker when the pair exists, is online and its
-       spread <= 0.3 %; 2) otherwise XXX/USD converted by USDC/USD,
-       conservatively: bid_usdc = bid_usd / ask_usdcusd, ask_usdc = ask_usd / bid_usdcusd."""
-    if asset in usdc_pairs:
-        try:
-            row=ticker_row(tickers,usdc_pairs[asset][0])
-            bid,ask=d(row["bid"]),d(row["ask"])
-            if (ask-bid)/((ask+bid)/2)<=MAX_DIRECT_SPREAD:
-                return {"bid":str(bid),"ask":str(ask),"valuation":"KRAKEN_"+asset+"_USDC_DIRECT"}
-        except KrakenMarketError:pass
-    return {"bid":str(d(usd_price["bid"])/d(usdc["ask"])),
-            "ask":str(d(usd_price["ask"])/d(usdc["bid"])),
-            "valuation":"KRAKEN_"+asset+"_USD_DIV_USDCUSD"}
+        base=base_of(row)
+        if base is None:continue
+        why=pair_rejection(row) or (("EXCLUDED_BY_SPEC") if base in EXCLUDED else None)
+        if why:rejected[base]=why;continue
+        if base in found:raise KrakenMarketError("DUPLICATE_ASSET_ALIAS_"+base)
+        found[base]=(key,row)
+    return found,rejected
 
 def ticker_row(data,key):
     try:
@@ -119,59 +89,64 @@ def daily_bars(data,key,asof):
     return output
 
 def collect(max_pairs=40,opener=None):
-    """Top 24h USD spot préréduit; filtres d'univers 30j par moteur ensuite.
-    Ce préfiltre est non exhaustif: validation historique non garantie.
+    """Univers UE : uniquement XXX/USDC (country_code=FR, online, conforme, spread <= 0,3 %).
+    Aucune conversion USD. Bougies journalières XXX/USDC ; historique court -> null.
     """
     if type(max_pairs) is not int or not 2<=max_pairs<=60:
         raise ValueError("max_pairs must be 2..60")
-    rawpairs,_=call("AssetPairs",opener=opener)
-    metadata=pairs_usd(rawpairs)
-    tickers,quote_received=call("Ticker",opener=opener)
+    rawpairs,_=call("AssetPairs",{"country_code":COUNTRY_CODE},opener=opener)
+    metadata,rejected=pairs_usdc(rawpairs)
+    tickers,quote_received=call("Ticker",{"pair":",".join(k for k,_ in metadata.values())} if metadata else None,opener=opener)
     shortlist=[]
     for asset,(key,info) in metadata.items():
         try:price=ticker_row(tickers,key)
-        except KrakenMarketError:continue
+        except KrakenMarketError:rejected[asset]="NO_TICKER";continue
+        if not spread_ok(price["bid"],price["ask"]):rejected[asset]="SPREAD_ABOVE_0_3_PCT";continue
         shortlist.append((price["usd_volume"],asset,key,info,price))
     shortlist.sort(key=lambda row:(-row[0],row[1]))
     selected=shortlist[:max_pairs]
     for important in ("BTC","ETH"):
         if important not in {r[1] for r in selected}:
             match=next((r for r in shortlist if r[1]==important),None)
-            if match is None:raise KrakenMarketError("MANDATORY_TICKER_ABSENT")
+            if match is None:raise KrakenMarketError("MANDATORY_USDC_PAIR_ABSENT_"+important)
             selected.append(match)
-    stable_key=next((k for k,v in rawpairs.items()
-                     if isinstance(v,dict) and v.get("wsname")=="USDC/USD"
-                     and v.get("status","online")=="online"),None)
-    if stable_key is None:raise KrakenMarketError("USDC_USD_PAIR_ABSENT")
-    usdcprice=ticker_row(tickers,stable_key)
-    usdc={"source":"trusted-public-kraken","bid":usdcprice["bid"],
-          "ask":usdcprice["ask"],"as_of":quote_received.isoformat()}
-    usdc_pairs=pairs_usdc(rawpairs)
-    histories={};quotes={}
+    histories={};quotes={};insufficient={};history={}
     for _,asset,key,pair,price in selected:
         values,received=call("OHLC",{"pair":key,"interval":1440},opener=opener)
         candles=daily_bars(values,key,received)
-        if not candles:raise KrakenMarketError("NO_CLOSED_CANDLES_"+asset)
-        histories[asset]=candles
-        q=usdc_quote(asset,price,usdc_pairs,tickers,usdc)
-        quotes[asset]={"bid":q["bid"],"ask":q["ask"],"quote_currency":"USDC",
-                       "valuation":q["valuation"],
+        n=len(candles)
+        if n<MIN_HISTORY_DAILY:
+            insufficient[asset]=n
+            history[asset]={"pair":asset+"/"+QUOTE,"closed_bars":n,"status":"insufficient_history",
+                            "sma200":None,"donchian55":None,"bars":None}
+        else:
+            histories[asset]=candles
+            history[asset]={"pair":asset+"/"+QUOTE,"closed_bars":n,"status":"ok"}
+        quotes[asset]={"bid":price["bid"],"ask":price["ask"],"quote_currency":QUOTE,
+                       "valuation":"KRAKEN_"+asset+"_USDC_DIRECT","pair":asset+"/"+QUOTE,
                        "as_of":quote_received.isoformat(),
                        "min_order_usd":str(pair.get("costmin","25"))}
+    btc_n=history["BTC"]["closed_bars"]
     observed=clock()
     if observed-quote_received>timedelta(minutes=5):
         raise KrakenMarketError("TICKERS_STALE_AFTER_COLLECTION")
+    eligible=sorted(quotes)
     return {"status":"PAPER","source":"trusted-public-kraken",
             "observed_at":observed.isoformat(),"quotes":quotes,"daily_bars":histories,
-            "usdc_usd":usdc,"quote_currency":"USDC",
+            "usdc_usd":None,"quote_currency":QUOTE,
             "valuation_method":VALUATION_METHOD,"trades":{},"data_origin":"KRAKEN_PUBLIC_API",
-            "universe_note":"24h-volume prefilter non exhaustive; 30d median signal still required"}
+            "compliance":{"regime":"UE/MiCA","country_code":COUNTRY_CODE,"quote":QUOTE,
+                "spot_long_only":True,"eligible":eligible,"eligible_pairs":[a+"/"+QUOTE for a in eligible],
+                "insufficient_history":sorted(insufficient),"history":history,
+                "rejected":dict(sorted(rejected.items())),
+                "btc_regime_source":"BTC/USDC",
+                "btc_regime_history":{"closed_bars":btc_n,"sufficient":btc_n>=MIN_HISTORY_DAILY}},
+            "universe_note":"XXX/USDC only (country_code=FR); 30d median signal still required"}
 
 def overview(snapshot):
     return {"asof":snapshot["observed_at"],"market":"Kraken public",
             "pairs":len(snapshot["daily_bars"]),
             "btc_daily_bars":len(snapshot["daily_bars"].get("BTC",[])),
             "eth_daily_bars":len(snapshot["daily_bars"].get("ETH",[])),
-            "usdc_usd_bid":snapshot["usdc_usd"]["bid"],
-            "usdc_usd_ask":snapshot["usdc_usd"]["ask"],
+            "eligible_usdc_pairs":len(snapshot.get("compliance",{}).get("eligible",[])),
             "no_trading_keys":True,"orders_sent":0}
