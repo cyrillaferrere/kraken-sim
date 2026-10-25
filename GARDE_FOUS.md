@@ -32,7 +32,8 @@
 ## 3. Ce que bloque `guard.yml` (PR et push sur main)
 - **perimetre-ux** (PR depuis `ux/*`) : échoue si un fichier hors `dashboard_template.html`, `CHANGELOG.md`, `docs/SPEC_UX.md` est modifié.
 - **perimetre-gpt6** (PR depuis `ux/*`, `feature/*`, `fix/*`) : échoue si la PR modifie le moteur, `VERSION_ENGINE`, `strategy/`, `params.json`, `.github/workflows/sim.yml`, `state/` ou `sim.db`. Ces changements passent par une branche Kraken Bot avec revue technique.
-- **perimetre-strategie** (toute PR `strategy/*`) : bloque `state/**`, `sim.db`, `VERSION_ENGINE` partagé et fichiers moteur/stratégie V1.1 ; tests négatifs inclus.\n- **versions** (toute PR) : template modifié sans changement de `VERSION_UX`, sans `CHANGELOG.md` ou sans entrée `## [UX <version>]` → échec ; `strategy/` modifié sans incrément de `STRATEGY_VERSION`, sans entrée `## [Stratégie <version>]` ou sans backtest → échec ; fichiers moteur modifiés sans incrément de `VERSION_ENGINE` et entrée `## [Moteur <version>]` → échec.
+- **perimetre-strategie** (toute PR `strategy/*`) : bloque `state/**`, `sim.db`, `VERSION_ENGINE` partagé et fichiers moteur/stratégie V1.1 ; tests négatifs inclus.
+- **versions** (toute PR) : template modifié sans changement de `VERSION_UX`, sans `CHANGELOG.md` ou sans entrée `## [UX <version>]` → échec ; `strategy/` modifié sans incrément de `STRATEGY_VERSION`, sans entrée `## [Stratégie <version>]` ou sans backtest → échec ; fichiers moteur modifiés sans incrément de `VERSION_ENGINE` et entrée `## [Moteur <version>]` → échec.
 - **preprod-isole** (PR et push) : `preprod.yml` / `render_preprod.py` ne doivent référencer ni la base de la sim, ni les scripts de cycle/rendu prod, ni l'écriture d'état, ni un push vers `kraken-sim` (seul `kraken-sim-preprod`).
 - **contrat** (PR et push) : `tests/check_template.py` (points 1 à 7 ci-dessus, rendu réel avec `render_page.py` puis Chrome sans interface : zéro erreur JS, zéro undefined/NaN, versions affichées).
 
