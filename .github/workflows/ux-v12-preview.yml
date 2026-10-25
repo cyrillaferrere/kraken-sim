@@ -1,0 +1,54 @@
+name: Aperçu UX V1.2 (sans publication)
+on:
+  pull_request:
+    paths:
+      - dashboard_v12_template.html
+      - docs/SPEC_UX_V12.md
+      - .github/workflows/ux-v12-preview.yml
+permissions:
+  contents: read
+jobs:
+  static-preview:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Préparer HTML de présentation V1.2 sans données de simulation
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          root=Path("ux-preview");root.mkdir(exist_ok=True)
+          template=Path("dashboard_v12_template.html").read_text(encoding="utf-8")
+          payload={"strategy_id":"kraken-sim-v1.2","environment":"preprod",
+                   "strategy_version":"V1.2","version_engine":"V1.3",
+                   "source":"APERÇU STATIQUE — PAS DE CYCLE PAPER",
+                   "equity":None,"cash":None,"C0":None,
+                   "positions":[],"orders":[],"decisions":[],
+                   "last_cycle_iso":None,"as_of":None}
+          assert template.count("__DATA__")==1
+          html=template.replace("__DATA__",json.dumps(payload,ensure_ascii=False))
+          html=html.replace('const STATE_URL = "__STATE_SOURCE__";',
+                            'const STATE_URL = "data:application/json,%7B%7D";')
+          warning=('<div style="background:#2b2634;border:1px solid #9d719a;'
+                   'color:#fce5ff;padding:12px 16px;border-radius:9px;margin-top:18px">'
+                   'APERÇU UX V1.2 — NON PUBLIÉ — AUCUNE DONNÉE DE SIMULATION</div>')
+          html=html.replace("<main>", "<main>"+warning,1)
+          html=html.replace("<title>","<title>[APERÇU STATIQUE] ",1)
+          (root/"index.html").write_text(html,encoding="utf-8")
+          PY
+      - name: Capture desktop / mobile (sans serveur ni source externe)
+        run: |
+          set -eu
+          CHROME=$(command -v google-chrome || command -v chromium || true)
+          if [ -z "$CHROME" ]; then echo "Chrome unavailable; HTML preview remains available"; exit 0; fi
+          URI="file://$PWD/ux-preview/index.html"
+          "$CHROME" --headless=new --no-sandbox --disable-gpu --disable-background-networking --hide-scrollbars --virtual-time-budget=1500 --window-size=1600,1100 --screenshot="$PWD/ux-preview/desktop.png" "$URI" >/dev/null 2>&1
+          "$CHROME" --headless=new --no-sandbox --disable-gpu --disable-background-networking --hide-scrollbars --virtual-time-budget=1500 --window-size=430,930 --screenshot="$PWD/ux-preview/mobile.png" "$URI" >/dev/null 2>&1
+      - uses: actions/upload-artifact@v4
+        with:
+          name: kraken-ux-v12-apercu-hors-ligne
+          path: ux-preview/
+          retention-days: 14
