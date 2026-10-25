@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kraken Sim PreProd — Stratégie V1.2</title>
+<style>
+:root { color-scheme:dark; font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif; font-size:15px;
+ --bg:#0a111c; --panel:#101c2b; --line:#203047; --text:#e8eef7; --muted:#9cacc2; --red:#ef4444; }
+* { box-sizing:border-box; } body{ margin:0; background:var(--bg); color:var(--text); line-height:1.55; }
+main{max-width:1180px;margin:0 auto;padding:24px 22px 52px;} header{display:flex;gap:15px;flex-wrap:wrap;
+ align-items:center;justify-content:space-between;padding:0 0 21px;border-bottom:1px solid var(--line);}
+h1{font-size:19px;letter-spacing:-.5px;margin:0;font-weight:680;}h1 strong{color:var(--red);}
+.subtle{font-size:12px;color:var(--muted)}.muted{color:var(--muted);font-size:13px;margin:6px 0;}
+.info{padding:11px 15px;border:1px solid var(--line);border-radius:9px;margin:20px 0;
+ background:#111c2a;color:#cad7ea;font-size:13px;} .metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+article{border:1px solid var(--line);background:var(--panel);border-radius:12px;padding:19px;min-width:0;}
+h2{font-size:14px;margin:0 0 13px;font-weight:670} .caption{color:var(--muted);font-size:12px;}
+.big{font-size:27px;letter-spacing:-.7px;font-weight:680;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.sections{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:14px;margin-top:14px}
+table{border-collapse:collapse;width:100%;font-size:13px;text-align:left}td,th{padding:10px 7px;border-bottom:1px solid var(--line);vertical-align:top}
+th{color:var(--muted);font-size:12px;font-weight:540}td:last-child{text-align:right}caption{color:var(--muted)}
+small{font-size:11px;color:var(--muted)} .status{display:inline-block;border:1px solid #33465d;padding:3px 8px;border-radius:20px;color:#bdc9d9;font-size:12px}
+footer{padding-top:24px;color:var(--muted);font-size:12px}
+@media(max-width:850px){.metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.sections{grid-template-columns:1fr}}
+@media(max-width:520px){.metrics{grid-template-columns:1fr}.big{font-size:24px}main{padding:17px 12px}}
+</style>
+</head>
+<body><main>
+<header><div><h1><strong>Kraken</strong> Sim <span class="subtle">PreProd</span></h1>
+<div class="subtle" id="version">Simulation papier · Stratégie V1.2</div></div><span class="status" id="status">En lecture seule</span></header>
+<div class="info" id="explain">Simulation papier indépendante V1.2. Aucun ordre réel ni donnée V1.1 importée. Les informations absentes sont indiquées comme telles.</div>
+<section class="metrics" aria-label="Portefeuille">
+<article><div class="caption">Valorisation du portefeuille</div><div class="big" id="equity">—</div><div class="muted">Au dernier cycle enregistré</div></article>
+<article><div class="caption">Liquidités USD</div><div class="big" id="cash">—</div><div class="muted">Données du moteur V1.2</div></article>
+<article><div class="caption">Résultat net depuis le départ</div><div class="big" id="pnl">—</div><div class="muted">Capital de départ : 6 605,10 USD</div></article>
+<article><div class="caption">Drawdown courant</div><div class="big" id="drawdown">—</div><div class="muted">Sur les cycles réels V1.2 uniquement</div></article>
+</section>
+<section class="sections"><article><h2>Positions ouvertes</h2><table><thead><tr><th>Actif</th><th>Quantité</th><th>Valeur</th></tr></thead><tbody id="positions"><tr><td colspan="3">Aucun état réel reçu</td></tr></tbody></table></article>
+<article><h2>État de la stratégie</h2><p class="muted" id="regime">Régime BTC : non disponible</p><p class="muted" id="last">Dernier cycle : non disponible</p><p class="muted" id="source">Source : V1.2 indépendante</p></article></section>
+<section class="sections"><article><h2>Ordres enregistrés</h2><table><thead><tr><th>Actif</th><th>Sens</th><th>Quantité</th><th>Frais</th></tr></thead><tbody id="orders"><tr><td colspan="4">Aucun ordre réel enregistré</td></tr></tbody></table></article>
+<article><h2>Validation de la stratégie</h2><p class="muted" id="validation">Backtests officiels : non disponibles</p><p class="muted">Les performances de V1.1 ne sont pas utilisées comme résultats de V1.2.</p></article></section>
+<footer>Données paper trading à titre expérimental. Les prix live n'impliquent pas une exécution effective. Aucune opération d'achat ou de vente possible depuis ce site.</footer>
+</main>
+<script>
+const D = __DATA__;
+const STATE_URL = "__STATE_SOURCE__";
+const $ = id => document.getElementById(id);
+const fmtN=(n,dec=2)=>typeof n==="number" && Number.isFinite(n)?new Intl.NumberFormat("fr-FR",{minimumFractionDigits:dec,maximumFractionDigits:dec}).format(n):"Non disponible";
+const money=n=>fmtN(n)+" USD";
+const esc=s=>String(s??"—").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+function render(d){
+ if(d?.strategy_id!=="kraken-sim-v1.2"||d?.environment!=="preprod"||d?.strategy_version!=="V1.2"){
+  $("status").textContent="État rejeté";
+  $("explain").textContent="État incompatible. Aucune donnée de production V1.1 ne peut être affichée ici.";return;
+ }
+ $("status").textContent="Dernier cycle V1.2 · papier";
+ $("version").textContent="Moteur : "+esc(d.version_engine)+" · Stratégie : V1.2 · Préprod";
+ $("equity").textContent=money(d.equity);
+ $("cash").textContent=money(d.cash);
+ $("pnl").textContent=typeof d.equity==="number" && typeof d.C0==="number" ?money(d.equity-d.C0):"Non disponible";
+ $("drawdown").textContent=typeof d.cur_dd_pct==="number"?fmtN(d.cur_dd_pct)+" %":"Non disponible";
+ $("last").textContent="Dernier cycle : "+(d.last_cycle_iso||"Non disponible");
+ $("source").textContent="Source : "+(d.source||"V1.2 indépendante");
+ $("regime").textContent="Régime BTC : "+(d.btc_regime??"Non disponible");
+ const pos=Array.isArray(d.positions)?d.positions:[];
+ $("positions").innerHTML=pos.length?pos.map(x=>"<tr><td>"+esc(x.asset)+"</td><td>"+esc(fmtN(x.qty,7))+"</td><td>"+esc(money(x.value))+"</td></tr>").join(""):'<tr><td colspan="3">Aucune position ouverte</td></tr>';
+ const ord=Array.isArray(d.orders)?d.orders:[];
+ $("orders").innerHTML=ord.length?ord.slice(-25).reverse().map(x=>"<tr><td>"+esc(x.asset)+"</td><td>"+esc(x.side)+"</td><td>"+esc(fmtN(x.qty,7))+"</td><td>"+esc(money(x.fee??x.fee_usd))+"</td></tr>").join(""):'<tr><td colspan="4">Aucun ordre enregistré</td></tr>';
+ $("validation").textContent=d.validation_status==="VALIDATED_WALK_FORWARD"?"Validation hors échantillon disponible":"Backtests officiels : non disponibles ou non validés";
+}
+render(D);
+async function refresh(){
+ try{
+  const res=await fetch(STATE_URL,{cache:"no-store"});
+  if(!res.ok)throw new Error("HTTP "+res.status);
+  const json=await res.json();
+  if(json.strategy_id!=="kraken-sim-v1.2"||json.environment!=="preprod")throw new Error("source étrangère");
+  render(json);
+ }catch(e){$("status").textContent="Valeurs figées du dernier cycle"; }
+}
+setInterval(refresh,60000);
+</script></body></html>
