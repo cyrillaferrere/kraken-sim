@@ -88,7 +88,7 @@ class TestPublicBridge(unittest.TestCase):
             engine=PaperEngine(td)
             try:
                 with patch("v12_live_bridge.collect",return_value=m),patch(
-                    "v12_grok_issues.fetch_latest",side_effect=InboxError("timeout")):
+                    "v12_grok_issues.fetch_recent",side_effect=InboxError("timeout")):
                     response=fetch_and_step(engine,USER_ID,"fake-public-read-token",max_pairs=2)
                 self.assertEqual(response["tick"]["status"],"DRY_RUN")
                 self.assertEqual(response["it_status"],"GITHUB_UNAVAILABLE_NO_NEW_DECISIONS")
@@ -104,7 +104,7 @@ class TestPublicBridge(unittest.TestCase):
             engine=PaperEngine(td)
             try:
                 with patch("v12_live_bridge.collect",return_value=m),patch(
-                    "v12_grok_issues.fetch_latest",return_value=verified):
+                    "v12_grok_issues.fetch_recent",return_value=[verified]):
                     result=fetch_and_step(engine,USER_ID,"fake-public-read-token",max_pairs=2)
                 self.assertEqual(result["it_status"],"GROK_ITS_PARTIALLY_REJECTED")
                 self.assertEqual(result["it_decisions"],[])
