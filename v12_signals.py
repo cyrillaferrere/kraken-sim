@@ -26,39 +26,49 @@ def closed_candles(bars,as_of):
             latest[end]=dict(b)
     return [latest[t] for t in sorted(latest)]
 
+def usable_signal_window(bars, n):
+    """Imputed candles cannot silently lower ATR/vol or create a signal."""
+    if n <= 0 or len(bars) < n:
+        return False
+    return not any(b.get("imputed") for b in bars[-n:])
+
 def point_in_time_universe(data,as_of,min_history=120,min_daily_volume=5000000,max_assets=20):
-    """Only seen-to-date data; a missing current candle rejects inactive/delisted pairs."""
+    """Strictly past-only universe. Fresh, real daily candle and 120 real bars required."""
     cutoff=_as_utc(as_of)
     found=[]
     for asset,raw in data.items():
-        if asset in EXCLUDED or asset.startswith("USD") or asset.startswith("EUR"): continue
+        if asset in EXCLUDED or asset.startswith("USD") or asset.startswith("EUR"):
+            continue
         bars=closed_candles(raw,as_of)
-        if len(bars)<min_history: continue
-        if cutoff-_as_utc(bars[-1]["end"])>timedelta(hours=26): continue
+        if len(bars)<min_history or not usable_signal_window(bars,min_history):
+            continue
+        if cutoff-_as_utc(bars[-1]["end"])>timedelta(hours=26):
+            continue
         vols=[float(b["close"])*float(b["volume"]) for b in bars[-30:]]
         med=statistics.median(vols)
-        if med>=min_daily_volume: found.append((med,asset,bars))
+        if med>=min_daily_volume:
+            found.append((med,asset,bars))
     found.sort(key=lambda v:(-v[0],v[1]))
     return {asset:bars for _,asset,bars in found[:max_assets]}
 
 def candidate_a(bars,btc,params,highest_close_since_entry=None):
     n,x,k=int(params["breakout_days"]),int(params["exit_days"]),float(params["atr_mult"])
-    if len(bars)<max(n+1,x+1,21) or len(btc)<200: return {"entry":False,"exit":False,"reason":"warmup"}
+    if not usable_signal_window(bars,max(n+1,x+1,21)) or not usable_signal_window(btc,200): return {"entry":False,"exit":False,"reason":"warmup"}
     c=float(bars[-1]["close"]); atr20=atr(bars,20)
     prev_high=max(float(b["high"]) for b in bars[-n-1:-1])
     prev_low=min(float(b["low"]) for b in bars[-x-1:-1])
     regime=float(btc[-1]["close"])>sma([b["close"] for b in btc],200)
     if highest_close_since_entry is None: stop=False
     else: stop=c<=float(highest_close_since_entry)-k*atr20
-    risk_weight=.005/(k*atr20/c) if atr20 else 0
+    risk_weight=float(params.get("risk_per_entry",0.005))/(k*atr20/c) if atr20 else 0
     return {"entry":regime and c>prev_high,"exit":c<prev_low or stop,
-            "score":c/prev_high-1,"target_weight":min(0.15,risk_weight),
+            "score":c/prev_high-1,"target_weight":min(float(params.get("max_per_asset",0.15)),risk_weight),
             "btc_regime":"on" if regime else "off","atr20":atr20}
 
 def candidate_b(bars,btc,params):
     n=int(params["momentum_days"]); skip=int(params["skip_days"])
     need=max(n+skip+1,int(params["sma_days"]),21)
-    if len(bars)<need or len(btc)<need: return {"eligible":False,"reason":"warmup"}
+    if not usable_signal_window(bars,need) or not usable_signal_window(btc,need): return {"eligible":False,"reason":"warmup"}
     def rate(q):
         c=[float(b["close"]) for b in q]
         return c[-1-skip]/c[-1-skip-n]-1
@@ -69,16 +79,16 @@ def candidate_b(bars,btc,params):
 
 def candidate_c(bars,params):
     f,slow=int(params["fast_ema"]),int(params["slow_ema"])
-    if len(bars)<slow+20: return {"entry":False,"exit":False,"reason":"warmup"}
+    if not usable_signal_window(bars,slow+20): return {"entry":False,"exit":False,"reason":"warmup"}
     c=[float(b["close"]) for b in bars]
     fast=ema_series(c,f)[-1]; long=ema_series(c,slow)[-1]; price=c[-1]
     sigma=vol(bars,20)
-    target=min(0.5,0.5*float(params["target_vol"])/sigma) if sigma else 0
+    target=min(float(params.get("max_per_asset",0.5)),0.5*float(params["target_vol"])/sigma) if sigma else 0
     return {"entry":fast>long and price>fast, "exit":price<long or fast<long,
             "target_weight":target,"vol20":sigma}
 
 def candidate_d(bars,btc,params):
-    if len(bars)<61 or len(btc)<61: return {"entry":False,"exit":False,"reason":"warmup"}
+    if not usable_signal_window(bars,61) or not usable_signal_window(btc,61): return {"entry":False,"exit":False,"reason":"warmup"}
     d=confluence_v11(bars)
     bc=confluence_v11(btc)
     at=atr(btc,20)
