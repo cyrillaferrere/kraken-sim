@@ -17,10 +17,9 @@ def calendar_days(data):
     if "BTC" not in data: raise ValueError("BTC/USD dataset required")
     return sorted({b["end"] for b in data["BTC"]})
 
-def _mark(portfolio, raw, day, fallback):
-    for asset, bars in raw.items():
-        matching=next((b for b in reversed(bars) if b["end"]<=day),None)
-        if matching: fallback[asset]=float(matching["close"])
+def _mark(portfolio, today, fallback):
+    for asset, bar in today.items():
+        fallback[asset]=float(bar["close"])
     return float(portfolio.equity(fallback))
 
 def _cost(asset, costs):
@@ -32,7 +31,7 @@ def run_experiment(data, label, pset, risk, costs, tier="F2", start=None, end=No
     fees=costs[tier]
     portfolio=Portfolio(c0); calendar=calendar_days(data)
     by_day={asset:{b["end"]:b for b in bars} for asset,bars in data.items()}
-    last_bids={}; pending=[]; events=[]; curve=[]
+    last_bids={}; pending=[]; events=[]; curve=[]; entry_dates={}; history={a:[] for a in data}
     peak=float(c0); killed_until=-1; killed=False
     missed_makers=0; amount_traded=0.; roundtrips=0; buycount=0
     start_i=next((i for i,x in enumerate(calendar) if start is None or x>=start),len(calendar))
@@ -47,14 +46,18 @@ def run_experiment(data, label, pset, risk, costs, tier="F2", start=None, end=No
             affordable=float(portfolio.cash)/(px*(1+float(rate)))
             qty=min(qty,affordable)
             if qty*px<25: return False
+            was_held=asset in portfolio.positions
             portfolio.buy(asset,qty,px,rate); buycount+=1
+            if not was_held:entry_dates[asset]=when
         else:
             position=portfolio.positions.get(asset)
             if position is None:return False
             qty=min(qty,float(position["qty"]))
             if qty*px<25 and qty < float(position["qty"]):return False
             portfolio.sell(asset,qty,px,rate)
-            if asset not in portfolio.positions:roundtrips+=1
+            if asset not in portfolio.positions:
+                roundtrips+=1
+                entry_dates.pop(asset,None)
         amount_traded+=qty*px
         events.append({"day":when,"asset":asset,"side":side,"qty":qty,"price":px,
                        "fee_rate":float(rate),"reason":reason,"cost_model":spread_slip})
@@ -63,6 +66,7 @@ def run_experiment(data, label, pset, risk, costs, tier="F2", start=None, end=No
     for i,day in enumerate(calendar):
         if i>=end_i:break
         today={asset:bars[day] for asset,bars in by_day.items() if day in bars}
+        for asset,bar in today.items(): history[asset].append(bar)
         # Decisions were made only at a PREVIOUS daily close.
         new_pending=[]
         for order in pending:
@@ -88,7 +92,7 @@ def run_experiment(data, label, pset, risk, costs, tier="F2", start=None, end=No
                 px=float(bar["open"])*(1+(spread+slip)*(1 if order["side"]=="buy" else -1))
                 trade(order["side"],asset,order["qty"],px,fees["taker"],day,order["reason"]+" fallback",spread+slip)
         pending=new_pending
-        eq=_mark(portfolio,data,day,last_bids)
+        eq=_mark(portfolio,today,last_bids)
         if i>=start_i:
             peak=max(peak,eq)
             curve.append({"day":day,"equity":eq,"cash":float(portfolio.cash),
@@ -96,7 +100,6 @@ def run_experiment(data, label, pset, risk, costs, tier="F2", start=None, end=No
         if i<start_i or i<250 or "BTC" not in today or today["BTC"].get("imputed"):
             continue
         # Forbid any look-ahead: every indicator receives only bars with end <= day.
-        history={a:[bar for bar in rows if bar["end"]<=day] for a,rows in data.items()}
         btc=history["BTC"]
         # Peak-to-trough kill-switch: no minimum hold restriction, gaps may exceed threshold.
         if eq<=peak*(1-float(risk["peak_drawdown_kill"])) and not killed:
@@ -112,14 +115,15 @@ def run_experiment(data, label, pset, risk, costs, tier="F2", start=None, end=No
                 continue
             killed=False;peak=eq
         is_monday=datetime.fromisoformat(day).weekday()==0
-        universe=point_in_time_universe(data,day)
+        universe=point_in_time_universe(history,day)
         assets={"BTC":btc,"ETH":history.get("ETH",[])} if label=="C" else universe
         target={}; emergencies=set(); exits=set()
         for asset,position in portfolio.positions.items():
             bars=history.get(asset,[])
             if not bars:continue
             if label=="A":
-                highest=max(float(b["close"]) for b in bars if b["end"]>=events[0]["day"]) if events else float(bars[-1]["close"])
+                entered=entry_dates.get(asset,day)
+                highest=max(float(b["close"]) for b in bars if b["end"]>=entered)
                 signal=candidate_a(bars,btc,pset,highest_close_since_entry=highest)
                 if signal.get("exit"):
                     exits.add(asset)
@@ -132,7 +136,9 @@ def run_experiment(data, label, pset, risk, costs, tier="F2", start=None, end=No
             else:
                 sig=candidate_d(bars,btc,pset)
                 if sig.get("exit"):exits.add(asset)
-                if len(bars)>20 and float(bars[-1]["close"])<last_bids[asset]-float(pset["atr_mult"])*atr(bars,20):
+                entered=entry_dates.get(asset,day)
+                high_close=max(float(b["close"]) for b in bars if b["end"]>=entered)
+                if len(bars)>20 and float(bars[-1]["close"])<high_close-float(pset["atr_mult"])*atr(bars,20):
                     exits.add(asset);emergencies.add(asset)
         if label=="A":
             eligible=[]
