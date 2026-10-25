@@ -428,6 +428,12 @@ class PaperEngine:
                 if baseline is None:continue
                 for days in (1,7,30):
                     if now<utc(at)+timedelta(days=days):continue
+                    # Once evaluated, never rewrite the outcome at a later tick.
+                    # Its event timestamp, chosen first eligible mark and evidence
+                    # hash remain frozen, even as more market data arrives.
+                    if db.execute("SELECT 1 FROM evidence WHERE event_id=?",
+                                  ("outcome:"+identity+":"+str(days),)).fetchone():
+                        continue
                     mark=self.conn.execute("""SELECT ts,equity,fees,usdc_hold_usd,btc_hold_usd
                           FROM marks WHERE ts>=? ORDER BY ts LIMIT 1""",
                           ((utc(at)+timedelta(days=days)).isoformat(),)).fetchone()
