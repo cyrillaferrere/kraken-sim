@@ -12,7 +12,7 @@ def baselines(data,period,fee_rates,costs,c0=6605.1):
         raise ValueError("BASELINE_MISSING_BTC_ETH_XRP")
     start,end=period
     by_day={a:{b["end"]:b for b in bars} for a,bars in data.items()}
-    days=[d for d in sorted(by_day["BTC"]) if start<=d<=end]
+    days=[d for d in sorted(by_day["BTC"]) if start<=d[:10]<=end]
     if not days:raise ValueError("empty benchmark window")
     output={}
     output["CASH"]={"net_return":0.,"max_drawdown_signed":0.,"fees_usd":0.,
