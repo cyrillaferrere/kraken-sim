@@ -7,7 +7,7 @@ on:
         description: "SHA épinglé de strategy/v1.2 (40 hex)"
         type: string
         required: true
-        default: "02329e5146e3d7b80a10a5646625bbb7a9314fb4"
+        default: "4347b842facf7f48ea617d2df0b342fe2fc454a5"
 permissions:
   contents: read
 concurrency:
@@ -58,19 +58,20 @@ jobs:
         run: |
           set -euo pipefail
           R="$RUNNER_TEMP/v12state/check_report.json"
-          python3 -c "import json,sys;r=json.load(open(sys.argv[1]));assert r['orders']==0 and r['fills']==0 and r['trades']==0 and r['mode']=='INIT_CHECK_HOLD_ONLY',r" "$R"
+          python3 -c "import json,sys;r=json.load(open(sys.argv[1]));assert r['orders']==0 and r['fills']==0 and r['trades']==0 and r['mode']=='INIT_CHECK_HOLD_ONLY' and r['quote_currency']=='USDC',r" "$R"
           mkdir -p "$RUNNER_TEMP/v12out"
           cp "$RUNNER_TEMP/v12_previous_sha" "$RUNNER_TEMP/v12out/previous_sha"
           for f in paper_engine_v12.db grok_paper_evidence_v12.db check_report.json; do
             test -f "$RUNNER_TEMP/v12state/$f" || { echo "::error::fichier $f absent"; exit 1; }
             cp "$RUNNER_TEMP/v12state/$f" "$RUNNER_TEMP/v12out/$f"
           done
+          if [ -f "$RUNNER_TEMP/v12state/migration_log.json" ]; then cp "$RUNNER_TEMP/v12state/migration_log.json" "$RUNNER_TEMP/v12out/"; fi
       - name: Rendu de la page PREPROD V1.2 PAPER (v12/index.html + public_state_v12.json)
         shell: bash
         run: |
           set -euo pipefail
           python3 code/render_v12_page.py --report "$RUNNER_TEMP/v12state/check_report.json" --out "$RUNNER_TEMP/v12out/site"
-          python3 -c "import json,sys;d=json.load(open(sys.argv[1]));assert d['strategy_id']=='kraken-sim-v1.2' and d['environment']=='preprod' and d['orders']==[],d" "$RUNNER_TEMP/v12out/site/public_state_v12.json"
+          python3 -c "import json,sys;d=json.load(open(sys.argv[1]));assert d['strategy_id']=='kraken-sim-v1.2' and d['environment']=='preprod' and d['orders']==[] and d['quote_currency']=='USDC',d" "$RUNNER_TEMP/v12out/site/public_state_v12.json"
           grep -q 'PREPROD V1.2 PAPER' "$RUNNER_TEMP/v12out/site/index.html"
       - uses: actions/upload-artifact@v4
         with:
@@ -107,6 +108,7 @@ jobs:
           cd "$RUNNER_TEMP/v12publish"
           git config user.name kraken-v12-paper-bot
           git config user.email kraken-sim-bot@users.noreply.github.com
+          if [ -f "$RUNNER_TEMP/v12out/migration_log.json" ]; then cp "$RUNNER_TEMP/v12out/migration_log.json" .; git add migration_log.json; fi
           git add paper_engine_v12.db grok_paper_evidence_v12.db check_report.json
           git diff --cached --quiet || git commit -m "state V1.2 init-check run $GITHUB_RUN_ID (code ${V12_REVIEWED_CODE_SHA::7}, 0 ordre)"
           git push origin HEAD:state-v12
