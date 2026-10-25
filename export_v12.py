@@ -3,6 +3,7 @@
 import json
 import os
 import tempfile
+from pathlib import Path
 from v12_isolation import state_dir
 REQUIRED=("equity","cash","positions","orders","decisions","as_of","last_cycle_iso")
 
@@ -14,7 +15,7 @@ def normalize(raw):
     if raw.get("environment") not in (None,"preprod"): raise ValueError("foreign environment")
     d=dict(raw)
     d.update(schema_version=1,strategy_id="kraken-sim-v1.2",
-             strategy_version="V1.2",version_engine="V1.3",
+             strategy_version="V1.2",version_engine=(Path(__file__).resolve().parent / "VERSION_ENGINE_V12").read_text(encoding="utf-8").strip(),
              environment="preprod",source="V1.2 independent paper simulation")
     return d
 
