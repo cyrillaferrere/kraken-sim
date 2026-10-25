@@ -1,6 +1,6 @@
 # Spécification UX — Dashboard (UX/UI V1.1)
 
-Fichier unique : `dashboard_template.html`. Version : `const VERSION_UX = "V1.1";`. Propriétaire : **GPT6** (PR `ux/*`). Contrat d'interface : `GARDE_FOUS.md`.
+Fichier unique : `dashboard_template.html`. Version : `const VERSION_UX = "V1.1";`. Propriétaire : **GPT6** (PR `ux/*` vers `develop`, fusionnées par GPT6 dès guard vert ; jamais sur `main`). Contrat d'interface : `GARDE_FOUS.md`.
 
 ## 1. Structure
 - **En-tête** (`app-top`) : marque, statut, bandeau `#versions` « Moteur : Vx · Stratégie : Vy · UX/UI : Vz » (obligatoire), heures de cycle / live.

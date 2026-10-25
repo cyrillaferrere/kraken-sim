@@ -36,6 +36,18 @@ jobs:
           BAD=$(echo "$FILES" | grep -Ev "$ALLOWED" || true)
           if [ -n "$BAD" ]; then echo "::error::Hors périmètre UX (voir GARDE_FOUS.md) : $BAD"; exit 1; fi
           echo "Périmètre respecté"
+  perimetre-gpt6:
+    if: github.event_name == 'pull_request' && (startsWith(github.head_ref, 'ux/') || startsWith(github.head_ref, 'feature/') || startsWith(github.head_ref, 'fix/'))
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - name: ux/feature/fix ne touchent ni moteur, ni stratégie, ni sim.yml, ni état
+        run: |
+          FORBIDDEN='^(cycle[_a-z0-9]*\.py|backtest[_a-z0-9]*\.py|page_data\.py|render_page\.py|run_cycle[_a-z0-9]*\.sh|VERSION_ENGINE|params\.json|strategy/.*|\.github/workflows/sim\.yml|state/.*|sim\.db)$'
+          BAD=$(git diff --name-only origin/${{ github.base_ref }}...HEAD | grep -E "$FORBIDDEN" || true)
+          if [ -n "$BAD" ]; then echo "::error::Chemins réservés (revue technique Kraken Bot, voir GARDE_FOUS.md) : $BAD"; exit 1; fi
+          echo "Aucun chemin moteur/stratégie/état modifié"
   versions:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest

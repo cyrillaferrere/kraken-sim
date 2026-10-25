@@ -11,6 +11,13 @@
 > - Les commits automatiques « état sim … » ne sont pas journalisés.
 > - Versions actuelles : **Moteur V1.1 · Stratégie V1.1 · UX/UI V1.1**.
 
+## [Process] — 25/10/2026 14h15 — Kraken Bot (versions inchangées : Moteur V1.1 · Stratégie V1.1 · UX/UI V1.1)
+### Docs / process
+- Droits GPT-6 (décision de Cyril) : GPT-6 fusionne lui-même ses PR `ux/*`, `feature/*`, `fix/*` vers `develop` dès guard vert, sans revue Kraken Bot, hors moteur, `VERSION_ENGINE`, `strategy/`, `params.json`, `sim.yml`, `state/`, `sim.db` (ces propositions restent soumises à la revue technique de Kraken Bot). GPT-6 ne pousse ni ne fusionne jamais sur `main` ; `develop` → `main` par Cyril seul après guard vert + « OK prod » GPT-6 et Kraken Bot, revue technique de Kraken Bot à cette étape.
+- `GARDE_FOUS.md` (Circuit, Périmètre, guard), `README.md`, `docs/SPEC_UX.md`, modèle de PR mis à jour.
+### Infra
+- `guard.yml` : nouveau contrôle `perimetre-gpt6` (PR depuis `ux/*`, `feature/*`, `fix/*` : échec si chemins moteur/stratégie/sim.yml/état modifiés). Impact décisions : aucun.
+
 ## [Infra] — 25/10/2026 14h05 — Kraken Bot (versions inchangées : Moteur V1.1 · Stratégie V1.1 · UX/UI V1.1)
 ### Infra
 - Préprod minimale : branche `develop`, dépôt public `cyrillaferrere/kraken-sim-preprod` (site seul, GitHub Pages), workflow `preprod.yml` (push sur develop : `render_preprod.py` rend le template de develop avec le state public de prod en lecture seule, bandeau PRÉPRODUCTION injecté à la publication, `tests/check_preprod.py`, push via clé de déploiement limitée au dépôt préprod, secret `PREPROD_DEPLOY_KEY`).
