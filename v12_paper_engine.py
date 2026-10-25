@@ -390,12 +390,12 @@ class PaperEngine:
             usdc=None;btc_ref=None
             usdc_quote=snapshot.get("usdc_usd")
             if usdc_quote is not None:
-                checked_rate(usdc_quote,moment)
+                checked_rate(usdc_quote,moment.isoformat())
                 units=self._get("usdc_initial_units")
                 if units is None:
-                    units=str(initial_units(self._get("initial_capital_usd"),usdc_quote,moment))
+                    units=str(initial_units(self._get("initial_capital_usd"),usdc_quote,moment.isoformat()))
                     self._put("usdc_initial_units",units)
-                usdc=str(usd_value(units,usdc_quote,moment))
+                usdc=str(usd_value(units,usdc_quote,moment.isoformat()))
             if "BTC" in quotes:
                 btc_units=self._get("btc_initial_units")
                 if btc_units is None:
