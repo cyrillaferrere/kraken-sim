@@ -12,7 +12,7 @@
 > - Versions sur `develop` : **moteur partagé V1.2 · stratégie V1.1 · UX/UI V1.1.2**. En PR expérimentale seulement : **moteur V1.3 (`VERSION_ENGINE_V12`) · stratégie V1.2**, sans fusion ni cycle.
 
 
-## [Moteur V1.4 — VERSION_ENGINE_V12] — 2026-10-25
+## [Moteur V1.4] — 2026-10-25 (VERSION_ENGINE_V12, moteur expérimental V1.2)
 - Exclusion par paire : une cotation invalide, périmée ou au spread > 0,3 % exclut seulement cette paire pour le tick (raison journalisée `PAIRS_EXCLUDED_THIS_TICK`, `excluded_pairs` dans la synthèse). Pause globale seulement si BTC/ETH invalides ou si moins de N = max(2, min(10, ⌈paires cotées/2⌉)) paires valides (N = 10 pour 40 paires). Une position détenue à cotation invalide est conservée (valorisée au dernier bid > 0, protections maintenues) et journalisée.
 - Nouveau mode `cycle_v12.py --init-check --state-dir <abs>` : init si absent (6 605,10 cash, pic 6 605,10, benchmark USDC), sans jamais écraser ; données publiques Kraken ; signaux A/B/C/D ; synthèse ; garde-fous ; décision HOLD seule via la gateway ; assertion orders == 0 et fills == 0 avant écriture de l'état et de `check_report.json`.
 
