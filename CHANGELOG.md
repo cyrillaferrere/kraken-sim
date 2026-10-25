@@ -11,6 +11,17 @@
 > - Les commits automatiques « état sim … » ne sont pas journalisés.
 > - Versions sur `develop` : **moteur partagé V1.2 · stratégie V1.1 · UX/UI V1.1.2**. En PR expérimentale seulement : **moteur V1.3 (`VERSION_ENGINE_V12`) · stratégie V1.2**, sans fusion ni cycle.
 
+## [UX V1.2.0] — 25/10/2026 — GPT-6 — Cockpit préprod V1.2 en attente du GO publication
+### UX/UI
+- `dashboard_v12_template.html` : refonte complète du template V1.2 inspirée de la **préprod V1.1.2 effectivement publiée** (dark theme, navigation latérale, grilles de graphiques alignées, marque discrète Kraken rouge / Sim PreProd, responsive mobile). Quatre espaces : synthèse, portefeuille, Grok IT/ordres, analyse/risque.
+- Première priorité au solde PAPER, écart **USDC conservés**, liquidités, exposition, drawdown, portefeuille et statut du contrôleur indépendant ; filtres des opérations, visuel A/B/C/D et historique des IT libres (potentiellement 10+ par jour), chronologie des raisons de Grok.
+- Courbe SVG temporelle PAPER vs USDC avec référence BTC optionnelle et périodes 7j/30j/tout, tracée **uniquement depuis les marques V1.2 effectivement publiées** ; pas de courbes ni de prix inventés.
+- Affichage explicite des données non disponibles et de l'ancienneté des instantanés ; aucun repli sur les séries/backtests V1.1.
+### Infra / Corrections
+- `docs/SPEC_UX_V12.md` : design, comportement, champs manquants à exporter avant activation, recettage local.
+- `tests/test_v12_ux.py` et `tests/check_preprod.py` : contrat préprod, isolation V1.1, rendu navigateur, identification discrète ; **aucune modification moteur, aucune publication, aucune fusion ni activation de cycle**.
+- Impact sur les décisions de trading, les risques, le portefeuille simulé et réel : **aucun**.
+
 ## [Stratégie V1.2] — 25/10/2026 — correction de cadrage IT / connecteur Kraken — Cyril / GPT-6
 ### Fonctionnel
 - **Précision utilisateur (sans modification de stratégie)** : Grok Bot réalise ses analyses **par IT à fréquence variable, possiblement 10 fois par jour ou davantage**. La recommandation d'IT quotidienne vers 02h30 n'est **pas une exigence utilisateur** et ne doit plus guider l'ordonnanceur.
