@@ -212,15 +212,37 @@ class PaperEngine:
         p=self.wallet()
         quotes=self._market_quotes(snapshot,t,p.positions)
         equity=p.equity({a:q["bid"] for a,q in quotes.items()})
-        from v12_signals import candidate_c,closed_candles
+        from v12_signals import (
+            candidate_a,candidate_b,candidate_c,candidate_d,
+            closed_candles,point_in_time_universe)
         bars=snapshot.get("daily_bars",{})
-        signals={}
+        closed={asset:closed_candles(raw,t.isoformat()) for asset,raw in bars.items()}
+        btc=closed.get("BTC",[])
+        if not btc:raise ValueError("SYNTHESIS_BTC_HISTORY_REQUIRED")
+        signals={"A":[],"B":[],"C":[],"D":[]}
+        universe=point_in_time_universe(
+            closed,t.isoformat(),
+            min_history=int(SPEC["UNIVERSE"]["min_history_daily"]),
+            min_daily_volume=float(SPEC["UNIVERSE"]["min_median_daily_usd_volume"]),
+            max_assets=int(SPEC["UNIVERSE"]["max_assets"]))
         for asset in ("BTC","ETH"):
-            arr=closed_candles(bars.get(asset,[]),t)
+            arr=closed.get(asset,[])
             if len(arr)>=220:
                 sig=candidate_c(arr,SPEC["CANDIDATES"]["C"])
-                signals[asset]={"C_entry":bool(sig["entry"]),"C_exit":bool(sig["exit"]),
-                                "C_target_weight":round(float(sig["target_weight"]),4)}
+                signals["C"].append({"asset":asset,"entry":bool(sig["entry"]),
+                    "exit":bool(sig["exit"]),"max_weight":round(float(sig["target_weight"]),4)})
+        for asset,series in list(universe.items())[:20]:
+            a=candidate_a(series,btc,SPEC["CANDIDATES"]["A"])
+            b=candidate_b(series,btc,SPEC["CANDIDATES"]["B"])
+            dd=candidate_d(series,btc,SPEC["CANDIDATES"]["D"])
+            signals["A"].append({"asset":asset,"entry":bool(a.get("entry")),
+                                  "exit":bool(a.get("exit")),
+                                  "max_weight":round(float(a.get("target_weight",0)),4)})
+            signals["B"].append({"asset":asset,"eligible":bool(b.get("eligible")),
+                                  "momentum":round(float(b.get("score",0)),6)})
+            signals["D"].append({"asset":asset,"entry":bool(dd.get("entry")),
+                                  "exit":bool(dd.get("exit")),
+                                  "momentum":round(float(dd.get("score",0)),6)})
         summary={"asof":t.isoformat(),"engine":"V1.2 PAPER OFFLINE FIXTURE",
                  "active_policy_version":self._get("active_policy_version"),
                  "strategy":"V1.2","candidates":["A","B","C","D"],
