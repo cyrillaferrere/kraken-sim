@@ -74,27 +74,36 @@ def replay_fixture(document, folder):
         for snap in document["cycles"]:
             ts=_utc(snap["now_utc"])
             api=snap["api"]
+            violations=[]
             class FrozenUTC(datetime):
                 @classmethod
                 def now(cls,tz=None):
                     return ts if tz is not None else ts.replace(tzinfo=None)
             def mock_get(endpoint, **params):
                 if endpoint not in api:
-                    raise ValueError("V11_REPLAY_ENDPOINT_MISSING: "+endpoint)
+                    violations.append("V11_REPLAY_ENDPOINT_MISSING: "+endpoint)
+                    raise ValueError(violations[-1])
                 response=api[endpoint]
                 if endpoint in ("OHLC","Depth","Trades"):
                     pair=params.get("pair")
                     if not pair or pair not in response:
-                        raise ValueError("V11_REPLAY_PAIR_MISSING: "+str((endpoint,pair)))
+                        violations.append("V11_REPLAY_PAIR_MISSING: "+str((endpoint,pair)))
+                        raise ValueError(violations[-1])
                     return response[pair]
                 if endpoint=="Ticker" and "pair" in params:
                     pair=params["pair"]
                     if pair not in response:
-                        raise ValueError("V11_REPLAY_PAIR_MISSING: "+str((endpoint,pair)))
+                        violations.append("V11_REPLAY_PAIR_MISSING: "+str((endpoint,pair)))
+                        raise ValueError(violations[-1])
                     return {pair:response[pair]}
                 return response
             with patch.object(production,"datetime",FrozenUTC), patch.object(production.V,"get",side_effect=mock_get):
                 production.main()
+            # The real V1.1 engine deliberately catches some OHLC/Trades API
+            # exceptions and still commits a cycle. For a replay reference,
+            # these data gaps are FATAL even when the original logs 'skip'.
+            if violations:
+                raise ValueError("V11_REPLAY_INCOMPLETE_PUBLIC_RECORD: "+"; ".join(violations))
             observations.append({"slot":ts.strftime("%Y%m%d%H"),"utc":ts.isoformat()})
     db=sqlite3.connect(dbfile)
     try:
