@@ -8,7 +8,7 @@ on:
         type: choice
         options: [render, cycle]
   # CRON DÉSACTIVÉ tant que le moteur local tourne. Pour activer, décommenter la ligne suivante :
-  # schedule: [{cron: "10 * * * *"}]
+  schedule: [{cron: "10 * * * *"}]
 concurrency:
   group: kraken-sim
   cancel-in-progress: false
