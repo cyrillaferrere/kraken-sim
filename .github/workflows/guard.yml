@@ -80,7 +80,7 @@ jobs:
             git diff "$B"...HEAD -- CHANGELOG.md | grep -q "^+## \[Stratégie $NEW\]" || { echo "::error::journal strategie V1.2 manquant"; exit 1; }
             git diff "$B"...HEAD -- CHANGELOG.md | grep -qi "backtest" || { echo "::error::statut backtest absent du journal"; exit 1; }
           fi
-          if echo "$FILES" | grep -Eq '^(cycle_v11\.py|cycle\.py|backtest\.py|page_data\.py|render_page\.py|cycle_v12\.py|export_v12\.py|backtest_v12\.py|v12_isolation\.py|v12_accounting\.py|v12_execution\.py)$'; then
+          if echo "$FILES" | grep -Eq '^(cycle_v11\.py|cycle\.py|backtest\.py|page_data\.py|render_page\.py|cycle_v12\.py|export_v12\.py|backtest_v12\.py|v12_isolation\.py|v12_accounting\.py|v12_execution\.py|v12_signals\.py|v12_indicators\.py|v12_data\.py|v12_history\.py)$'; then
             OLD=$(git show $B:VERSION_ENGINE); NEW=$(cat VERSION_ENGINE)
             [ "$OLD" != "$NEW" ] || { echo "::error::moteur/données modifiés sans incrémenter VERSION_ENGINE ($OLD)"; exit 1; }
             git diff $B...HEAD -- CHANGELOG.md | grep -q "^+## \[Moteur $NEW\]" || { echo "::error::CHANGELOG.md : ajouter une entrée '## [Moteur $NEW] — …'"; exit 1; }
