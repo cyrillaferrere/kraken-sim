@@ -58,8 +58,8 @@ function renderSplit() {
   const K = D.core || {positions: []}, T = D.total || {};
   const row = (n, c0, v, p, pp, x = "") => `<tr class="${x}"><td>${n}</td><td>${usd(c0)}</td><td>${usd(v)}</td><td class="${cls(p)}">${p >= 0 ? "+" : ""}${usd(p)}</td><td class="${cls(pp)}">${pct(pp)}</td></tr>`;
   $("splitTable").innerHTML = `<table class="split-table"><tr><th>Référence</th><th>Capital initial</th><th>Valeur</th><th>P&L</th><th>P&L %</th></tr>${row("Portefeuille V1.1 (unique)", T.C0, T.equity, T.pnl, T.pnl_pct, "tot")}${K.bench != null ? row("Socle de départ conservé + liquidités", D.C0, K.bench, K.bench - D.C0, K.bench_pct) : ""}</table>`;
-  $("splitNote").textContent = K.bench != null ? `Écart vs socle conservé : ${T.equity - K.bench >= 0 ? "+" : ""}${usd(T.equity - K.bench)}. Socle de départ acheté le ${K.start} pour ${usd(K.cost)} (dont ${usd(K.fees)} de frais maker) ; ces positions sont gérées par la stratégie comme les autres.` : "Socle non encore acheté.";
-  $("corePos").innerHTML = K.positions.length ? table(["Actif", "Qté initiale", "Prix d'achat", "Frais", "Encore détenu", "Prix", "Valeur si conservé"], K.positions.map(p => [esc(p.asset), qf(p.qty), usd(p.buy_price), usd(p.fee), Math.round(p.held_pct) + " %", usd(p.price), usd(p.value)])) : '<div class="sub">Aucun socle de départ.</div>';
+  $("splitNote").textContent = K.bench != null ? `Écart vs socle conservé : ${T.equity - K.bench >= 0 ? "+" : ""}${usd(T.equity - K.bench)}. Socle de départ acheté le ${K.start || "25/10 11h33"} pour ${usd(K.cost)} (dont ${usd(K.fees)} de frais maker) ; ces positions sont gérées par la stratégie comme les autres.` : "Socle non encore acheté.";
+  $("corePos").innerHTML = K.positions.length ? table(["Actif", "Qté initiale", "Prix d'achat", "Frais", "Encore détenu", "Prix", "Valeur si conservé"], K.positions.map(p => [esc(p.asset), qf(p.qty), usd(p.buy_price), usd(p.fee), (p.held_pct != null ? Math.round(p.held_pct) : Math.round(100 * Math.min(1, ((D.positions.find(q => q.asset === p.asset) || {}).qty || 0) / p.qty))) + " %", usd(p.price), usd(p.value)])) : '<div class="sub">Aucun socle de départ.</div>';
 }
 function renderSim() {
 renderSplit();
@@ -128,7 +128,7 @@ function renderInd(rows, src, live) {
   $("ind").innerHTML = table(["Crypto", "Clôture vs EMA50", "MACD − signal", "RSI 14", "ADX (+DI/−DI)", "Vol. 7j/30j", "Score", "Régime BTC"],
     rows.map(r => [esc(r.asset), cell(r.trend, sgn(r.ema_pct, 1) + " %"), cell(r.macd, r.macd_hist == null ? "n.d." : (r.macd_hist >= 0 ? "+" : "−") + Number(Math.abs(r.macd_hist).toPrecision(3)).toLocaleString("fr-FR", {maximumFractionDigits: 10})),
       cell(r.rsi_ok, nf(r.rsi, 1)), cell(r.adx_ok, `${nf(r.adx, 0)} (${nf(r.pdi, 0)}/${nf(r.mdi, 0)})`), cell(r.vol, r.vol_ratio == null ? "n.d." : "×" + nf(r.vol_ratio, 2)),
-      `<b class="${r.score >= 4 && r.trend ? "up" : ""}">${r.score}/5</b>`, ({on: "haussier", neutral: "neutre", off: "baissier"})[D.btc_regime_state] || (r.regime ? "haussier" : "baissier")]));
+      `<b class="${r.score >= 4 && r.trend ? "up" : ""}">${r.score}/5</b>`, ({on: "haussier", neutral: "neutre", off: "baissier"})[D.btc_regime_state] || "n.d."]));
   $("indsrc").textContent = "Achat si régime BTC haussier + tendance validée (clôture et EMA20 > EMA50) + au moins 4/5. Volume = moyenne 7 j ÷ moyenne 30 j (en $). Source : " + src;
   $("inddot").className = live ? "dot on" : "dot";
 }
@@ -160,7 +160,7 @@ async function liveInd() {
 const NAMES = {A: "A · rotation momentum (ancienne)", B: "B · confluence 5 indicateurs (retenue)", C: "C · EMA + MACD + RSI", D: "D · confluence 3/5", BTC: "BTC acheter-conserver"};
 const p1 = v => (v * 100).toFixed(1).replace(".", ",") + " %";
 function strat(per) {
-  $("strat").innerHTML = `<ol><li>Régime : BTC clôture au-dessus de son EMA50 journalière.</li><li>Tendance (obligatoire) : clôture > EMA50 et EMA20 > EMA50.</li><li>MACD (12, 26, 9) au-dessus du signal.</li><li>RSI 14 entre 50 et 75.</li><li>ADX 14 > 20 avec +DI > −DI.</li><li>Volume 7 j > 30 j.</li><li>Top 3 par momentum, 33 % chacun ; sortie stop 3×ATR, clôture &lt; EMA50 ou régime baissier.</li></ol>
+  $("strat").innerHTML = `<ol><li>Régime : BTC clôture au-dessus de son EMA50 journalière.</li><li>Tendance (obligatoire) : clôture > EMA50 et EMA20 > EMA50.</li><li>MACD (12, 26, 9) au-dessus du signal.</li><li>RSI 14 entre 50 et 75.</li><li>ADX 14 > 20 avec +DI > −DI.</li><li>Volume 7 j > 30 j.</li><li>Top 3 par momentum, 33 % chacun ; sortie : stop suiveur 3×ATR, régime BTC baissier (sous la bande, risk-off), ou clôture &lt; EMA50 (différée tant que la détention min. 48 h n'est pas écoulée pour le socle de départ). Régime neutre : pas d'achat, positions conservées.</li></ol>
   <div class="seg" style="margin:10px 0">${Object.keys(D.backtest.rows).map(k => `<button class="${k === per ? "on" : ""}" onclick="strat('${k}')">${k}</button>`).join("")}</div>
   <div class="sub">Période : ${esc(D.backtest.periods[per])}</div>` + table(["Variante", "Rendement", "Drawdown max", "Transactions", "Frais (% C0)", "Réussite"], D.backtest.rows[per].map(r => [NAMES[r.v], `<span class="${cls(r.ret)}">${p1(r.ret)}</span>`, "-" + p1(r.mdd), r.trades, p1(r.fees), r.win == null ? "n.d." : Math.round(r.win * 100) + " %"]));
 }
@@ -258,7 +258,7 @@ async function pollPositions() {
 // --- indicateurs de sortie (bougies journalières clôturées, même calcul que la sim) ---
 async function pollExitInd() {
   if (!D.positions.length) return;
-  try { const b = indLast(await ohlcDaily(D.ind_btc_pair)); if (b) liveInd.__regime = b.c > b.e50;
+  try {
     for (const p of D.positions) { const x = indLast(await ohlcDaily(p.asset === "BTC" ? D.ind_btc_pair : (p.asset === "DOGE" ? "XDGUSD" : p.asset + "USD"))); if (x) liveInd[p.asset] = x; }
     renderExit(); } catch (e) {}
 }
@@ -266,19 +266,21 @@ const yn = (sell, txt) => `<span class="${sell ? "down" : "up"}">${txt}<br><b>${
 function renderExit() {
   const T = $("sellConditions"); if (!T) return;
   if (!D.positions.length) { T.innerHTML = '<tr><td colspan="6" style="color:var(--mute)">Aucune position ouverte.</td></tr>'; return; }
-  const reg = liveInd.__regime ?? D.btc_regime, hold = D.min_hold_h || 48;
+  const hold = D.min_hold_h || 48, sn = D.snapshot || {}, rs = D.btc_regime_state || sn.state || null, band = sn.band || null;
+  const REGL = {on: "haussier", neutral: "neutre", off: "baissier"};
+  const regTxt = `${REGL[rs] || "n.d."}${band ? `<br><small>clôture BTC ${usd(sn.btc_close)} · bande ${usd(band[0])} – ${usd(band[1])}</small>` : ""}`;
   T.innerHTML = D.positions.map(p => {
     const x = liveInd[p.asset], close = x ? x.c : p.close, e50 = x ? x.e50 : p.ema50;
     const dist = p.stop ? (p.price / p.stop - 1) * 100 : null, stopHit = p.stop != null && p.price <= p.stop;
     const below = close != null && e50 != null && close < e50;
     const held = (Date.now() - new Date(p.entry_iso)) / 3600000, left = Math.max(0, hold - held);
-    const regOff = D.btc_regime_state ? D.btc_regime_state === 'off' : reg === false;
+    const regOff = rs === 'off';
     const trendExit = regOff || (below && (!p.origin || left <= 0));
-    const decision = stopHit ? '<b class="down">Vente (stop)</b>' : trendExit ? '<b class="down">Vente au prochain cycle</b>' : below ? '<b>Sortie différée (détention min. 48 h)</b>' : '<b class="up">Conserver</b>';
+    const decision = stopHit ? '<b class="down">Vente (stop)</b>' : regOff ? '<b class="down">Vente risk-off au prochain cycle</b>' : trendExit ? '<b class="down">Vente au prochain cycle (clôture &lt; EMA50)</b>' : below ? '<b>Sortie différée (détention min. 48 h)</b>' : '<b class="up">Conserver</b>';
     return `<tr><td>${esc(p.asset)}${p.test ? ' <small>(test)</small>' : ''}</td>
       <td>${yn(stopHit, `stop ${usd(p.stop)} · bid ${usd(p.price)} · distance ${dist == null ? "n.d." : pct(dist)}<br><small>Stop touché ?</small>`)}</td>
       <td>${yn(below, `clôture ${usd(close)} vs EMA50 ${usd(e50)} (${close && e50 ? pct((close / e50 - 1) * 100) : "n.d."})<br><small>Sous EMA50 ?</small>`)}</td>
-      <td>${yn(reg === false, `${reg == null ? "n.d." : reg ? "haussier" : "baissier"}<br><small>Régime baissier ?</small>`)}</td>
+      <td>${yn(regOff, `${regTxt}<br><small>Régime baissier (risk-off) ?</small>`)}</td>
       <td>${yn(left <= 0, `détenu ${nf(held, 1)} h · reste ${nf(left, 1)} h<br><small>Durée min. écoulée ?</small>`)}</td>
       <td>${decision}</td></tr>`; }).join("");
 }
