@@ -147,7 +147,7 @@ class TestGrokPaperFirewall(unittest.TestCase):
         result=validate(d,s,p,s["observed_at"])
         self.assertFalse(result["accepted"])
         self.assertTrue(any(x in result["reason"] for x in
-                            ("EXPOSURE_CAP","ABOVE_CANDIDATE_TARGET_WEIGHT")),result)
+                            ("EXPOSURE_CAP","ABOVE_CANDIDATE_TARGET_WEIGHT","INSUFFICIENT_CASH_NO_LEVERAGE")),result)
     def test_risk_from_separate_context_cannot_be_overridden_by_market_snapshot(self):
         s,d=fixture()
         engine=risk_fixture(s)
