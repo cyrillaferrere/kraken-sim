@@ -26,11 +26,11 @@ html = html.replace("__DATA__", json.dumps(data, ensure_ascii=False, separators=
 html, n = re.subn(r'const STATE_URL = [^;\n]*;', f'const STATE_URL = "{PROD_STATE}";', html, count=1)
 assert n == 1, "STATE_URL introuvable dans le template"
 # Bandeau préprod injecté à la publication uniquement (jamais dans le template, donc jamais en prod)
-BAN = ('<div id="preprod-banner" style="position:sticky;top:0;z-index:99999;background:repeating-linear-gradient(45deg,#b00020,#b00020 18px,#8a0018 18px,#8a0018 36px);'
-       'color:#fff;font:800 18px/1.3 system-ui,sans-serif;text-align:center;padding:12px 8px;letter-spacing:.5px;border-bottom:4px solid #ffd400">'
-       '⚠ PRÉPRODUCTION — NE PAS CONFONDRE AVEC LA SIMULATION OFFICIELLE ⚠<br><span style="font-weight:500;font-size:13px">'
-       'Données en lecture seule de la prod · officielle : cyrillaferrere.github.io/kraken-sim</span></div>')
-html, n = re.subn(r'(<body[^>]*>)', r'\1' + BAN.replace("\\", "\\\\"), html, count=1)
+# Marquage préprod discret, sans bandeau occupant toute la largeur.
+# Modifié exclusivement dans le rendu préprod : jamais dans le template de production.
+BAN = ''
+html = html.replace('<strong>Kraken <span>Sim</span></strong>', '<strong><span style="color:#ef4444">Kraken</span> <span>Sim</span> <small style="font-size:12px;color:#a7b7c9;font-weight:650">PreProd</small></strong>', 1)
+html, n = re.subn(r'(<body[^>]*>)', r'\1' + BAN, html, count=1)
 assert n == 1, "<body> introuvable"
 html = html.replace("<title>", "<title>[PRÉPROD] ", 1)
 os.makedirs(OUT, exist_ok=True)
