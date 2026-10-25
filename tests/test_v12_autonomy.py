@@ -3,7 +3,7 @@ import math
 import unittest
 from datetime import datetime,timezone,timedelta
 from v12_accounting import Portfolio
-from v12_autonomy import validate,utc
+from v12_autonomy import validate as engine_validate,utc
 
 def fixture():
     start=datetime(2025,1,1,tzinfo=timezone.utc)
@@ -34,6 +34,18 @@ def fixture():
               "reason":"La tendance BTC et son historique EMA confirment la strategie C",
               "confidence":0.72,"ttl_seconds":300}
     return snapshot,decision
+
+def risk_fixture(snapshot):
+    # TEST ONLY: reconstruct the independent engine state from fixture fields.
+    # Production must load these from its own persisted SQLite database.
+    return {"engine_controlled":True,"active_policy_version":snapshot["active_policy_version"],
+            "authorized_model_id":snapshot["authorized_model_id"],
+            "paused":snapshot.get("paused",False),"risk_lock":snapshot.get("risk_lock",False),
+            "cooldown_until":snapshot.get("cooldown_until","1970-01-01T00:00:00Z"),
+            "equity_peak_usd":snapshot.get("equity_peak_usd",6605.1)}
+def validate(decision,snapshot,portfolio,now=None):
+    return engine_validate(decision,snapshot,portfolio,now,risk_state=risk_fixture(snapshot),
+                           phase="execution")
 
 class TestGrokPaperFirewall(unittest.TestCase):
     def test_candidate_c_valid_proposal_is_only_preflight(self):
@@ -126,6 +138,35 @@ class TestGrokPaperFirewall(unittest.TestCase):
         s,d=fixture()
         now=(utc(s["observed_at"])+timedelta(seconds=301)).isoformat()
         self.assertIn("EXPIRED_DECISION",validate(d,s,Portfolio(6605.1),now)["reason"])
+    def test_candidate_c_obeys_global_ninety_percent_exposure(self):
+        s,d=fixture()
+        p=Portfolio(6605.1)
+        p.buy("ETH",30,110,"0.004")  # ~50% current exposure
+        d["asset"]="BTC"
+        d["quantity"]=15  # >40% extra, although C individual cap may allow it
+        result=validate(d,s,p,s["observed_at"])
+        self.assertFalse(result["accepted"])
+        self.assertTrue(any(x in result["reason"] for x in
+                            ("EXPOSURE_CAP","ABOVE_CANDIDATE_TARGET_WEIGHT")),result)
+    def test_risk_from_separate_context_cannot_be_overridden_by_market_snapshot(self):
+        s,d=fixture()
+        engine=risk_fixture(s)
+        engine["risk_lock"]=True
+        s["risk_lock"]=False
+        result=engine_validate(d,s,Portfolio(6605.1),s["observed_at"],risk_state=engine)
+        self.assertEqual(result["reason"],"RISK_LOCK_OR_COOLDOWN")
+        absent=engine_validate(d,s,Portfolio(6605.1),s["observed_at"])
+        self.assertIn("TRUSTED_ENGINE_RISK_STATE_REQUIRED",absent["reason"])
+    def test_it_admission_accepts_two_hour_gap_then_execution_requires_fresh_quote(self):
+        s,d=fixture()
+        d["ttl_seconds"]=26*3600
+        later=(utc(s["observed_at"])+timedelta(hours=3)).isoformat()
+        accepted=engine_validate(d,s,Portfolio(6605.1),later,
+                                 risk_state=risk_fixture(s),phase="admission")
+        self.assertTrue(accepted["accepted"],accepted)
+        refused=engine_validate(d,s,Portfolio(6605.1),later,
+                                 risk_state=risk_fixture(s),phase="execution")
+        self.assertEqual(refused["reason"],"STALE_QUOTES")
     def test_no_private_keys_or_live_actions_in_protocol(self):
         s,d=fixture()
         d["environment"]="LIVE"
