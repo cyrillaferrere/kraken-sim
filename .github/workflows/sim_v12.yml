@@ -7,7 +7,7 @@ on:
         description: "SHA épinglé de strategy/v1.2 (40 hex)"
         type: string
         required: true
-        default: "972b4c4406d4847b9e7e7bd3f71350c36409fbf1"
+        default: "02329e5146e3d7b80a10a5646625bbb7a9314fb4"
 permissions:
   contents: read
 concurrency:
@@ -65,6 +65,13 @@ jobs:
             test -f "$RUNNER_TEMP/v12state/$f" || { echo "::error::fichier $f absent"; exit 1; }
             cp "$RUNNER_TEMP/v12state/$f" "$RUNNER_TEMP/v12out/$f"
           done
+      - name: Rendu de la page PREPROD V1.2 PAPER (v12/index.html + public_state_v12.json)
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 code/render_v12_page.py --report "$RUNNER_TEMP/v12state/check_report.json" --out "$RUNNER_TEMP/v12out/site"
+          python3 -c "import json,sys;d=json.load(open(sys.argv[1]));assert d['strategy_id']=='kraken-sim-v1.2' and d['environment']=='preprod' and d['orders']==[],d" "$RUNNER_TEMP/v12out/site/public_state_v12.json"
+          grep -q 'PREPROD V1.2 PAPER' "$RUNNER_TEMP/v12out/site/index.html"
       - uses: actions/upload-artifact@v4
         with:
           name: v12-next-state
@@ -103,4 +110,14 @@ jobs:
           git add paper_engine_v12.db grok_paper_evidence_v12.db check_report.json
           git diff --cached --quiet || git commit -m "state V1.2 init-check run $GITHUB_RUN_ID (code ${V12_REVIEWED_CODE_SHA::7}, 0 ordre)"
           git push origin HEAD:state-v12
+          # Page : uniquement le dossier v12/ de la branche main (Pages), sans force-push.
+          git clone --depth 1 --branch main git@github.com:cyrillaferrere/kraken-sim-preprod.git "$RUNNER_TEMP/v12pages"
+          cd "$RUNNER_TEMP/v12pages"
+          rm -rf v12 && mkdir v12 && cp "$RUNNER_TEMP/v12out/site/index.html" "$RUNNER_TEMP/v12out/site/public_state_v12.json" v12/
+          git config user.name kraken-v12-paper-bot
+          git config user.email kraken-sim-bot@users.noreply.github.com
+          git add -A v12
+          git diff --cached --name-only | grep -qv '^v12/' && { echo "::error::modification hors v12/"; exit 1; } || true
+          git diff --cached --quiet || git commit -m "page V1.2 PAPER run $GITHUB_RUN_ID (code ${V12_REVIEWED_CODE_SHA::7}, 0 ordre)"
+          git push origin HEAD:main
           rm -f "$HOME/.ssh/v12"
