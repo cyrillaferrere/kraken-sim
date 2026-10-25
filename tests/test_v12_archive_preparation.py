@@ -16,7 +16,7 @@ def sample_zip(root, name, btc="1735689600,100,102,99,101,2000,5\n", eth=None):
         z.writestr("folder/EURGBP_1440.csv","1735689600,1,1,1,1,100,10\n")
         z.writestr("MANIFEST.json",'{"archive":"test only"}')
     return dict(file=str(path),sha256=hashlib.sha256(path.read_bytes()).hexdigest(),
-                source_url="https://assets.kraken.com/testing/"+name,
+                source_url="https://assets.kraken.com/marketing/institutions/testing/"+name,
                 retrieved_utc="2026-10-25T12:00:00Z")
 
 def mapping():
