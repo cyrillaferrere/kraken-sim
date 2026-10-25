@@ -21,7 +21,10 @@ def inspect_and_record(proposal,trusted_snapshot,portfolio,evidence_directory,no
     now=utc(now) if isinstance(now,str) else now.astimezone(timezone.utc)
     if not isinstance(trusted_snapshot,dict):
         raise ValueError("TRUSTED_SNAPSHOT_REQUIRED")
-    result=validate(proposal,trusted_snapshot,portfolio,now)
+    result=(validate(proposal,trusted_snapshot,portfolio,now) if proposal is not None else
+            {"status":"PREFLIGHT_ONLY_NOT_EXECUTED","decision_id":None,
+             "candidate":None,"accepted":False,"reason":"GROK_UNAVAILABLE_NO_TRADE",
+             "max_strategy_weight":None})
     # Even invalid model outputs and provider timeouts have an audit ID.
     submitted=proposal if isinstance(proposal,dict) else None
     identity=result.get("decision_id")
