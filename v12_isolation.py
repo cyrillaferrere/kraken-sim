@@ -15,10 +15,22 @@ def state_dir(raw=None):
     path = Path(raw).resolve()
     if path == ROOT or ROOT in path.parents or path == Path("/"):
         raise IsolationError("V1.2 cannot write inside production repository")
-    if path.name in ("kraken-sim", "kraken-sim-state", "state"):
-        raise IsolationError("forbidden V1.2 directory")
     if path.exists() and not path.is_dir():
         raise IsolationError("V1.2 state target must be a directory")
+    # Check every ancestor, not only the leaf (including alternate V1.1 clones).
+    for ancestor in (path, *path.parents):
+        name = ancestor.name.lower()
+        if name == "state" or name.startswith("kraken-sim"):
+            raise IsolationError("forbidden V1.1 directory segment")
+        if (ancestor / "sim.db").exists():
+            raise IsolationError("V1.1 ledger exists in target or ancestor")
+        gitmeta = ancestor / ".git"
+        if gitmeta.exists():
+            if ancestor != path:
+                raise IsolationError("nested output inside another Git repository")
+            cfg = gitmeta / "config"
+            if not cfg.is_file() or "kraken-sim-preprod" not in cfg.read_text(encoding="utf-8",errors="replace"):
+                raise IsolationError("V1.2 state Git checkout must be kraken-sim-preprod")
     return path
 
 def db_path(raw=None):
