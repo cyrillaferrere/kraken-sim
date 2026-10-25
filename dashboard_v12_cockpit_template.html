@@ -135,6 +135,32 @@ h1,h2,h3,p{margin:0}h1{font-size:29px;letter-spacing:-.9px;font-weight:720;line-
     <article class="card"><div class="card-head"><div><h2>Garde-fous</h2><p>Paramètres de risque du moteur V1.2</p></div></div><div id="icGuards"><div class="empty">—</div></div></article>
    </div>
   </section>
+  <section id="liquidityMonitor" class="section" aria-label="Contrôle de liquidité V1.6.2">
+   <div class="section-header"><h2>Liquidité XXX/USDC</h2><p>Contrôles PAPER au moment de chaque ordre · métriques moteur uniquement</p></div>
+   <div class="grid4">
+    <article class="card kpi"><div class="eyebrow">Seuil de volume médian</div><div class="value" id="lqThreshold">—</div><div class="foot">XXX/USDC · 30 jours · valeur versionnée</div></article>
+    <article class="card kpi"><div class="eyebrow">Paires passant le filtre</div><div class="value" id="lqEligible">—</div><div class="foot" id="lqEligibilityNote">Aucun comptage publié</div></article>
+    <article class="card kpi"><div class="eyebrow">Ordres refusés (liquidité)</div><div class="value" id="lqRejected">—</div><div class="foot" id="lqRejectedPct">Taux non publié</div></article>
+    <article class="card kpi"><div class="eyebrow">Profondeur USDC vérifiée</div><div class="value" id="lqDepth">—</div><div class="foot" id="lqDepthNote">Pas d'affirmation sans donnée moteur</div></article>
+   </div>
+   <div class="duocol" style="margin-top:14px">
+    <article class="card"><div class="card-head"><div><h2>Qualité d'exécution</h2><p>Mesures publiques observées, distinctes des estimations</p></div></div>
+      <div class="statline"><span>Spread maximal autorisé</span><strong>0,30 %</strong></div>
+      <div class="statline"><span>Spread médian mesuré</span><strong id="lqSpread">—</strong></div>
+      <div class="statline"><span>Slippage estimé pour l'ordre</span><strong id="lqSlippage">—</strong></div>
+      <div class="statline"><span>Nombre de carnets contrôlés</span><strong id="lqBookChecks">—</strong></div>
+      <div class="no-borrow">Le dashboard ne déduit ni la profondeur ni le slippage du seul volume. Un ordre PAPER refusé reste un refus.</div>
+    </article>
+    <article class="card"><div class="card-head"><div><h2>Motifs des refus</h2><p>Suivi des événements fournis par le moteur</p></div></div>
+      <div id="lqRejectionReasons" class="barlist"><div class="empty">Pas de statistiques de refus publiées</div></div>
+      <details class="details"><summary>Provenance et version de la règle</summary>
+        <div class="statline"><span>Version du moteur</span><strong id="lqEngine">—</strong></div>
+        <div class="statline"><span>Date du contrôle</span><strong id="lqAsOf">—</strong></div>
+        <div class="statline"><span>Retour automatique à 5 M</span><strong id="lqRollback">Non documenté</strong></div>
+      </details>
+    </article>
+   </div>
+  </section>
   <section id="analyse" class="section">
    <div class="section-header"><h2>Analyse & apprentissage</h2><p>Constats mesurés par le moteur, distincts des propositions de Grok</p></div>
    <div class="grid3">
@@ -153,7 +179,7 @@ h1,h2,h3,p{margin:0}h1{font-size:29px;letter-spacing:-.9px;font-weight:720;line-
 <script>
 const D = __DATA__;
 const STATE_URL = "__STATE_SOURCE__";
-const VERSION_UX = "V1.2.2";
+const VERSION_UX = "V1.2.3";
 const qs = id => document.getElementById(id);
 const nf = new Intl.NumberFormat("fr-FR",{maximumFractionDigits:2,minimumFractionDigits:2});
 const nfQty = new Intl.NumberFormat("fr-FR",{maximumFractionDigits:8});
@@ -275,13 +301,32 @@ function initCheck(d){
  const g=obj(ic.guardrails),r=obj(g.risk);const pc=v=>num(v)===null?"—":percent(num(v)*100);
  qs("icGuards").innerHTML=ic.guardrails==null?'<div class="empty">—</div>':[st("Coupe-circuit drawdown","−"+pc(r.peak_drawdown_kill)),st("Exposition max",pc(r.max_exposure)),st("Spread max",pc(g.max_spread)),st("Paires valides min",n(g.min_valid_pairs)),st("Corrélation max",val(r.correlation_max,2)),st("Verrou risque",g.risk_lock===false?"Inactif":g.risk_lock===true?"ACTIF":"—"),st("Pic moteur",usd(g.engine_peak_usd))].join("");
 }
+function renderLiquidity(d){
+ const m=obj(d.liquidity_monitor);
+ text("lqEngine",d.version_engine??"—");
+ text("lqAsOf",stamp(m.as_of??null));
+ text("lqThreshold",num(m.min_median_daily_volume_usdc)===null?"—":usd(m.min_median_daily_volume_usdc));
+ text("lqEligible",num(m.eligible_pairs_count)===null?"—":val(m.eligible_pairs_count,0));
+ text("lqEligibilityNote",m.eligible_pairs_count==null?"Donnée moteur absente":"Après filtrage volume USDC");
+ text("lqRejected",num(m.rejected_liquidity_orders)===null?"—":val(m.rejected_liquidity_orders,0));
+ text("lqRejectedPct",num(m.rejected_liquidity_pct)===null?"Taux non publié":"Taux : "+percent(m.rejected_liquidity_pct));
+ text("lqDepth",num(m.orderbook_checks)===null?"—":val(m.orderbook_checks,0)+" contrôle(s)");
+ text("lqDepthNote",m.orderbook_checks==null?"Contrôle non attesté":"Vérifications moteur du carnet USDC");
+ text("lqSpread",percent(m.median_spread_pct));
+ text("lqSlippage",percent(m.estimated_slippage_pct));
+ text("lqBookChecks",num(m.orderbook_checks)===null?"—":val(m.orderbook_checks,0));
+ text("lqRollback",m.rollback_policy??"Non documenté");
+ const reasons=obj(m.rejection_reasons);
+ const ent=Object.entries(reasons).filter(([k,v])=>num(v)!==null);
+ qs("lqRejectionReasons").innerHTML=ent.length?ent.map(([k,v])=>'<div class="statline"><span>'+htmlEscape(k)+'</span><strong>'+htmlEscape(val(v,0))+'</strong></div>').join(""):'<div class="empty">Pas de statistiques de refus publiées</div>';
+}
 function render(d){
  if(!valid(d)){
   lastError="Source incompatible";qs("healthDot").className="dot alert";text("healthText","Source V1.2 rejetée");
   setNotice("Source rejetée : seuls les états PAPER préprod de la stratégie V1.2 sont acceptés.",true);
   return;
  }
- latest=d;lastError=null;
+ latest=d;lastError=null;renderLiquidity(d);
  const a=derive(d),date=timeValue(d.as_of??d.last_cycle_iso);
  const old=date!==null&&(Date.now()-date)>20*60*1000;
  qs("healthDot").className="dot "+(old?"wait":"ok");
