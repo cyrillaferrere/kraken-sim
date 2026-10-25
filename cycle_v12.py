@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""V1.2 offline entrypoint. Only synthetic --dry-run; --cycle BLOCKED.
+"""V1.2 offline entrypoint. Synthetic --dry-run, HOLD-only --init-check; --cycle BLOCKED.
 
 The 30-day fixture does not call Grok Bot, Kraken or any real trading endpoint.
 """
@@ -16,6 +16,9 @@ def main(argv=None):
                       help="INTERDIT : aucune simulation autonome activée")
     opts.add_argument("--dry-run",action="store_true",
                       help="30 jours synthétiques hors ligne, sans appel Grok")
+    opts.add_argument("--init-check",action="store_true",
+                      help="init état si absent + check marché public + HOLD seul, 0 ordre")
+    p.add_argument("--state-dir",help="dossier d'état V1.2 (absolu); défaut V12_STATE_DIR")
     p.add_argument("--out",help="dossier externe de sortie; obligatoire avec --dry-run")
     args=p.parse_args(argv)
     if args.dry_run:
@@ -27,6 +30,15 @@ def main(argv=None):
             p.error(str(exc))
         print(json.dumps(report,indent=2,ensure_ascii=False))
         return 0
+    if args.init_check:
+        from v12_init_check import run,InitCheckRefused
+        import os
+        try:
+            report=run(args.state_dir or os.environ.get("V12_STATE_DIR"))
+        except (IsolationError,InitCheckRefused,AssertionError) as exc:
+            print("V1.2 INIT-CHECK REFUSED:",exc,file=sys.stderr);return 4
+        print(json.dumps(report,indent=2,ensure_ascii=False))
+        return 0 if report["orders"]==0 else 4
     try: path=db_path()
     except IsolationError as exc: p.error(str(exc))
     if args.validate_env:
