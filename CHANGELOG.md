@@ -30,6 +30,7 @@
 - guard.yml : exception explicite strategy/v1.2 pour GPT-6, périmètre stratégie protégeant la V1.1, tests isolation-v12. GARDE_FOUS.md mis à jour.
 ### Tests et limites
 - Tests infrastructure : chemin de stockage, idempotence, export minimal, look-ahead des bougies, intégrité statique du code V1.1. Tests trading/risque/backtest non encore implémentés.
+- `v12_acceptance.py` : sept critères de rejet OOS §5 pré-encodés ; refus explicite des métriques absentes ou des runs exploratoires, choix Calmar/Sortino seulement parmi les survivants. `tests/test_v12_acceptance.py` couvre les rejets.
 - Aucune performance ni validation économique revendiquée. Première fusion develop et tout workflow sur main soumis à Cyril.
 
 ## [UX V1.1.2] — 25/10/2026 15h15 (Paris) — GPT6
