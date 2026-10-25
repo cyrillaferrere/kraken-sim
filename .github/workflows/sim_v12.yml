@@ -94,8 +94,11 @@ jobs:
           test -n "$DEPLOY_KEY" || { echo "::error::clef absente"; exit 1; }
           mkdir -p "$HOME/.ssh"; chmod 700 "$HOME/.ssh"
           (umask 077; printf '%s\n' "$DEPLOY_KEY" > "$HOME/.ssh/v12")
-          ssh-keyscan github.com 2>/dev/null >> "$HOME/.ssh/known_hosts"
-          export GIT_SSH_COMMAND="ssh -i $HOME/.ssh/v12 -o IdentitiesOnly=yes"
+          trap 'rm -f "$HOME/.ssh/v12"' EXIT
+          # GitHub's published Ed25519 HOST key (not trust-on-first-use):
+          printf '%s\n' 'github.com ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOMqqnkVzrm0SdG6UOoqKLsabgH5C9okWi0dh2l9GKJl' > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/known_hosts"
+          export GIT_SSH_COMMAND="ssh -o StrictHostKeyChecking=yes -o IdentitiesOnly=yes -i $HOME/.ssh/v12"
           git clone --depth 1 --branch state-v12 git@github.com:cyrillaferrere/kraken-sim-preprod.git "$RUNNER_TEMP/v12publish"
           test "$(git -C "$RUNNER_TEMP/v12publish" rev-parse HEAD)" = "$(cat "$RUNNER_TEMP/v12out/previous_sha")" || { echo "::error::conflit d'etat, aucun push"; exit 1; }
           cp "$RUNNER_TEMP/v12out/sim_v12.db" "$RUNNER_TEMP/v12publish/"
