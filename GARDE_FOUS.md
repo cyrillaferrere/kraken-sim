@@ -8,7 +8,7 @@
 3. Toute proposition moteur ou stratégie de GPT-6 passe par la **revue technique de Kraken Bot** avant d'atteindre `develop`.
 4. Chaque push sur `develop` publie automatiquement la **préprod** : https://cyrillaferrere.github.io/kraken-sim-preprod/ (template de develop + state public de prod en lecture seule, bandeau PRÉPRODUCTION, aucun cycle).
 5. **GPT-6 ne pousse ni ne fusionne jamais sur `main`.** PR `develop` → `main` fusionnée **par Cyril seulement** après guard vert + deux commentaires « OK prod » : GPT-6 (UX/fonctionnel) et Kraken Bot (technique). La **revue technique de Kraken Bot se fait à cette étape** (relecture de tout ce que develop apporte). Ces avis ne remplacent ni guard ni la décision de Cyril.
-6. `strategy/*` est réservé à Kraken Bot ; seul `main` exécute les cycles (`sim.yml`).
+6. `strategy/*` reste réservé à Kraken Bot **sauf délégation expresse sur strategy/v1.2 à GPT-6** : moteur V1.2 en préprod séparée après revue technique et décision de Cyril. `sim.yml` reste V1.1 exclusivement ; le nouveau sim_v12.yml est manuel et demeure désactivé sur main jusqu'à validation de Cyril.
 7. Retour arrière = `git revert` du commit de code sur `main` ; l'état de la simulation (`sim.db`, `state/`) n'est **jamais rembobiné**.
 
 ## 1. Contrat technique du template (à ne jamais casser)
@@ -50,3 +50,12 @@ La PR vers `develop` est fusionnée par GPT-6 dès que `guard` est vert ; la PR 
 **Ids (69)** : `accountCaption`, `accountChange`, `accountChangePct`, `accountValue`, `activity`, `alloc`, `allocationVisual`, `analysis`, `bchart`, `briefCash`, `briefDd`, `briefExposure`, `briefFees`, `briefPnl`, `briefTrades`, `btcRegime`, `cmp`, `compareVisual`, `corePos`, `cycleElapsed`, `cycleNext`, `dd`, `dec`, `dot`, `drawdownVisual`, `equityChartNote`, `equityPeriods`, `equityPlot`, `equityRangeLabel`, `head`, `ind`, `inddot`, `indsrc`, `indst`, `jr`, `kill`, `lch`, `lchart`, `lessons`, `lessonsCard`, `live`, `lp`, `lst`, `market`, `metrics`, `mobileToggle`, `navToggle`, `orderCount`, `ordersVisual`, `overview`, `periodNote`, `pnl`, `portfolio`, `pos`, `rail`, `rules`, `sellConditions`, `signalBars`, `signals`, `split`, `splitNote`, `splitTable`, `stateSrc`, `strat`, `ts`, `uptime`, `ver`, `versions`, `wf`
 
 **Clés de `D` utilisées (51)** : `C0`, `allocation`, `as_of`, `atr_mult`, `backtest`, `basket_return_pct`, `btc_regime`, `btc_regime_state`, `btc_return_pct`, `btc_series`, `cash`, `core`, `cur_dd_pct`, `curve`, `dd_series`, `decisions`, `equity`, `exposure_pct`, `fees`, `fees_tier`, `ind_btc_pair`, `ind_live`, `indicators`, `indicators_src`, `invested_pct`, `journal`, `keep_rank`, `killed`, `last_cycle_iso`, `lessons`, `max_dd_pct`, `min_hold_h`, `n_cycles`, `n_trades`, `net_return_pct`, `orders`, `pnl_by_asset`, `pnl_gross`, `pnl_net`, `positions`, `snapshot`, `start_iso`, `start_paris`, `total`, `trade_stats`, `universe`, `version`, `version_engine`, `vs_btc_pct`, `walkforward`, `win_rate_pct`
+
+## Dérogation V1.2 — approuvée pour le travail de branche seulement
+- GPT-6 travaille sur la branche `strategy/v1.2` issue de develop, en exception explicite de `perimetre-gpt6`. Les contrôles `perimetre-strategie`, `isolation-v12`, `versions` et `contrat` restent obligatoires.
+- La protection de `cycle_v11.py`, `cycle.py`, `sim.yml`, `sim.db`, `state/`, `strategy/params.json`, `page_data.py`, `render_page.py` et du template est **intacte** pour toutes les branches.
+- Etat V1.2 dans `kraken-sim-preprod/state-v12` seulement. Aucun moteur V1.2 ne peut écrire dans `kraken-sim` ou `kraken-sim-state`.
+- `sim_v12.yml` : workflow manuel, pas de cron, code figé à un SHA validé, calcul sans secret et publication séparée. Présence du workflow sur main, activation des cycles et activation ultérieure du cron : décisions distinctes de Cyril.
+- La SPEC de stratégie provient de Grok Bot ; première fusion de `strategy/v1.2` vers develop soumise à Cyril et à une revue technique Grok Bot.
+- Le site préprod continue temporairement à afficher V1.1 jusqu'à un état V1.2 réel et testé ; ne jamais présenter ses données V1.1 comme les résultats du moteur V1.2.
+- Numérotations indépendantes : moteur V1.3, stratégie V1.2 et UX propre.
