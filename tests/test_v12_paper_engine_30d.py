@@ -35,7 +35,7 @@ def market_day(base,day,crash=False):
                                  "min_order_usd":25}
     source["usdc_usd"]={"source":"trusted-public-kraken",
        "bid":"0.9950" if day>=20 else "0.9995",
-       "ask":"1.0005","as_of":moment}
+       "ask":"0.9970" if day>=20 else "1.0005","as_of":moment}
     return source
 
 def at(market,hours=0):
