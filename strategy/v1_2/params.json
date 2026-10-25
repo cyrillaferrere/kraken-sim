@@ -7,7 +7,7 @@
   "UNIVERSE": {
     "max_assets": 20,
     "min_history_daily": 120,
-    "min_median_daily_usd_volume": 5000000,
+    "min_median_daily_usdc_volume_30d": 1000000,
     "liquidity_days": 30,
     "exclusions": [
       "USDT",
@@ -23,6 +23,17 @@
       "USD"
     ],
     "quote": "USD"
+  },
+  "LIQUIDITY": {
+    "volume_source": "OHLC_1440_closed_bars_median_30d_volume_x_close_usdc",
+    "max_spread": 0.003,
+    "depth_band_pct": 0.005,
+    "depth_multiple": 3,
+    "alert_min_attempts": 20,
+    "alert_max_reject_rate": 0.05,
+    "alert_max_median_slippage": 0.0015,
+    "rollback_min_median_daily_usdc_volume_30d": 5000000,
+    "rollback_automated": false
   },
   "COSTS": {
     "F1": {

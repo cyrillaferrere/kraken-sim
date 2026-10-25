@@ -15,7 +15,7 @@ from decimal import Decimal
 from pathlib import Path
 
 from v12_accounting import Portfolio,d
-from v12_autonomy import SPEC,utc,validate
+from v12_autonomy import SPEC,utc,validate,min_median_volume_usdc
 from v12_execution import passive_crossing_qty,taker_estimate
 from v12_isolation import state_dir
 from v12_learning import canonical,append,open_journal
@@ -241,8 +241,25 @@ class PaperEngine:
                            liquidity,now.isoformat()))
         return paid
 
+    def _liquidity_gate(self,asset,side,qty,forced):
+        """Moteur V1.6.2 : contrôle Depth avant chaque ordre PAPER taker.
+        Snapshot sans clé 'books' (fixtures hors ligne antérieures) : non contrôlé.
+        Sorties de sécurité (forced) jamais bloquées par un carnet mince."""
+        books=getattr(self,"current_books",None)
+        if books is None or forced:return
+        from v12_liquidity import book_from_snapshot,check_order,record
+        result=check_order(book_from_snapshot(books.get(asset)),side,qty)
+        self._put("liquidity_metrics",record(self._get("liquidity_metrics"),result))
+        if not result["accepted"]:
+            raise ValueError(result["reason"])
+
+    def liquidity_metrics(self):
+        from v12_liquidity import empty_metrics
+        return self._get("liquidity_metrics") or empty_metrics()
+
     def _execute_taker(self,portfolio,identity,asset,side,qty,quotes,now,forced=False):
         q=quotes[asset]
+        self._liquidity_gate(asset,side,qty,forced)
         estimate=taker_estimate(side.lower(),qty,q["bid"],q["ask"],
                                 self._fee("taker"),self._slip(asset,forced))
         self._fill(portfolio,identity,asset,side,qty,estimate["price"],"taker",now)
@@ -269,7 +286,7 @@ class PaperEngine:
         universe=point_in_time_universe(
             closed,t.isoformat(),
             min_history=int(SPEC["UNIVERSE"]["min_history_daily"]),
-            min_daily_volume=float(SPEC["UNIVERSE"]["min_median_daily_usd_volume"]),
+            min_daily_volume=min_median_volume_usdc(),
             max_assets=int(SPEC["UNIVERSE"]["max_assets"]))
         for asset in ("BTC","ETH"):
             arr=closed.get(asset,[])
@@ -522,6 +539,7 @@ class PaperEngine:
         existing=self.conn.execute("SELECT status,note FROM cycles WHERE slot=?",(slot,)).fetchone()
         if existing:return {"status":existing[0],"duplicate":True,"note":existing[1]}
         events=[]
+        self.current_books=snapshot.get("books") if isinstance(snapshot,dict) else None
         with self.transaction():
             p=self.wallet()
             try:
@@ -559,6 +577,11 @@ class PaperEngine:
                 # even if Grok misses its daily IT.
                 events.append({"action":"RISK_LOCK_OR_PAUSE_NO_NEW_ORDERS"})
             equity=p.equity(self._marks(quotes,p.positions))
+            if self.current_books is not None:
+                from v12_liquidity import evaluate_alert
+                alert=evaluate_alert(self._get("liquidity_metrics"))
+                self._put("liquidity_alert",alert)
+                if alert:events.append({"action":"LIQUIDITY_REVIEW","alert":alert})
             self._put("wallet",self._wallet_json(p))
             usdc=None;btc_ref=None
             usdc_quote=snapshot.get("usdc_usd")

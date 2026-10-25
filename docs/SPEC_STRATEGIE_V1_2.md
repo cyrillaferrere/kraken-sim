@@ -145,3 +145,17 @@ Demande de Cyril (résident français, zone euro). Mises en œuvre dans le Moteu
   - il reste la devise de compte et l'actif refuge, et il est exclu des signaux et des entrées.
 - **Données manquantes :** une donnée absente ou un historique insuffisant (< 220 bougies journalières closes) est publié à `null`, jamais imputé. La paire est marquée `insufficient_history` et exclue des entrées. Le régime BTC utilise BTC/USDC.
 - **Versions en 3 chiffres (x.y.z) :** le troisième chiffre est réservé aux correctifs, le deuxième à une vraie mise à jour (ex. ce changement = Moteur V1.6.1, UX V1.2.2). Le `VERSION_ENGINE` partagé de la V1.1 n'est pas concerné.
+
+## 9. Liquidité PAPER à 1 M USDC — Moteur V1.6.2 (ajout du 26/10/2026)
+- **Décision (Cyril, 26/10/2026) :** le seuil d'univers passe de 5 M à **1 M USDC** de volume médian quotidien. Motif : à 5 M, presque aucune paire XXX/USDC accessible en France (MiCA, USDT exclu) n'est éligible ; l'univers serait réduit à BTC/ETH.
+- **Mesure du volume :** médiane sur 30 jours du volume quotidien en USDC (volume × clôture des bougies OHLC journalières **closes** de la paire XXX/USDC). Le volume 24 h du Ticker n'est **pas** utilisé pour l'éligibilité. Moins de 30 bougies ou donnée manquante → `null`, paire rejetée.
+- **Garde-fous :**
+  - spread maximal inchangé : ≤ 0,3 % ;
+  - carnet lu via l'endpoint public Kraken `/0/public/Depth` ;
+  - avant chaque ordre PAPER : la profondeur cumulée côté exécution (asks pour un achat, bids pour une vente) dans ±0,5 % autour du mid doit valoir au moins **3× la taille de l'ordre** ; sinon refus `INSUFFICIENT_DEPTH` ;
+  - slippage estimé en faisant traverser le carnet à l'ordre (VWAP comparé au meilleur prix) ;
+  - les sorties de sécurité (coupe-circuit, stops) ne sont jamais bloquées par un carnet mince ;
+  - métriques (tentatives, refus par motif, slippage estimé) et instantané des carnets publiés à chaque IT dans `liquidity_monitor`.
+- **Alerte `LIQUIDITY_REVIEW` :** levée dans l'état et les logs si, sur au moins 20 tentatives, plus de 5 % des ordres sont refusés ou si le slippage médian dépasse 0,15 %.
+- **Critère de repli :** si l'alerte est levée, retour au seuil de **5 M USDC** (`UNIVERSE.min_median_daily_usdc_volume_30d=5000000`) par un correctif versionné, après décision de Cyril. Ce repli est documenté mais **pas automatisé**.
+

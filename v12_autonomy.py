@@ -21,6 +21,12 @@ from v12_signals import (closed_candles,point_in_time_universe,
 
 ROOT=Path(__file__).resolve().parent
 SPEC=json.loads((ROOT/"strategy"/"v1_2"/"params.json").read_text(encoding="utf8"))
+
+def min_median_volume_usdc():
+    """Seuil de volume médian quotidien 30 j XXX/USDC (Moteur V1.6.2 : 1 M).
+    Rétrocompatible avec l'ancienne clé min_median_daily_usd_volume."""
+    u=SPEC["UNIVERSE"]
+    return float(u.get("min_median_daily_usdc_volume_30d",u.get("min_median_daily_usd_volume")))
 ACTIONS=frozenset(("BUY","SELL","HOLD","CANCEL"))
 REQUIRED=frozenset(("decision_id","cycle_id","strategy_id","strategy_version",
  "candidate","model_id","policy_version","market_data_asof","created_at",
@@ -150,7 +156,7 @@ def _candidate_buy_weight(label,asset,market,portfolio,snapshot,asof):
     universe=point_in_time_universe(
         market,asof,
         min_history=int(SPEC["UNIVERSE"]["min_history_daily"]),
-        min_daily_volume=float(SPEC["UNIVERSE"]["min_median_daily_usd_volume"]),
+        min_daily_volume=min_median_volume_usdc(),
         max_assets=int(SPEC["UNIVERSE"]["max_assets"]))
     if asset not in universe:
         raise ValueError("OUTSIDE_POINT_IN_TIME_UNIVERSE")

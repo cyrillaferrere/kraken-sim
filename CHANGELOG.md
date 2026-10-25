@@ -12,6 +12,17 @@
 > - Versions sur `develop` : **moteur partagé V1.2 · stratégie V1.1 · UX/UI V1.1.2**. En PR expérimentale seulement : **moteur V1.3 (`VERSION_ENGINE_V12`) · stratégie V1.2**, sans fusion ni cycle.
 
 
+## [Moteur V1.6.2] — 26/10/2026 01h00 (Paris) — Kraken Bot (VERSION_ENGINE_V12, moteur expérimental V1.2)
+> Correctif (3e chiffre). Décision Cyril : seuil de liquidité PAPER abaissé à 1 M USDC, avec garde-fous. VERSION_ENGINE partagé V1.1 inchangé.
+### Fonctionnel
+- `strategy/v1_2/params.json` : `UNIVERSE.min_median_daily_usd_volume` (5 M) renommé `min_median_daily_usdc_volume_30d` = **1 000 000** ; lecture rétrocompatible de l'ancienne clé (`v12_autonomy.min_median_volume_usdc`). Nouveau bloc `LIQUIDITY` (spread ≤ 0,3 %, bande ±0,5 %, 3× l'ordre, seuils d'alerte, repli 5 M non automatisé). Impact décisions : l'univers éligible est désormais filtré par médiane 30 j ≥ 1 M USDC.
+- `v12_kraken_public.py` : éligibilité = **médiane 30 j** du volume quotidien en USDC (volume × close des bougies OHLC journalières closes), et non plus le Ticker 24 h (`usd_volume` → `usdc_volume_24h`, utilisé seulement pour ordonner la présélection). Moins de 30 bougies ou donnée manquante → `null` et paire rejetée (`VOLUME_MEDIAN_30D_UNAVAILABLE`), sinon `VOLUME_MEDIAN_30D_BELOW_MIN`. BTC/ETH restent obligatoires. Lecture du carnet via l'endpoint public `/0/public/Depth` pour chaque paire éligible ; instantané `liquidity.books` (meilleur bid/ask, spread, profondeur USDC à ±0,5 %).
+- Nouveau `v12_liquidity.py` + `v12_paper_engine._liquidity_gate` : avant chaque ordre PAPER taker, profondeur cumulée côté exécution à ±0,5 % du mid ≥ 3× la taille de l'ordre, sinon refus `INSUFFICIENT_DEPTH` (`DEPTH_UNAVAILABLE` si carnet absent). Slippage estimé en traversant le carnet. Sorties de sécurité forcées (kill switch, stops) jamais bloquées par un carnet mince.
+- Métriques persistées dans l'état V1.2 (kv `liquidity_metrics`, `liquidity_alert`) et bloc `liquidity_monitor` publié à chaque IT dans `check_report.json` et `public_state_v12.json` (champs attendus par le dashboard de la PR #22).
+- Alerte `LIQUIDITY_REVIEW` (état + logs) si ≥ 20 tentatives et (refus > 5 % ou slippage médian > 0,15 %). Repli documenté : retour à 5 M, décision manuelle de Cyril.
+### Infra
+- Tests : `tests/test_v12_liquidity.py` (profondeur suffisante/insuffisante, médiane 30 j, alerte, null si données manquantes, garde moteur) ; stub Depth dans `test_v12_real_bridge.py`.
+
 ## [Moteur V1.6.1] — 25/10/2026 23h55 (Paris) — Kraken Bot (VERSION_ENGINE_V12, moteur expérimental V1.2)
 > Numérotation : désormais à 3 chiffres (x.y.z). VERSION_ENGINE partagé V1.1 inchangé.
 ### Fonctionnel
