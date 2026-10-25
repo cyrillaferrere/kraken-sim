@@ -23,10 +23,12 @@ import csv
 import hashlib
 import io
 import json
+import math
 import re
 import zipfile
 from datetime import datetime, timezone
 from pathlib import Path
+from urllib.parse import urlsplit
 
 from v12_data import sha256_file
 
@@ -48,7 +50,10 @@ def _archives(document):
         expected=str(item.get("sha256","")).lower()
         if not SHA.fullmatch(expected):
             raise ValueError("ARCHIVE_UNVERIFIED_SHA256: "+path.name)
-        if not item.get("source_url","").startswith("https://assets.kraken.com/"):
+        url=urlsplit(item.get("source_url",""))
+        if (url.scheme!="https" or url.netloc!="assets.kraken.com" or
+            not url.path.startswith("/marketing/institutions/") or
+            url.query or url.fragment):
             raise ValueError("ARCHIVE_UNTRUSTED_ORIGIN: "+path.name)
         _utc(item["retrieved_utc"])
         if not path.is_file() or sha256_file(path)!=expected:
@@ -107,7 +112,8 @@ def _rows(z,member):
                     trades=int(row[6])
                 except (ValueError,OverflowError) as exc:
                     raise ValueError("BAD_OHLCVT_VALUE: %s:%s"%(member.filename,n)) from exc
-                if (ts%86400 or min(nums[:4])<=0 or nums[4]<0 or
+                if (ts%86400 or not all(math.isfinite(x) for x in nums) or
+                    min(nums[:4])<=0 or nums[4]<0 or
                     nums[1]<max(nums[0],nums[3]) or
                     nums[2]>min(nums[0],nums[3]) or trades<0):
                     raise ValueError("BAD_OHLCVT_PRICE_OR_TIME: %s:%s"%(member.filename,n))
