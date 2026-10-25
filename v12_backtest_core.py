@@ -251,7 +251,7 @@ def run_experiment(data,label,pset,risk,costs,tier="F2",start=None,end=None,
                 entered=entry_dates.get(a,day)
                 peak_close=max(float(b["close"]) for b in bars if b["end"]>=entered)
                 if (len(bars)>20 and usable_signal_window(bars,21) and
-                    float(bars[-1]["close"])<peak_close-float(pset["atr_mult"])*atr(bars,20)):
+                    float(bars[-1]["close"])<peak_close-float(pset["atr_mult"])*sig["atr14"]):
                     exits.add(a);urgent.add(a)
         current={a:float(p["qty"])*last_prices[a]/eq for a,p in portfolio.positions.items()}
 
