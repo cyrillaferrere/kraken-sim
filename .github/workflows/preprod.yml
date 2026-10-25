@@ -1,0 +1,40 @@
+name: préprod (dashboard de develop + données publiques de prod, lecture seule)
+on:
+  push:
+    branches: [develop]
+  workflow_dispatch:
+concurrency:
+  group: kraken-sim-preprod
+  cancel-in-progress: true
+permissions:
+  contents: read
+jobs:
+  preprod:
+    if: github.ref == 'refs/heads/develop'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Refuser toute autre branche que develop
+        run: '[ "$GITHUB_REF" = "refs/heads/develop" ] || { echo "::error::préprod uniquement depuis develop"; exit 1; }'
+      - uses: actions/checkout@v4
+        with: {ref: develop, persist-credentials: false}
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12"}
+      - name: Rendu depuis le state public de prod (aucun accès aux données internes)
+        env: {PREPROD_OUT: "${{ runner.temp }}/site"}
+        run: python3 render_preprod.py
+      - name: Contrôle (bandeau, source prod, zéro erreur JS)
+        env: {PREPROD_OUT: "${{ runner.temp }}/site"}
+        run: python3 tests/check_preprod.py
+      - name: Publication vers kraken-sim-preprod (clé de déploiement limitée à ce dépôt)
+        env:
+          DEPLOY_KEY: ${{ secrets.PREPROD_DEPLOY_KEY }}
+          SITE: ${{ runner.temp }}/site
+        run: |
+          mkdir -p ~/.ssh && umask 077 && printf '%s\n' "$DEPLOY_KEY" > ~/.ssh/preprod && ssh-keyscan -q github.com >> ~/.ssh/known_hosts
+          export GIT_SSH_COMMAND="ssh -i ~/.ssh/preprod -o IdentitiesOnly=yes"
+          cd "$SITE"; echo "Site de PRÉPRODUCTION publié depuis develop@${GITHUB_SHA::7}. Ne pas modifier à la main." > README.md
+          git init -q -b main && git add -A
+          git -c user.name=kraken-sim-preprod-bot -c user.email=kraken-sim-bot@users.noreply.github.com commit -qm "préprod develop@${GITHUB_SHA::7} $(TZ=Europe/Paris date '+%d/%m %Hh%M')"
+          git push -f git@github.com:cyrillaferrere/kraken-sim-preprod.git main
+          rm -f ~/.ssh/preprod

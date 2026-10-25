@@ -21,9 +21,12 @@ env:
   SIM_NO_REMOTE: "1"
 jobs:
   run:
+    if: github.ref == 'refs/heads/main'  # prod uniquement : jamais de cycle depuis develop ou une autre branche
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
+      - name: Refuser toute autre branche que main
+        run: '[ "$GITHUB_REF" = "refs/heads/main" ] || { echo "::error::sim.yml uniquement sur main"; exit 1; }'
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with: {python-version: "3.12"}

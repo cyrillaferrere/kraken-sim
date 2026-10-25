@@ -11,6 +11,12 @@
 > - Les commits automatiques « état sim … » ne sont pas journalisés.
 > - Versions actuelles : **Moteur V1.1 · Stratégie V1.1 · UX/UI V1.1**.
 
+## [Infra] — 25/10/2026 14h05 — Kraken Bot (versions inchangées : Moteur V1.1 · Stratégie V1.1 · UX/UI V1.1)
+### Infra
+- Préprod minimale : branche `develop`, dépôt public `cyrillaferrere/kraken-sim-preprod` (site seul, GitHub Pages), workflow `preprod.yml` (push sur develop : `render_preprod.py` rend le template de develop avec le state public de prod en lecture seule, bandeau PRÉPRODUCTION injecté à la publication, `tests/check_preprod.py`, push via clé de déploiement limitée au dépôt préprod, secret `PREPROD_DEPLOY_KEY`).
+- `sim.yml` ne tourne que sur `main` ; `guard.yml` aussi sur develop + contrôle `preprod-isole`.
+- GARDE_FOUS / README / SPEC_UX : circuit develop → préprod → main (fusion par Cyril, « OK prod » GPT-6 + Kraken Bot).
+
 ## [Stratégie V1.1] — 25/10/2026 13h15 — Kraken Bot
 ### Fonctionnel
 - Création du versionnage stratégie : `strategy/params.json` (`STRATEGY_VERSION` = V1.1) devient la source unique des paramètres, lus par `cycle_v11.py` ; valeurs **identiques** aux constantes précédentes (aucun changement de décision).
