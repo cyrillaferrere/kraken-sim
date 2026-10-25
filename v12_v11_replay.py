@@ -64,14 +64,13 @@ def replay_fixture(document, folder):
         raise ValueError("V11_REPLAY_WOULD_OVERWRITE_EXISTING_FIXTURE")
     history_root=root/"fixture_history"
     observations=[]
+    original_export=history_export.export_cycle
     def export_offline(conn,slot,engine,strategy):
-        return history_export.export_cycle(conn,slot,engine,strategy,root=str(history_root))
+        return original_export(conn,slot,engine,strategy,root=str(history_root))
     with ExitStack() as stack:
         stack.enter_context(patch.object(production.V,"DB",str(dbfile)))
         stack.enter_context(patch("history_export.export_cycle",side_effect=export_offline))
         stack.enter_context(patch("urllib.request.urlopen",side_effect=AssertionError("OFFLINE_REPLAY_NETWORK_FORBIDDEN")))
-        # Capture the original, before monkeypatching it (the export call above is
-        # intentionally rebound to history_export; patch would otherwise recurse).
         for snap in document["cycles"]:
             ts=_utc(snap["now_utc"])
             api=snap["api"]
