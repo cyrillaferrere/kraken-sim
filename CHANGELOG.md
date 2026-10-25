@@ -20,6 +20,10 @@
 
 ## [Moteur V1.3] — 25/10/2026 — GPT-6 (préprod V1.2, infrastructure)
 ### Suite aux corrections P1 de Grok Bot (branche, sans cycles)
+- `prepare_kraken_history_v12.py` : inventaire hors ligne des ZIP Kraken complets et 2026 T3, contrôle SHA-256, revue explicite des paires USD, dédoublonnage strict et `MANIFEST.draft.json` non certifié. Tests négatifs ZIP, paires inconnues et contradictions inter-archives.
+- `v12_v11_replay.py` : rejeu du moteur `cycle_v11.py` original à l'aide de snapshots d'API synthétiques, dans SQLite + historique isolés hors dépôt et sans réseau ; toute API manquante fait échouer la référence, même si le moteur enregistre un cycle. Aucun historique 2021–2026 n'est revendiqué.
+- `docs/DONNEES_ET_REPLAY_V1_2.md` : provenance Kraken, somme SHA-256 de l'archive complète, procédures de staging et distinction entre tests déterministes et véritable baseline V1.1.
+
 - `v12_signals.py` : rejette bougies imputées, passe le sizing A par paramètres ; D récupère les indicateurs V1.1 historiques.
 - `v12_rebalance.py`, `v12_backtest_core.py` : ventes partielles, rétention top K+2 de B, risque BTC quotidien, limites de corrélation et d'exposition, fills maker partiels et fallback taker, frais/spread/slippage distincts, kill-switch et délistage conventionnel, refus de valorisation gelée.
 - `v12_data.py` : manifeste SHA-256 avec vérification de couverture des paires USD historiques et délistées exigée pour le mode officiel ; données historiques exhaustives encore absentes.
