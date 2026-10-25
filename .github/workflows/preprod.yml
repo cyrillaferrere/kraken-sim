@@ -33,8 +33,13 @@ jobs:
         run: |
           mkdir -p ~/.ssh && umask 077 && printf '%s\n' "$DEPLOY_KEY" > ~/.ssh/preprod && ssh-keyscan github.com 2>/dev/null >> ~/.ssh/known_hosts
           export GIT_SSH_COMMAND="ssh -i ~/.ssh/preprod -o IdentitiesOnly=yes"
-          cd "$SITE"; echo "Site de PRÉPRODUCTION publié depuis develop@${GITHUB_SHA::7}. Ne pas modifier à la main." > README.md
-          git init -q -b main && git add -A
-          git -c user.name=kraken-sim-preprod-bot -c user.email=kraken-sim-bot@users.noreply.github.com commit -qm "préprod develop@${GITHUB_SHA::7} $(TZ=Europe/Paris date '+%d/%m %Hh%M')"
-          git push -f git@github.com:cyrillaferrere/kraken-sim-preprod.git main
+          # Pas de force-push : on remplace la racine mais on PRÉSERVE le dossier v12/ (page V1.2, publiée par sim_v12.yml).
+          git clone --depth 1 --branch main git@github.com:cyrillaferrere/kraken-sim-preprod.git "$RUNNER_TEMP/pub"
+          rm -rf "$SITE/v12"
+          cd "$RUNNER_TEMP/pub"; find . -mindepth 1 -maxdepth 1 ! -name .git ! -name v12 -exec rm -rf {} +
+          cp -a "$SITE"/. .
+          echo "Site de PRÉPRODUCTION publié depuis develop@${GITHUB_SHA::7}. Ne pas modifier à la main. Le dossier v12/ est géré par sim_v12.yml." > README.md
+          git add -A
+          git diff --cached --quiet || git -c user.name=kraken-sim-preprod-bot -c user.email=kraken-sim-bot@users.noreply.github.com commit -qm "préprod develop@${GITHUB_SHA::7} $(TZ=Europe/Paris date '+%d/%m %Hh%M')"
+          git push git@github.com:cyrillaferrere/kraken-sim-preprod.git HEAD:main
           rm -f ~/.ssh/preprod
