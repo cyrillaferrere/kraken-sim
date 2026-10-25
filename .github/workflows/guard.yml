@@ -37,7 +37,7 @@ jobs:
           if [ -n "$BAD" ]; then echo "::error::Hors périmètre UX (voir GARDE_FOUS.md) : $BAD"; exit 1; fi
           echo "Périmètre respecté"
   perimetre-gpt6:
-    if: github.event_name == 'pull_request' && (startsWith(github.head_ref, 'ux/') || startsWith(github.head_ref, 'feature/') || startsWith(github.head_ref, 'fix/'))
+    if: github.event_name == 'pull_request' && !startsWith(github.head_ref, 'strategy/v1.2') && (startsWith(github.head_ref, 'ux/') || startsWith(github.head_ref, 'feature/') || startsWith(github.head_ref, 'fix/'))
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -66,7 +66,29 @@ jobs:
             git diff $B...HEAD -- CHANGELOG.md | grep -q "^+## \[UX $NEW\]" || { echo "::error::CHANGELOG.md : ajouter une entrée '## [UX $NEW] — …'"; exit 1; }
             echo "UX $OLD -> $NEW OK"
           fi
-          if echo "$FILES" | grep -q '^strategy/'; then
+          if echo "$FILES" | grep -q '^strategy/params\.json
+            OLD=$(git show $B:strategy/params.json | grep -oP '"STRATEGY_VERSION": *"\K[^"]+'); NEW=$(grep -oP '"STRATEGY_VERSION": *"\K[^"]+' strategy/params.json)
+            [ "$OLD" != "$NEW" ] || { echo "::error::stratégie modifiée sans incrémenter STRATEGY_VERSION ($OLD)"; exit 1; }
+            E=$(git diff $B...HEAD -- CHANGELOG.md | grep '^+')
+            echo "$E" | grep -q "^+## \[Stratégie $NEW\]" || { echo "::error::CHANGELOG.md : ajouter '## [Stratégie $NEW] — …'"; exit 1; }
+            echo "$E" | grep -qi 'backtest' || { echo "::error::entrée Stratégie sans résultat de backtest"; exit 1; }
+            echo "Stratégie $OLD -> $NEW OK"
+          fi
+          if echo "$FILES" | grep -Eq '^(cycle_v11\.py|cycle\.py|backtest\.py|page_data\.py|render_page\.py|cycle_v12\.py|export_v12\.py|backtest_v12\.py|v12_isolation\.py)
+            OLD=$(git show $B:VERSION_ENGINE); NEW=$(cat VERSION_ENGINE)
+            [ "$OLD" != "$NEW" ] || { echo "::error::moteur/données modifiés sans incrémenter VERSION_ENGINE ($OLD)"; exit 1; }
+            git diff $B...HEAD -- CHANGELOG.md | grep -q "^+## \[Moteur $NEW\]" || { echo "::error::CHANGELOG.md : ajouter une entrée '## [Moteur $NEW] — …'"; exit 1; }
+            echo "Moteur $OLD -> $NEW OK"
+          fi
+  contrat:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12"}
+      - name: Contrat d'interface du dashboard (rendu réel + Chrome headless)
+        run: python3 tests/check_template.py
+; then
             OLD=$(git show $B:strategy/params.json | grep -oP '"STRATEGY_VERSION": *"\K[^"]+'); NEW=$(grep -oP '"STRATEGY_VERSION": *"\K[^"]+' strategy/params.json)
             [ "$OLD" != "$NEW" ] || { echo "::error::stratégie modifiée sans incrémenter STRATEGY_VERSION ($OLD)"; exit 1; }
             E=$(git diff $B...HEAD -- CHANGELOG.md | grep '^+')
@@ -88,3 +110,70 @@ jobs:
         with: {python-version: "3.12"}
       - name: Contrat d'interface du dashboard (rendu réel + Chrome headless)
         run: python3 tests/check_template.py
+; then
+            OLD=$(git show $B:VERSION_ENGINE); NEW=$(cat VERSION_ENGINE)
+            [ "$OLD" != "$NEW" ] || { echo "::error::moteur/données modifiés sans incrémenter VERSION_ENGINE ($OLD)"; exit 1; }
+            git diff $B...HEAD -- CHANGELOG.md | grep -q "^+## \[Moteur $NEW\]" || { echo "::error::CHANGELOG.md : ajouter une entrée '## [Moteur $NEW] — …'"; exit 1; }
+            echo "Moteur $OLD -> $NEW OK"
+          fi
+  contrat:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12"}
+      - name: Contrat d'interface du dashboard (rendu réel + Chrome headless)
+        run: python3 tests/check_template.py
+; then
+            OLD=$(git show $B:strategy/params.json | grep -oP '"STRATEGY_VERSION": *"\K[^"]+'); NEW=$(grep -oP '"STRATEGY_VERSION": *"\K[^"]+' strategy/params.json)
+            [ "$OLD" != "$NEW" ] || { echo "::error::stratégie modifiée sans incrémenter STRATEGY_VERSION ($OLD)"; exit 1; }
+            E=$(git diff $B...HEAD -- CHANGELOG.md | grep '^+')
+            echo "$E" | grep -q "^+## \[Stratégie $NEW\]" || { echo "::error::CHANGELOG.md : ajouter '## [Stratégie $NEW] — …'"; exit 1; }
+            echo "$E" | grep -qi 'backtest' || { echo "::error::entrée Stratégie sans résultat de backtest"; exit 1; }
+            echo "Stratégie $OLD -> $NEW OK"
+          fi
+          if echo "$FILES" | grep -Eq '^(cycle_v11\.py|cycle\.py|backtest\.py|page_data\.py|render_page\.py)$'; then
+            OLD=$(git show $B:VERSION_ENGINE); NEW=$(cat VERSION_ENGINE)
+            [ "$OLD" != "$NEW" ] || { echo "::error::moteur/données modifiés sans incrémenter VERSION_ENGINE ($OLD)"; exit 1; }
+            git diff $B...HEAD -- CHANGELOG.md | grep -q "^+## \[Moteur $NEW\]" || { echo "::error::CHANGELOG.md : ajouter une entrée '## [Moteur $NEW] — …'"; exit 1; }
+            echo "Moteur $OLD -> $NEW OK"
+          fi
+  contrat:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12"}
+      - name: Contrat d'interface du dashboard (rendu réel + Chrome headless)
+        run: python3 tests/check_template.py
+
+  perimetre-strategie:
+    if: github.event_name == 'pull_request' && startsWith(github.head_ref, 'strategy/')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - name: Aucun fichier de simulation V1.1 modifie
+        shell: bash
+        run: |
+          FILES=$(git diff --name-only "origin/$GITHUB_BASE_REF"...HEAD)
+          BAD=$(echo "$FILES" | grep -E '^(sim\.db|state/|cycle_v11\.py|cycle\.py|strategy/params\.json|\.github/workflows/sim\.yml|page_data\.py|render_page\.py|dashboard_template\.html)$' || true)
+          test -z "$BAD" || { echo "::error::V1.1 interdite : $BAD"; exit 1; }
+  isolation-v12:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12"}
+      - name: Controle statique du workflow V1.2
+        shell: bash
+        run: |
+          if test -f .github/workflows/sim_v12.yml; then
+            ! grep -Eq '^[[:space:]]*schedule:|^[[:space:]]*contents: write|git push .*kraken-sim\.git' .github/workflows/sim_v12.yml || { echo "::error::sim_v12 non isole"; exit 1; }
+            grep -q 'cancel-in-progress: false' .github/workflows/sim_v12.yml || exit 1
+            grep -q 'V12_REVIEWED_CODE_SHA' .github/workflows/sim_v12.yml || exit 1
+          fi
+      - name: Tests V1.2
+        run: python3 -m unittest discover -s tests -p 'test_v12_*.py' -v
+      - name: V1.1 intacte
+        run: python3 -m unittest discover -s tests -p 'test_v11_nonregression.py' -v
