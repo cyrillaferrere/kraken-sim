@@ -24,8 +24,6 @@ import hashlib
 import io
 import json
 import re
-import shutil
-import tempfile
 import zipfile
 from datetime import datetime, timezone
 from pathlib import Path
@@ -82,8 +80,8 @@ def inventory(archives):
     out={}
     for item in archives:
         with zipfile.ZipFile(item["file"]) as z:
-            if z.testzip() is not None:
-                raise ValueError("ZIP_CRC_FAILURE: "+Path(item["file"]).name)
+            # Do not decompress multi-gigabyte complete archives during an inventory scan.
+            # SHA-256 authenticates the whole ZIP; ZIP CRC is checked while each selected CSV is read.
             pairs=_daily_members(z)
             for pair,member in pairs.items():
                 out.setdefault(pair,[]).append({"archive":Path(item["file"]).name,
