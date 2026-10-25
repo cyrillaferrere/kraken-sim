@@ -33,6 +33,7 @@ ok("sources live (state.json + API publique Kraken)") if not any("source live" i
 mv = re.findall(r'^const VERSION_UX = "(V\d+(?:\.\d+)*)";', T, re.M)
 if len(mv) != 1: bad("il faut exactement une ligne 'const VERSION_UX = \"Vx.y\";' (version UX/UI)")
 else: ok(f"version UX/UI {mv[0]}")
+if "D.strategy_version" not in T: bad("la version stratégie (D.strategy_version) n'est plus affichée")
 if "D.version_engine" not in T: bad("la version moteur (D.version_engine) n'est plus affichée")
 if not os.path.exists(os.path.join(R, "VERSION_ENGINE")): bad("fichier VERSION_ENGINE absent")
 # 5. ids requis
@@ -73,7 +74,7 @@ else:
     if hits: bad("valeurs non définies affichées : " + " | ".join(hits[:5]))
     else: ok("aucun undefined / NaN affiché")
     vm = re.search(r'id="versions"[^>]*>([^<]*)', dom)
-    if not vm or "Moteur : V" not in vm.group(1) or "UX/UI : V" not in vm.group(1): bad("bandeau des versions non rempli : " + (vm.group(1) if vm else "absent"))
+    if not vm or "Moteur : V" not in vm.group(1) or "UX/UI : V" not in vm.group(1) or "Stratégie : V" not in vm.group(1): bad("bandeau des versions non rempli : " + (vm.group(1) if vm else "absent"))
     else: ok("versions affichées : " + vm.group(1))
 print("\nRÉSULTAT :", "CONTRAT CASSÉ" if errs else "contrat respecté")
 sys.exit(1 if errs else 0)

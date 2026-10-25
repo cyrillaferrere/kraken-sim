@@ -3,7 +3,7 @@
 Fichier unique : `dashboard_template.html`. Version : `const VERSION_UX = "V1.1";`. Propriétaire : **GPT6** (PR `ux/*`). Contrat d'interface : `GARDE_FOUS.md`.
 
 ## 1. Structure
-- **En-tête** (`app-top`) : marque, statut, bandeau `#versions` « Moteur : Vx · UX/UI : Vy » (obligatoire), heures de cycle / live.
+- **En-tête** (`app-top`) : marque, statut, bandeau `#versions` « Moteur : Vx · Stratégie : Vy · UX/UI : Vz » (obligatoire), heures de cycle / live.
 - **Rail de navigation** (mobile : `#mobileToggle`).
 - Sections (ancres) : `#split` (portefeuille vs socle conservé), `#market` (vue marché, BTC live, total), `#portfolio` (positions, socle de départ, allocation), `#activity` (ordres, ordres en attente, journal), `#signals` (régime BTC, indicateurs, conditions de vente), `#analysis` (performance, drawdown, frais, ablation, walk-forward).
 

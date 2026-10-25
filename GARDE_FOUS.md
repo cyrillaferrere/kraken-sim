@@ -1,11 +1,11 @@
 # GARDE-FOUS — contrat d'interface GPT6 ↔ Kraken Bot
 
-**Rôles** : Kraken Bot = moteur, données, règles (`VERSION_ENGINE`). GPT6 = UX/UI (`VERSION_UX` dans `dashboard_template.html`). Paper trading uniquement, aucun ordre réel.
+**Rôles** : Kraken Bot = moteur, données, règles (`VERSION_ENGINE`). GPT6 = UX/UI (`VERSION_UX` dans `dashboard_template.html`). Stratégie (`strategy/params.json`, `STRATEGY_VERSION`) = Kraken Bot uniquement, **GPT6 n'y touche jamais**. Paper trading uniquement, aucun ordre réel.
 
 ## 1. Contrat technique du template (à ne jamais casser)
 1. Une seule ligne d'injection, exactement : `const D = __DATA__;` (remplacée par `render_page.py`).
 2. Exactement **deux** blocs `<script` dans le fichier.
-3. Une seule ligne `const VERSION_UX = "Vx.y";` et le bandeau `#versions` affichant `Moteur : ${D.version_engine} · UX/UI : ${VERSION_UX}`.
+3. Une seule ligne `const VERSION_UX = "Vx.y";` et le bandeau `#versions` affichant `Moteur : ${D.version_engine} · Stratégie : ${D.strategy_version} · UX/UI : ${VERSION_UX}`.
 4. Tous les ids listés ci-dessous restent présents (on peut en **ajouter** ; en supprimer = demande fonctionnelle + mise à jour de `tests/contract.json` par Kraken Bot). Tout id référencé en JS doit exister.
 5. Seules les clés de `D` listées ci-dessous (ou ajoutées par Kraken Bot) sont lues ; jamais de clé inventée.
 6. Sources live conservées : `STATE_URL` + `fetch(STATE_URL…)` sur `state/public_state.json`, API Kraken `Ticker` et `OHLC`.
@@ -13,15 +13,16 @@
 8. Libellés « LIVE » / « sur clôture » / « valeurs FIGÉES » conformes à `docs/SPEC_UX.md`.
 
 ## 2. Périmètre
-- GPT6 modifie **uniquement** `dashboard_template.html` (+ `CHANGELOG.md`, `docs/SPEC_UX.md`). **Jamais** `cycle_v11.py`, `cycle.py`, `backtest.py`, `page_data.py`, `render_page.py`, `sim.db`, `state/`, `.github/workflows/`, `VERSION_ENGINE`, `tests/`.
+- GPT6 modifie **uniquement** `dashboard_template.html` (+ `CHANGELOG.md`, `docs/SPEC_UX.md`). **Jamais** `cycle_v11.py`, `cycle.py`, `backtest.py`, `page_data.py`, `render_page.py`, `sim.db`, `state/`, `.github/workflows/`, `VERSION_ENGINE`, `strategy/`, `tests/`.
 - GPT6 travaille sur une branche `ux/<sujet>` et ouvre une PR vers `main` ; **jamais de push direct sur main**.
 - Chaque PR UX **incrémente `VERSION_UX`** et ajoute en tête de `CHANGELOG.md` une entrée `## [UX <nouvelle version>] — date — GPT6`.
 - Chaque modif moteur/données **incrémente `VERSION_ENGINE`** + entrée `## [Moteur <version>]` (Kraken Bot).
+- Chaque changement de stratégie **incrémente `STRATEGY_VERSION`** + entrée `## [Stratégie <version>]` avec paramètres avant/après, justification et **backtest** (Kraken Bot).
 - Besoin d'une donnée ou d'une règle nouvelle → issue GitHub avec l'étiquette **`fonctionnel`** (Kraken Bot l'ajoute dans `page_data.py`, puis le contrat).
 
 ## 3. Ce que bloque `guard.yml` (PR et push sur main)
 - **perimetre-ux** (PR depuis `ux/*`) : échoue si un fichier hors `dashboard_template.html`, `CHANGELOG.md`, `docs/SPEC_UX.md` est modifié.
-- **versions** (toute PR) : template modifié sans changement de `VERSION_UX`, sans `CHANGELOG.md` ou sans entrée `## [UX <version>]` → échec ; fichiers moteur modifiés sans incrément de `VERSION_ENGINE` et entrée `## [Moteur <version>]` → échec.
+- **versions** (toute PR) : template modifié sans changement de `VERSION_UX`, sans `CHANGELOG.md` ou sans entrée `## [UX <version>]` → échec ; `strategy/` modifié sans incrément de `STRATEGY_VERSION`, sans entrée `## [Stratégie <version>]` ou sans backtest → échec ; fichiers moteur modifiés sans incrément de `VERSION_ENGINE` et entrée `## [Moteur <version>]` → échec.
 - **contrat** (PR et push) : `tests/check_template.py` (points 1 à 7 ci-dessus, rendu réel avec `render_page.py` puis Chrome sans interface : zéro erreur JS, zéro undefined/NaN, versions affichées).
 
 ## 4. Procédure de test (avant chaque PR)

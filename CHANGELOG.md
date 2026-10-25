@@ -1,17 +1,28 @@
 # Journal des modifications — Kraken Sim (paper trading, aucun ordre réel)
 
 > **Convention d'ajout (obligatoire, vérifiée par `guard.yml`)**
-> - Deux versions **indépendantes** :
+> - Trois versions **indépendantes** :
 >   - **Moteur** : fichier `VERSION_ENGINE` (source unique, exposée dans `state.json` / `D.version_engine`). Incrémentée **uniquement par Kraken Bot** à chaque modif moteur/données/règles.
+>   - **Stratégie** : `STRATEGY_VERSION` dans `strategy/params.json` (règles d'achat/vente et paramètres, source unique, exposée dans `state.json` / `D.strategy_version`, enregistrée sur chaque ordre, décision et cycle). Incrémentée **uniquement par Kraken Bot** ; entrée obligatoire avec **paramètres avant/après, justification, résultat de backtest**. GPT6 n'y touche jamais.
 >   - **UX/UI** : constante `const VERSION_UX = "Vx.y";` dans `dashboard_template.html`. Incrémentée **uniquement par GPT6** à chaque PR `ux/*`.
 > - Toute modification ajoute une entrée **en tête** du fichier, dans la même PR :
->   `## [Moteur Vx.y] — JJ/MM/AAAA HHhMM (Paris) — Kraken Bot` ou `## [UX Vx.y] — JJ/MM/AAAA HHhMM (Paris) — GPT6`
+>   `## [Moteur Vx.y] — JJ/MM/AAAA HHhMM (Paris) — Kraken Bot`, `## [Stratégie Vx.y] — … — Kraken Bot` ou `## [UX Vx.y] — JJ/MM/AAAA HHhMM (Paris) — GPT6`
 >   puis les sections utiles : **Fonctionnel / UX-UI / Infra / Corrections**, une ligne par changement (fichier + impact sur les décisions, « aucun » si visuel).
 > - Les commits automatiques « état sim … » ne sont pas journalisés.
-> - Versions actuelles : **Moteur V1.1 · UX/UI V1.1**.
+> - Versions actuelles : **Moteur V1.1 · Stratégie V1.1 · UX/UI V1.1**.
+
+## [Stratégie V1.1] — 25/10/2026 13h15 — Kraken Bot
+### Fonctionnel
+- Création du versionnage stratégie : `strategy/params.json` (`STRATEGY_VERSION` = V1.1) devient la source unique des paramètres, lus par `cycle_v11.py` ; valeurs **identiques** aux constantes précédentes (aucun changement de décision).
+- Paramètres V1.1 : k hystérésis 0,15 · rang de maintien 4 · détention min. 48 h · challenger +10 pts · stop 3×ATR14 · sizing 3 × 33 % · coupe-circuit −30 % · pas d'achat 60 min avant 00:00 UTC · spread max 0,3 % · ordre min. 25 $ · sortie B taker après 3 cycles · socle différé 48 h.
+- Avant (V1.04) → après (V1.1) : régime 2 états → 3 états (k = 0,15) ; rotation libre → rang ≤ 4 / 48 h / +10 pts ; taker 0,80 % → maker post-only + paliers ; univers top 10 → filtre `country_code=FR`.
+- Justification : audit ChatGPT (`v1_1/specs/audit_chatgpt.md`). Backtest (ablation, validation 02/02–23/10/2026) : V1.04 +1,2 % → V1.1 **+30,6 %**, 70 trades, DD max 30 %.
+### Infra
+- Colonne `strategy_version` sur `orders`, `decisions`, `cycles` ; `state.json` : `strategy_version`, `strategy_params`, `perf_by_strategy` (ordres, frais, P&L réalisé par version). Badge « Stratégie : V1.1 » en tête du dashboard. Les ordres antérieurs à la colonne sont rattachés à leur `version`.
 
 ## [Moteur V1.1] — 25/10/2026 13h10 — Kraken Bot
 ### Infra
+- Moteur V1.1 inchangé (aucune logique de trading modifiée).
 - Collaboration à deux : `GARDE_FOUS.md`, `docs/SPEC_FONCTIONNELLE.md`, `docs/SPEC_UX.md`, `tests/check_template.py` + `tests/contract.json`, workflow `guard.yml`, modèle de PR, CODEOWNERS, étiquettes `fonctionnel` / `ux`.
 - Versions séparées : fichier `VERSION_ENGINE` (lu par `cycle_v11.py` et `page_data.py` → `version_engine`), `VERSION_UX` dans le template, bandeau « Moteur : … · UX/UI : … » en haut du dashboard. Aucune logique de trading modifiée.
 

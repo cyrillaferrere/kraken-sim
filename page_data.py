@@ -69,6 +69,11 @@ out["backtest"] = dict(periods=bt["periods"], rows={k: [dict(v=v, **r) for v, r 
 # ---------- V1.01 ----------
 FEE, SLIP = 0.004, 0.0005
 out["version"] = m.get("version", "V1.04")
+_spf = os.path.join(D, "strategy", "params.json"); _sp = json.load(open(_spf)) if os.path.exists(_spf) else {}
+out["strategy_version"] = _sp.get("STRATEGY_VERSION", out["version"])  # version stratégie (source unique strategy/params.json)
+out["strategy_params"] = {k: v for k, v in _sp.items() if not k.startswith("_")}
+_osv = "COALESCE(strategy_version, version)" if "strategy_version" in {r[1] for r in c.execute("PRAGMA table_info(orders)")} else "version"
+out["perf_by_strategy"] = [dict(strategy_version=r[0] or "?", n_orders=r[1], fees=r[2], pnl_realized=r[3], first=paris(r[4]), last=paris(r[5])) for r in c.execute(f"SELECT {_osv},COUNT(*),COALESCE(SUM(fee),0),COALESCE(SUM(pnl),0),MIN(ts),MAX(ts) FROM orders GROUP BY 1 ORDER BY MIN(ts)")]
 _vf = os.path.join(D, "VERSION_ENGINE"); out["version_engine"] = open(_vf).read().strip() if os.path.exists(_vf) else out["version"]  # version moteur (fichier unique)
 st = datetime.fromisoformat(c.execute("SELECT MIN(ts) FROM cycles").fetchone()[0])
 out["start_iso"] = st.isoformat(); out["start_paris"] = st.astimezone(P).strftime("%d/%m/%Y %Hh%M")

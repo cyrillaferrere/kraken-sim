@@ -12,3 +12,4 @@
 - [ ] Aucune donnée d'exemple en dur ; ce qui est figé (sur clôture / cycle) est étiqueté comme tel
 - [ ] Aucune logique de trading modifiée
 - [ ] `VERSION_UX` (UX) ou `VERSION_ENGINE` (moteur) incrémentée, entrée `## [UX|Moteur Vx.y]` en tête du CHANGELOG
+- [ ] Stratégie : jamais par GPT6 ; sinon `STRATEGY_VERSION` incrémentée + entrée avec backtest

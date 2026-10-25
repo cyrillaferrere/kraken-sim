@@ -1,0 +1,8 @@
+{
+ "STRATEGY_VERSION": "V1.1",
+ "_doc": "Source unique de la stratégie (règles d'achat/vente). Toute modif = incrément STRATEGY_VERSION + entrée '## [Stratégie Vx.y]' dans CHANGELOG.md avec backtest. Jamais modifié par GPT6.",
+ "K_HYST": 0.15, "KEEP_RANK": 4, "MIN_HOLD_H": 48, "CHAL": 0.10,
+ "TOP_N": 3, "W": 0.33, "ATR_MULT": 3.0, "KILL_DD": 0.30,
+ "MAX_SPREAD": 0.003, "MIN_ORDER": 25.0, "SLIP": 0.0005,
+ "BLOCK_MIN": 60, "B_TAKER_AFTER": 3, "CORE_MIN_HOLD_H": 48
+}

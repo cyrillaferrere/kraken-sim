@@ -1,6 +1,9 @@
 # Spécification fonctionnelle — Moteur V1.1 (paper trading, aucun ordre réel)
 
-Version moteur : fichier `VERSION_ENGINE` (actuellement **V1.1**). Propriétaire : **Kraken Bot**. Toute modif → incrément `VERSION_ENGINE` + entrée `## [Moteur Vx.y]` dans `CHANGELOG.md`.
+Version moteur : fichier `VERSION_ENGINE` (actuellement **V1.1**). Propriétaire : **Kraken Bot**. Version stratégie : `STRATEGY_VERSION` dans `strategy/params.json` (actuellement **V1.1**), source unique des paramètres ci-dessous, lue par `cycle_v11.py`.
+- Moteur (code, infra, données) → incrément `VERSION_ENGINE` + `## [Moteur Vx.y]`.
+- Stratégie (règles, paramètres) → incrément `STRATEGY_VERSION` + `## [Stratégie Vx.y]` avec paramètres avant/après, justification et backtest.
+- Chaque ordre, décision et cycle enregistre `strategy_version` (comparaison des performances : `perf_by_strategy`).
 
 ## 1. Règles V1.1 (`cycle_v11.py`)
 | Paramètre | Valeur |
@@ -48,6 +51,8 @@ Version moteur : fichier `VERSION_ENGINE` (actuellement **V1.1**). Propriétaire
 | Champ | Description |
 |---|---|
 | `version` | version enregistrée dans le cycle (ex. V1.1) |
+| `strategy_version`, `strategy_params` | version et paramètres de stratégie (`strategy/params.json`) |
+| `perf_by_strategy[]` | `{strategy_version, n_orders, fees, pnl_realized, first, last}` |
 | `version_engine` | contenu de `VERSION_ENGINE` (affiché « Moteur : … ») |
 | `C0`, `start`, `start_iso`, `start_paris`, `uptime` | capital initial, début de la sim, durée |
 | `as_of`, `slot`, `last_cycle_iso`, `rendered`, `n_cycles` | horodatages du dernier cycle / rendu, nombre de cycles |

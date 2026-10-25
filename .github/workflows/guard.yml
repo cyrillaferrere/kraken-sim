@@ -40,6 +40,14 @@ jobs:
             git diff $B...HEAD -- CHANGELOG.md | grep -q "^+## \[UX $NEW\]" || { echo "::error::CHANGELOG.md : ajouter une entrée '## [UX $NEW] — …'"; exit 1; }
             echo "UX $OLD -> $NEW OK"
           fi
+          if echo "$FILES" | grep -q '^strategy/'; then
+            OLD=$(git show $B:strategy/params.json | grep -oP '"STRATEGY_VERSION": *"\K[^"]+'); NEW=$(grep -oP '"STRATEGY_VERSION": *"\K[^"]+' strategy/params.json)
+            [ "$OLD" != "$NEW" ] || { echo "::error::stratégie modifiée sans incrémenter STRATEGY_VERSION ($OLD)"; exit 1; }
+            E=$(git diff $B...HEAD -- CHANGELOG.md | grep '^+')
+            echo "$E" | grep -q "^+## \[Stratégie $NEW\]" || { echo "::error::CHANGELOG.md : ajouter '## [Stratégie $NEW] — …'"; exit 1; }
+            echo "$E" | grep -qi 'backtest' || { echo "::error::entrée Stratégie sans résultat de backtest"; exit 1; }
+            echo "Stratégie $OLD -> $NEW OK"
+          fi
           if echo "$FILES" | grep -Eq '^(cycle_v11\.py|cycle\.py|backtest\.py|page_data\.py|render_page\.py)$'; then
             OLD=$(git show $B:VERSION_ENGINE); NEW=$(cat VERSION_ENGINE)
             [ "$OLD" != "$NEW" ] || { echo "::error::moteur/données modifiés sans incrémenter VERSION_ENGINE ($OLD)"; exit 1; }

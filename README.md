@@ -1,5 +1,5 @@
-> **Collaboration GPT6 (UX/UI) ↔ Kraken Bot (moteur)** — versions : **Moteur `VERSION_ENGINE`** · **UX/UI `VERSION_UX`** (template).
-> GPT6 ne modifie que `dashboard_template.html` sur une branche `ux/*` + PR (jamais de push sur main), incrémente `VERSION_UX` et ajoute une entrée au `CHANGELOG.md`. Contrat : une seule ligne `const D = __DATA__;`, 2 blocs script, ids et clés `D` du contrat, données live (state.json + API Kraken), aucune donnée d'exemple. Demandes fonctionnelles → issue `fonctionnel`.
+> **Collaboration GPT6 (UX/UI) ↔ Kraken Bot (moteur)** — versions : **Moteur `VERSION_ENGINE`** · **Stratégie `strategy/params.json`** · **UX/UI `VERSION_UX`** (template).
+> GPT6 ne modifie que `dashboard_template.html` sur une branche `ux/*` + PR (jamais de push sur main), incrémente `VERSION_UX` et ajoute une entrée au `CHANGELOG.md`. Contrat : une seule ligne `const D = __DATA__;`, 2 blocs script, ids et clés `D` du contrat, données live (state.json + API Kraken), aucune donnée d'exemple. Stratégie : Kraken Bot seul (incrément + CHANGELOG avec backtest). Demandes fonctionnelles → issue `fonctionnel`.
 > Détails : [GARDE_FOUS.md](GARDE_FOUS.md) · [CHANGELOG.md](CHANGELOG.md) · [docs/SPEC_FONCTIONNELLE.md](docs/SPEC_FONCTIONNELLE.md) · [docs/SPEC_UX.md](docs/SPEC_UX.md) · test : `python3 tests/check_template.py`.
 
 # Kraken Sim — paper trading (no real orders, public Kraken API only)

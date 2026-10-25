@@ -24,6 +24,13 @@ B_TAKER_AFTER = 3  # sortie B (clôture < EMA50) non remplie après 3 cycles -> 
 TIERS = [(50000, .0015, .0030), (25000, .0020, .0035), (10000, .0022, .0038), (2500, .0030, .0060), (0, .0040, .0080)]
 CORE = [("XBT", 500.0), ("ETH", 300.0), ("XRP", 200.0)]  # socle de DÉPART : positions normales gérées par la stratégie (vendables)
 CORE_MIN_HOLD_H = 48  # détention min. depuis l'achat initial avant une sortie de tendance B
+# Stratégie : source unique strategy/params.json (mêmes valeurs par défaut ci-dessus) ; SIM_BLOCK_MIN (env) reste prioritaire
+_SP = os.path.join(D, "strategy", "params.json")
+_S = json.load(open(_SP)) if os.path.exists(_SP) else {}
+STRATEGY_VERSION = _S.get("STRATEGY_VERSION", "V1.1")
+for _k in ("K_HYST", "KEEP_RANK", "MIN_HOLD_H", "CHAL", "TOP_N", "W", "ATR_MULT", "KILL_DD", "MAX_SPREAD", "MIN_ORDER", "SLIP", "B_TAKER_AFTER", "CORE_MIN_HOLD_H"):
+    if _k in _S: globals()[_k] = _S[_k]
+if "BLOCK_MIN" in _S and "SIM_BLOCK_MIN" not in os.environ: BLOCK_MIN = int(_S["BLOCK_MIN"])
 EEA_FALLBACK = {"XMR"}  # repli si country_code=FR indisponible
 
 def fee_rate(c, now, maker):
@@ -70,18 +77,20 @@ def main():
     c.executescript("""CREATE TABLE IF NOT EXISTS core(asset TEXT PRIMARY KEY, pair TEXT, qty REAL, avg REAL, cost REAL, fee REAL, price REAL, fee_rate REAL, ts TEXT);
     CREATE TABLE IF NOT EXISTS pending(asset TEXT PRIMARY KEY, pair TEXT, side TEXT, qty REAL, lim REAL, placed_ts TEXT, reason TEXT, kind TEXT, tries INTEGER DEFAULT 0, day TEXT);""")
     oc = {r[1] for r in c.execute("PRAGMA table_info(orders)")}
-    for col, typ in (("liquidity", "TEXT"), ("fee_rate", "REAL"), ("version", "TEXT"), ("core", "INTEGER DEFAULT 0")):
+    for col, typ in (("liquidity", "TEXT"), ("fee_rate", "REAL"), ("version", "TEXT"), ("core", "INTEGER DEFAULT 0"), ("strategy_version", "TEXT")):
         if col not in oc: c.execute(f"ALTER TABLE orders ADD COLUMN {col} {typ}")
     ec = {r[1] for r in c.execute("PRAGMA table_info(equity)")}
     for col in ("core_value", "strat_equity"):
         if col not in ec: c.execute(f"ALTER TABLE equity ADD COLUMN {col} REAL")
     if "mode" not in {r[1] for r in c.execute("PRAGMA table_info(cycles)")}: c.execute("ALTER TABLE cycles ADD COLUMN mode TEXT")
+    for _t in ("decisions", "cycles"):
+        if "strategy_version" not in {r[1] for r in c.execute(f"PRAGMA table_info({_t})")}: c.execute(f"ALTER TABLE {_t} ADD COLUMN strategy_version TEXT")
     if c.execute("SELECT 1 FROM cycles WHERE slot=?", (slot,)).fetchone(): print(f"slot {slot} déjà traité"); return
     M = lambda k, v=None: V.meta(c, k, v)
     if M("C0") is None:
         M("C0", V.C0); M("C0_source", V.C0_SOURCE); M("C0_core", sum(b for _, b in CORE)); M("C0_strat", V.C0); M("cash", V.C0 - sum(b for _, b in CORE)); M("start_ts", ts); M("killed", 0)
     C0 = float(M("C0")); M("version", VERSION); C0S = C0  # un seul portefeuille : coupe-circuit sur le total
-    dec = lambda a, act, why: c.execute("INSERT INTO decisions(slot,ts,asset,action,reason) VALUES(?,?,?,?,?)", (slot, ts, a, act, why))
+    dec = lambda a, act, why: c.execute("INSERT INTO decisions(slot,ts,asset,action,reason,strategy_version) VALUES(?,?,?,?,?,?)", (slot, ts, a, act, why, STRATEGY_VERSION))
     snap = json.loads(M("daily_snapshot") or "{}")
     mins_to_close = (today0 + 86400 - now.timestamp()) / 60
     mode = "daily" if snap.get("day") != day and now.hour < 23 else "intraday"
@@ -94,8 +103,8 @@ def main():
         for a, budget in CORE:
             q = allq[a]; rate, _ = fee_rate(c, now, True); lim = q["bid"]; qty = budget / (1 + rate) / lim; notional = qty * lim; fee = notional * rate
             c.execute("INSERT OR REPLACE INTO core VALUES(?,?,?,?,?,?,?,?,?)", (a, q["pair"], qty, (notional + fee) / qty, notional + fee, fee, lim, rate, ts))
-            c.execute("INSERT INTO orders(slot,ts,pair,asset,side,qty,price,notional,fee,reason,pnl,test,liquidity,fee_rate,version,core) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
-                      (slot, ts, q["pair"], a, "buy", qty, lim, notional, fee, f"SOCLE : achat de départ {budget:.0f} $ (limite post-only au bid, position gérée ensuite par la stratégie)", None, 0, "maker", rate, VERSION, 1))
+            c.execute("INSERT INTO orders(slot,ts,pair,asset,side,qty,price,notional,fee,reason,pnl,test,liquidity,fee_rate,version,core,strategy_version) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                      (slot, ts, q["pair"], a, "buy", qty, lim, notional, fee, f"SOCLE : achat de départ {budget:.0f} $ (limite post-only au bid, position gérée ensuite par la stratégie)", None, 0, "maker", rate, VERSION, 1, STRATEGY_VERSION))
             dec(a, "socle", f"achat socle {qty:.6g} {a} @ {lim:.6g} (maker {rate*100:.2f} %, frais {fee:.2f} $)"); print(f"SOCLE BUY {qty:.6g} {a} @ {lim:.6g} maker fee {fee:.2f}")
         M("core_done", ts)
     core = {r[0]: dict(pair=r[1], qty=r[2], avg=r[3], cost=r[4]) for r in c.execute("SELECT asset,pair,qty,avg,cost FROM core")}
@@ -129,8 +138,8 @@ def main():
             cash += notional - fee; p = pos[a]; pnl = (px*(1-rate) - p["avg"]) * qty; p["qty"] -= qty
             test = test or int(a in tests)
             if p["qty"] * q["bid"] < 1: del pos[a]; tests.discard(a)
-        c.execute("INSERT INTO orders(slot,ts,pair,asset,side,qty,price,notional,fee,reason,pnl,test,liquidity,fee_rate,version) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
-                  (slot, ts, q["pair"], a, side, qty, px, notional, fee, why, pnl, test, liq, rate, VERSION))
+        c.execute("INSERT INTO orders(slot,ts,pair,asset,side,qty,price,notional,fee,reason,pnl,test,liquidity,fee_rate,version,strategy_version) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                  (slot, ts, q["pair"], a, side, qty, px, notional, fee, why, pnl, test, liq, rate, VERSION, STRATEGY_VERSION))
         dec(a, side, f"{why} [{liq} {rate*100:.2f} %]"); print(f"{side.upper()} {qty:.6g} {a} @ {px:.6g} {liq} fee {fee:.2f} — {why}")
     def taker(a, side, qty, why):
         q = allq[a]
@@ -252,7 +261,7 @@ def main():
             c.execute("INSERT OR REPLACE INTO prices VALUES(?,?,?,?,?)", (slot, a, q["bid"], q["ask"], q["last"]))
     eq = equity(); cv = core_value(); seq = eq; exp = 1 - cash / eq if eq else 0; btch = float(M("btc_qty")) * btc["bid"]  # core_value = référence « socle conservé » (hors liquidités)
     c.execute("INSERT INTO equity(slot,ts,equity,cash,btc_hold,exposure,core_value,strat_equity) VALUES(?,?,?,?,?,?,?,?)", (slot, ts, eq, cash, btch, exp, cv, seq))
-    c.execute("INSERT INTO cycles(slot,ts,status,note,mode) VALUES(?,?,?,?,?)", (slot, ts, "ok", note, mode))
+    c.execute("INSERT INTO cycles(slot,ts,status,note,mode,strategy_version) VALUES(?,?,?,?,?,?)", (slot, ts, "ok", note, mode, STRATEGY_VERSION))
     c.commit()
     print(f"{VERSION} slot {slot} [{mode}] : total {eq:.2f} $ (réf. socle conservé {cv + float(M("C0")) - float(M("C0_core") or 0):.2f}), liquidités {cash:.2f}, exposition {exp:.0%}, ordres en attente {len(pend)}, BTC hold {btch:.2f}")
 
