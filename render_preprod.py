@@ -32,7 +32,8 @@ else:
     data["lessons"] = [b.strip() for b in open(lp).read().split("\n## ")[1:] if b.strip()] if os.path.exists(lp) else []
     data["C0_source"] = "state public de production (préprod, lecture seule)"
 
-html = open(os.path.join(D, "dashboard_template.html")).read()
+template = "dashboard_v12_template.html" if V12_ENABLED else "dashboard_template.html"
+html = open(os.path.join(D, template), encoding="utf-8").read()
 assert html.count("__DATA__") == 1, "template : une seule injection attendue"
 html = html.replace("__DATA__", json.dumps(data, ensure_ascii=False, separators=(",", ":")).replace("</", "<\\/"))
 # Le JS lit uniquement la source explicitement sélectionnée (les prix Kraken restent live)
@@ -42,7 +43,8 @@ assert n == 1, "STATE_URL introuvable dans le template"
 # Marquage préprod discret, sans bandeau occupant toute la largeur.
 # Modifié exclusivement dans le rendu préprod : jamais dans le template de production.
 BAN = ''
-html = html.replace('<strong>Kraken <span>Sim</span></strong>', '<strong><span style="color:#ef4444">Kraken</span> <span>Sim</span> <small style="font-size:12px;color:#a7b7c9;font-weight:650">PreProd</small></strong>', 1)
+if not V12_ENABLED:
+    html = html.replace('<strong>Kraken <span>Sim</span></strong>', '<strong><span style="color:#ef4444">Kraken</span> <span>Sim</span> <small style="font-size:12px;color:#a7b7c9;font-weight:650">PreProd</small></strong>', 1)
 html, n = re.subn(r'(<body[^>]*>)', r'\1' + BAN, html, count=1)
 assert n == 1, "<body> introuvable"
 html = html.replace("<title>", "<title>[PRÉPROD] ", 1)
