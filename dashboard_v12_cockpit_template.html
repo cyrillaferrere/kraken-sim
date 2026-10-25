@@ -110,7 +110,7 @@ h1,h2,h3,p{margin:0}h1{font-size:29px;letter-spacing:-.9px;font-weight:720;line-
   <section id="portfolio" class="section">
    <div class="section-header"><h2>Portefeuille</h2><p>Positions et liquidités réelles de la simulation fictive</p></div>
    <div class="duocol">
-    <article class="card"><div class="card-head"><div><h2>Positions ouvertes</h2><p>Quantités du moteur PAPER, sans accès au portefeuille réel</p></div><span id="positionCount" class="tag">—</span></div><div class="table-scroll"><table><thead><tr><th>Crypto</th><th>Quantité</th><th>Valeur</th><th>P&L</th><th>Stratégie</th></tr></thead><tbody id="positions"><tr><td colspan="5" class="empty">Aucune donnée de position publiée</td></tr></tbody></table></div></article>
+    <article class="card"><div class="card-head"><div><h2>Portefeuille</h2><p>USDC compté comme une crypto (devise de compte et refuge) + positions du moteur PAPER</p></div><span id="positionCount" class="tag">—</span></div><div class="table-scroll"><table><thead><tr><th>Actif</th><th>Quantité</th><th>Valeur (USDC)</th><th>Poids</th><th>Rôle</th></tr></thead><tbody id="positions"><tr><td colspan="5" class="empty">Aucune donnée de position publiée</td></tr></tbody></table></div></article>
     <article class="card"><div class="card-head"><div><h2>Allocation actuelle</h2><p>Part du portefeuille valorisée au dernier état</p></div></div><div class="barlist" id="allocation"><div class="empty">Répartition indisponible.</div></div><details class="details"><summary>Comptabilité et référence USDC</summary><div class="statline"><span>Capital PAPER de départ</span><strong id="c0Again">—</strong></div><div class="statline"><span>USDC conservés</span><strong id="usdcAgain">—</strong></div><div class="statline"><span>BTC conservé</span><strong id="btcAgain">—</strong></div></details></article>
    </div>
   </section>
@@ -153,7 +153,7 @@ h1,h2,h3,p{margin:0}h1{font-size:29px;letter-spacing:-.9px;font-weight:720;line-
 <script>
 const D = __DATA__;
 const STATE_URL = "__STATE_SOURCE__";
-const VERSION_UX = "V1.2.1";
+const VERSION_UX = "V1.2.2";
 const qs = id => document.getElementById(id);
 const nf = new Intl.NumberFormat("fr-FR",{maximumFractionDigits:2,minimumFractionDigits:2});
 const nfQty = new Intl.NumberFormat("fr-FR",{maximumFractionDigits:8});
@@ -239,14 +239,14 @@ function renderOrders(d){
  }).join("");
 }
 function renderPositions(d,a){
- const positions=arr(d.positions);text("positionCount",positions.length+" position"+(positions.length>1?"s":""));
- if(!positions.length){qs("positions").innerHTML=rowPlaceholder(5,"Aucune position ouverte dans le dernier état.");return;}
- qs("positions").innerHTML=positions.map(p=>'<tr><td><strong>'+htmlEscape(p.asset??p.symbol??"—")+'</strong></td><td>'+htmlEscape(val(p.qty??p.quantity,7))+'</td><td>'+htmlEscape(usd(p.value??p.value_usdc))+'</td><td>'+htmlEscape(percent(p.pnl_pct))+'</td><td>'+htmlEscape(p.candidate??p.strategy??"—")+'</td></tr>').join("");
+ const positions=arr(d.portfolio);text("positionCount",positions.length+" ligne"+(positions.length>1?"s":""));
+ if(!positions.length){qs("positions").innerHTML=rowPlaceholder(5,"Portefeuille non publié.");return;}
+ qs("positions").innerHTML=positions.map(p=>'<tr><td><strong>'+htmlEscape(p.asset??"—")+'</strong></td><td>'+htmlEscape(val(p.qty,p.asset==="USDC"?2:7))+'</td><td>'+htmlEscape(val(p.value_usdc,2)+" USDC")+'</td><td>'+htmlEscape(percent(p.weight_pct))+'</td><td>'+htmlEscape(p.role??"—")+'</td></tr>').join("");
 }
 function allocation(d,a){
  const container=qs("allocation");
  if(a.equity===null||a.equity<=0||a.cash===null){container.innerHTML='<div class="empty">Allocation non enregistrée.</div>';return;}
- const parts=[{asset:"Liquidités",v:a.cash}];
+ const parts=[{asset:"USDC",v:a.cash}];
  for(const pos of arr(d.positions)){const value=num(pos.value??pos.value_usdc);if(value!==null&&value>=0)parts.push({asset:String(pos.asset??"Actif"),v:value});}
  container.innerHTML=parts.map((p,i)=>{const per=p.v/a.equity*100,clamp=Math.max(0,Math.min(100,per));return '<div class="barrow"><div class="barlabels"><span>'+htmlEscape(p.asset)+'</span><strong>'+htmlEscape(percent(per))+'</strong></div><div class="track"><div class="fill" style="width:'+clamp.toFixed(2)+'%;background:'+(i===0?"#3cdaa8":"#75b5ff")+'"></div></div></div>';}).join("");
 }
