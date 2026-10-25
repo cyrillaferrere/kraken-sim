@@ -43,7 +43,7 @@ def run_experiment(data, label, pset, risk, costs, tier="F2", start=None, end=No
         px=float(price); qty=float(qty)
         if qty<=0 or px<=0 or qty*px<25: return False
         if side=="buy":
-            affordable=float(portfolio.cash)/(px*(1+float(rate)))
+            affordable=float(portfolio.cash)/(px*(1+float(rate)))*(1-1e-9)  # Decimal safety reserve; no leverage
             qty=min(qty,affordable)
             if qty*px<25: return False
             was_held=asset in portfolio.positions
