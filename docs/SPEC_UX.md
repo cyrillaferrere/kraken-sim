@@ -20,6 +20,11 @@ Fichier unique : `dashboard_template.html`. Version : `const VERSION_UX = "V1.1"
 
 Règles : chaque bloc live affiche « LIVE : prix Kraken (bid) à HH:MM:SS » ; si l'API échoue → « valeurs FIGÉES du cycle du … ». Jamais de valeur figée présentée comme live. Les indicateurs quotidiens portent la mention « sur clôture ».
 
+## 2b. Préproduction
+- URL : https://cyrillaferrere.github.io/kraken-sim-preprod/ — publiée à chaque push sur `develop` par `preprod.yml`.
+- Rendu par `render_preprod.py` : template de `develop` + `state/public_state.json` **public de prod** (lecture seule) ; backtests et leçons depuis les fichiers statiques du dépôt.
+- À la publication seulement : bandeau rouge permanent « PRÉPRODUCTION — NE PAS CONFONDRE AVEC LA SIMULATION OFFICIELLE », titre préfixé [PRÉPROD], `STATE_URL` réécrit vers le state de prod (raw GitHub). Le JS live lit donc le state de prod et les prix Kraken, comme en prod. Le template n'est pas modifié : le bandeau n'apparaît jamais en prod.
+
 ## 3. Responsive, thème, langue
 - Points de rupture CSS : 1150 / 850 / 600 px ; `prefers-reduced-motion` respecté ; tableaux défilables horizontalement sur mobile.
 - Thème sombre uniquement.

@@ -2,12 +2,26 @@ name: garde-fous (contrat dashboard + périmètre UX)
 on:
   pull_request:
   push:
-    branches: [main]
+    branches: [main, develop]
     paths-ignore: [sim.db, "state/**", dashboard.html, index.html, page_contents.txt]
   workflow_dispatch:
 permissions:
   contents: read
 jobs:
+  preprod-isole:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: preprod.yml / render_preprod.py n'écrivent jamais dans la prod
+        run: |
+          F=".github/workflows/preprod.yml render_preprod.py"
+          for f in $F; do [ -f "$f" ] || continue
+            if grep -nE 'sim\.db|cycle[_a-z0-9]*\.py|render_page\.py|page_data\.py|contents: *write' "$f"; then echo "::error::$f référence les données/le moteur de prod ou demande l'écriture"; exit 1; fi
+            if grep -nE 'cyrillaferrere/kraken-sim(\.git)?([^-]|$)' "$f" | grep -vE 'raw\.githubusercontent\.com/cyrillaferrere/kraken-sim/main/state/public_state\.json'; then echo "::error::$f vise le dépôt de prod kraken-sim (seul le state public en lecture est permis)"; exit 1; fi
+          done
+          grep -nE "open\([^)]*state/|state/[^\"]*\", *[\"']w" render_preprod.py && { echo "::error::écriture dans state/"; exit 1; } || true
+          if grep 'git push' .github/workflows/preprod.yml | grep -v 'git@github.com:cyrillaferrere/kraken-sim-preprod.git'; then echo "::error::push hors kraken-sim-preprod"; exit 1; fi
+          echo "préprod isolée"
   perimetre-ux:
     if: github.event_name == 'pull_request' && startsWith(github.head_ref, 'ux/')
     runs-on: ubuntu-latest
