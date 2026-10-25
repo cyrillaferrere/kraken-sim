@@ -69,9 +69,10 @@ def neighbors(default):
     return result
 
 def _run(data,name,p,risk,costs,tier,window,metadata,common):
+    start=window["start"]+"T00:00:00+00:00" if len(window["start"])==10 else window["start"]
+    end=window["end"]+"T23:59:59+00:00" if len(window["end"])==10 else window["end"]
     return run_experiment(data,name,p,risk,costs,tier=tier,
-                          start=window["start"],end=window["end"],
-                          metadata=metadata,common=common)
+                          start=start,end=end,metadata=metadata,common=common)
 
 def fold_choice(data,name,default,risk,costs,fold,metadata=None,common=None):
     """Fit ONLY within IS, maximizing Calmar at conservative F2 tier."""
