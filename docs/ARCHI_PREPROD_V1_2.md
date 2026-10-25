@@ -17,3 +17,11 @@ Statut : infrastructure EN PR, NON DÉPLOYÉE. Aucun cycle V1.2 autorisé ni ex�
 - P0 : interdiction expresse de tous les fichiers `state/**` ainsi que `VERSION_ENGINE` dans la PR `strategy/v1.2`, couverte par des tests négatifs.
 - P1 : chemins d'état interdits dès qu'un ancêtre contient un clone du moteur V1.1 ou `sim.db`, avec tests hors ligne.
 - Restent ouverts avant tout backtest officiel : biais de survivance, délistages, validation chronologique complète, frais réels, schéma du dashboard et équivalence V1.1.
+
+
+## Devise de compte USDC (Moteur V1.6)
+- Le portefeuille V1.2 est tenu en **USDC** : capital 6 605,10 USDC ; cash, équité, PnL, frais, pic et positions en USDC.
+- Cotations : paire Kraken XXX/USDC si en ligne et spread ≤ 0,3 % ; sinon XXX/USD ÷ USDC/USD (bid ÷ ask USDC/USD, ask ÷ bid USDC/USD, sens prudent). Les bougies journalières servant aux signaux restent XXX/USD (ratios).
+- Benchmark « conserver les USDC » : 6 605,10 USDC constants (0 %). Le taux USDC/USD reste affiché pour information.
+- Schémas publics : `"quote_currency": "USDC"`, montants en `*_usdc`.
+- Migration : `--init-check` réinitialise un état USD hérité en USDC seulement s'il n'a aucun ordre, exécution ni position (journal `migration` + `migration_log.json`), refuse sinon.

@@ -1,8 +1,15 @@
 #!/usr/bin/env python3
-"""V1.2 pre-production INIT + CHECK, HOLD only, zero order (moteur V1.4).
+"""V1.2 pre-production INIT + CHECK, HOLD only, zero order (moteur V1.6).
 
-1. Initialise the PAPER state if absent (6 605,10 cash, peak 6 605,10, no
-   trade, USDC benchmark). An existing state is NEVER overwritten.
+Account currency: USDC (Moteur V1.6). Cash, equity, PnL, fees, peak and
+positions are in USDC; quotes come from v12_kraken_public (XXX/USDC direct,
+else XXX/USD / USDC/USD).
+1. Initialise the PAPER state if absent (6 605,10 USDC cash, peak 6 605,10, no
+   trade). An existing USDC state is NEVER overwritten.
+   Migration: a legacy USD state (no quote_currency) is re-initialised in USDC
+   ONLY if it has 0 order, 0 fill and 0 position; the reset is logged in
+   check_report.json ("migration") and appended to migration_log.json.
+   Otherwise the init-check is REFUSED (USD_STATE_WITH_ACTIVITY_REFUSED).
 2. Reads Kraken PUBLIC data, computes A/B/C/D signals, builds the synthesis,
    loads the engine guard rails, submits ONE HOLD decision to the gateway.
 3. Asserts orders == 0 and fills == 0, THEN copies the working state into the
@@ -20,6 +27,7 @@ from v12_autonomy import SPEC,STRATEGY_ID
 from v12_isolation import state_dir
 
 C0="6605.10"
+QUOTE="USDC"
 STATE_FILES=("paper_engine_v12.db","grok_paper_evidence_v12.db")
 ROOT=Path(__file__).resolve().parent
 
@@ -49,6 +57,25 @@ def count_orders(engine):
     fills=engine.conn.execute("SELECT COUNT(*) FROM fills").fetchone()[0]
     return orders,fills
 
+def migrate_usd_if_empty(work,now_iso):
+    """Legacy USD -> USDC reset, only when the ledger is provably empty."""
+    from v12_paper_engine import PaperEngine
+    old=PaperEngine(str(work))
+    try:
+        if old.quote_currency==QUOTE:return None
+        orders,fills=count_orders(old)
+        positions=old._get("wallet")["positions"]
+        info={"at":now_iso,"from":old.quote_currency,"to":QUOTE,
+              "previous_cash":old._get("wallet")["cash"],"orders":orders,"fills":fills,
+              "positions":len(positions)}
+    finally:old.close()
+    if orders or fills or positions:
+        raise InitCheckRefused("USD_STATE_WITH_ACTIVITY_REFUSED")
+    for name in STATE_FILES:
+        if (work/name).exists():(work/name).unlink()
+    info["action"]="REINITIALISED_USDC_C0_"+C0
+    return info
+
 def run(state,collector=None,clock=None,max_pairs=40):
     from v12_paper_engine import PaperEngine
     target=state_dir(str(state))
@@ -62,7 +89,12 @@ def run(state,collector=None,clock=None,max_pairs=40):
         work.mkdir()
         for name in STATE_FILES:
             if (target/name).exists():shutil.copy2(target/name,work/name)
-        engine=PaperEngine(str(work),c0=C0)  # creates wallet ONLY if absent
+        migration=None
+        if (work/STATE_FILES[0]).exists():
+            migration=migrate_usd_if_empty(work,now_iso=datetime.now(timezone.utc).isoformat())
+        engine=PaperEngine(str(work),c0=C0,quote_currency=QUOTE)  # creates wallet ONLY if absent
+        if engine.quote_currency!=QUOTE:
+            engine.close();raise InitCheckRefused("STATE_NOT_USDC")
         try:
             snapshot=collector()
             now=snapshot["observed_at"]
@@ -83,7 +115,7 @@ def run(state,collector=None,clock=None,max_pairs=40):
             report={"schema_version":1,"mode":"INIT_CHECK_HOLD_ONLY",
               "engine_version":(ROOT/"VERSION_ENGINE_V12").read_text().strip(),
               "strategy_version":"V1.2","generated_at":datetime.now(timezone.utc).isoformat(),
-              "state_initialized_now":not existed,
+              "state_initialized_now":(not existed) or bool(migration),
               "data":{"origin":snapshot.get("data_origin"),"observed_at":now,
                       "pairs_quoted":len(snapshot.get("quotes",{})),
                       "pairs_valid":len(snapshot.get("quotes",{}))-len(excluded),
@@ -98,14 +130,18 @@ def run(state,collector=None,clock=None,max_pairs=40):
               "guardrails":{"risk":SPEC["RISK"],"max_spread":str(engine.MAX_SPREAD),
                             "min_valid_pairs":engine.min_valid_pairs(len(snapshot.get("quotes",{}))),
                             "risk_lock":rep["risk_lock"],"kill_count":rep["kill_count"],
-                            "engine_peak_usd":rep["engine_peak_usd"]},
+                            "engine_peak_usdc":rep["engine_peak_usd"]},
               "decisions":[{"decision_id":x.get("decision_id"),"accepted":x.get("accepted"),
                             "reason":x.get("reason")} for x in decisions],
               "orders":orders,"fills":fills,"trades":fills,
-              "equity_usd":tick.get("equity_usd") or str(sum([float(wallet["cash"])])),
-              "cash_usd":wallet["cash"],"positions":wallet["positions"],
-              "initial_capital_usd":rep["initial_cash_usd"],
-              "benchmark":{"usdc_hold_usd":tick.get("usdc_hold_usd")},
+              "quote_currency":QUOTE,
+              "valuation_method":snapshot.get("valuation_method"),
+              "equity_usdc":tick.get("equity_usd") or wallet["cash"],
+              "cash_usdc":wallet["cash"],"fees_paid_usdc":wallet["fees_paid"],
+              "realized_pnl_usdc":wallet["realized_pnl"],"positions":wallet["positions"],
+              "initial_capital_usdc":rep["initial_cash_usd"],
+              "benchmark":{"usdc_hold_usdc":rep["initial_cash_usd"],"usdc_hold_return_pct":0},
+              "migration":migration,
               "live_orders":0,"api_keys_used":False}
         finally:
             engine.close()
@@ -113,5 +149,11 @@ def run(state,collector=None,clock=None,max_pairs=40):
             raise InitCheckRefused("INIT_CHECK_ORDERS_MUST_BE_ZERO")
         for name in STATE_FILES:
             if (work/name).exists():shutil.copy2(work/name,target/name)
+            elif migration and (target/name).exists():(target/name).unlink()
+    if report.get("migration"):
+        log=target/"migration_log.json"
+        hist=json.loads(log.read_text(encoding="utf8")) if log.exists() else []
+        hist.append(report["migration"])
+        log.write_text(json.dumps(hist,indent=2,ensure_ascii=False)+"\n",encoding="utf8")
     (target/"check_report.json").write_text(json.dumps(report,indent=2,ensure_ascii=False)+"\n",encoding="utf8")
     return report

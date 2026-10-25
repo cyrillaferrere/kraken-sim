@@ -92,7 +92,7 @@ h1,h2,h3,p{margin:0}h1{font-size:29px;letter-spacing:-.9px;font-weight:720;line-
    <div class="section-header"><h2>Performance et marché</h2><p>Comparaison sur les données enregistrées, jamais avec la V1.1</p></div>
    <div class="pair">
     <article class="card chart-card">
-     <div class="card-head"><div><h2>Portefeuille vs conserver les USDC</h2><p>Valorisation fictive nette en USD · historique du moteur V1.2</p></div><div class="segment" id="chartPeriod" role="group" aria-label="Période"><button type="button" data-days="7">7 j</button><button type="button" data-days="30">30 j</button><button type="button" data-days="0" class="active">Tout</button></div></div>
+     <div class="card-head"><div><h2>Portefeuille vs conserver les USDC</h2><p>Valorisation fictive nette en USDC · historique du moteur V1.2</p></div><div class="segment" id="chartPeriod" role="group" aria-label="Période"><button type="button" data-days="7">7 j</button><button type="button" data-days="30">30 j</button><button type="button" data-days="0" class="active">Tout</button></div></div>
      <div class="chart-area" id="chartArea" role="img" aria-label="Historique des valeurs PAPER et USDC"><div class="empty">Historique de valorisation V1.2 non disponible.<br>Aucune courbe fictive affichée.</div></div>
      <div class="legend"><span><i class="key" style="background:var(--blue)"></i>Kraken Sim PAPER</span><span><i class="key" style="background:var(--green)"></i>USDC conservés</span><span><i class="key" style="background:var(--amber)"></i>BTC conservé (si enregistré)</span></div>
      <div class="chart-note"><span id="chartRange">Aucun historique V1.2 enregistré</span><span>Prix historiques, pas cotations instantanées</span></div>
@@ -130,7 +130,7 @@ h1,h2,h3,p{margin:0}h1{font-size:29px;letter-spacing:-.9px;font-weight:720;line-
   </section>
   <section id="initcheck" class="section" aria-label="Contrôle init-check V1.2">
    <div class="grid3" style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px">
-    <article class="card"><div class="card-head"><div><h2>Dernier contrôle moteur</h2><p>Mode, données Kraken publiques et ordres</p></div><span id="icMode" class="tag">—</span></div><div class="statline"><span>Décision</span><strong id="icDecision">—</strong></div><div class="statline"><span>Ordres / exécutions / trades</span><strong id="icOrders">—</strong></div><div class="statline"><span>Paires cotées / valides</span><strong id="icPairs">—</strong></div><div class="statline"><span>USDC/USD (bid / ask)</span><strong id="icUsdc">—</strong></div><div class="statline"><span>Clés API utilisées</span><strong id="icKeys">—</strong></div></article>
+    <article class="card"><div class="card-head"><div><h2>Dernier contrôle moteur</h2><p>Mode, données Kraken publiques et ordres</p></div><span id="icMode" class="tag">—</span></div><div class="statline"><span>Décision</span><strong id="icDecision">—</strong></div><div class="statline"><span>Ordres / exécutions / trades</span><strong id="icOrders">—</strong></div><div class="statline"><span>Paires cotées / valides</span><strong id="icPairs">—</strong></div><div class="statline"><span>Info taux USDC/USD (bid / ask)</span><strong id="icUsdc">—</strong></div><div class="statline"><span>Clés API utilisées</span><strong id="icKeys">—</strong></div></article>
     <article class="card"><div class="card-head"><div><h2>Paires exclues ce tick</h2><p>Cotation invalide ou spread trop large</p></div></div><div id="icExcluded"><div class="empty">—</div></div></article>
     <article class="card"><div class="card-head"><div><h2>Garde-fous</h2><p>Paramètres de risque du moteur V1.2</p></div></div><div id="icGuards"><div class="empty">—</div></div></article>
    </div>
@@ -162,7 +162,7 @@ let latest=null,period=0,filter="all",lastError=null;
 const num = v => {if(v===null||v===undefined||v==="")return null;if(typeof v!=="number"&&typeof v!=="string")return null;if(typeof v==="string"&&!/^-?\d+(\.\d+)?$/.test(v.trim()))return null;let n=Number(v);return Number.isFinite(n)?n:null;};
 const arr=v=>Array.isArray(v)?v:[];
 const val=(v,dec=2)=>{const n=num(v);return n===null?"—":new Intl.NumberFormat("fr-FR",{minimumFractionDigits:dec,maximumFractionDigits:dec}).format(n);};
-const usd=v=>num(v)===null?"—":nf.format(Number(v))+" $";
+const usd=v=>num(v)===null?"—":nf.format(Number(v))+" USDC";
 const percent=v=>num(v)===null?"—":nf.format(Number(v))+" %";
 const signedUsd=v=>{const n=num(v);return n===null?"—":(n>0?"+":"")+usd(n);};
 const htmlEscape=v=>String(v===null||v===undefined?"—":v).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -176,8 +176,8 @@ function setNotice(message,error){const n=qs("notice");n.classList.toggle("is-er
 function derive(d){
  const equity=num(d.equity),cash=num(d.cash),start=num(d.C0);
  const gain=equity!==null&&start!==null?equity-start:null;
- const usdc=num(d.usdc_hold_usd??d.benchmarks?.usdc_hold_usd);
- const btc=num(d.btc_hold_usd??d.benchmarks?.btc_hold_usd);
+ const usdc=num(d.usdc_hold_usdc??d.benchmarks?.usdc_hold_usdc);
+ const btc=num(d.btc_hold_usdc??d.benchmarks?.btc_hold_usdc);
  const exposure=num(d.exposure_pct)??(equity!==null&&equity>0&&cash!==null?(equity-cash)/equity*100:null);
  const drawdown=num(d.cur_dd_pct);
  const risk=obj(d.risk);
@@ -194,8 +194,8 @@ function metricBar(id,label,value,max,color){
 function periodEntries(d){
  const input=arr(d.curve_v12?.length?d.curve_v12:d.marks);
  return input.map(p=>{if(Array.isArray(p)){return {ts:p[0],paper:num(p[1]),usdc:num(p[2]),btc:num(p[3])};}
- return{ts:p.ts??p.iso??p.day??p.t,paper:num(p.equity??p.paper_usd??p.sim),
-       usdc:num(p.usdc_hold_usd??p.usdc),btc:num(p.btc_hold_usd??p.btc)};})
+ return{ts:p.ts??p.iso??p.day??p.t,paper:num(p.equity??p.paper_usdc??p.sim),
+       usdc:num(p.usdc_hold_usdc??p.usdc),btc:num(p.btc_hold_usdc??p.btc)};})
  .filter(x=>timeValue(x.ts)!==null&&x.paper!==null&&x.paper>0).sort((a,b)=>timeValue(a.ts)-timeValue(b.ts));
 }
 function plotLine(rows,key,min,max,width,height){
@@ -241,13 +241,13 @@ function renderOrders(d){
 function renderPositions(d,a){
  const positions=arr(d.positions);text("positionCount",positions.length+" position"+(positions.length>1?"s":""));
  if(!positions.length){qs("positions").innerHTML=rowPlaceholder(5,"Aucune position ouverte dans le dernier état.");return;}
- qs("positions").innerHTML=positions.map(p=>'<tr><td><strong>'+htmlEscape(p.asset??p.symbol??"—")+'</strong></td><td>'+htmlEscape(val(p.qty??p.quantity,7))+'</td><td>'+htmlEscape(usd(p.value??p.value_usd))+'</td><td>'+htmlEscape(percent(p.pnl_pct))+'</td><td>'+htmlEscape(p.candidate??p.strategy??"—")+'</td></tr>').join("");
+ qs("positions").innerHTML=positions.map(p=>'<tr><td><strong>'+htmlEscape(p.asset??p.symbol??"—")+'</strong></td><td>'+htmlEscape(val(p.qty??p.quantity,7))+'</td><td>'+htmlEscape(usd(p.value??p.value_usdc))+'</td><td>'+htmlEscape(percent(p.pnl_pct))+'</td><td>'+htmlEscape(p.candidate??p.strategy??"—")+'</td></tr>').join("");
 }
 function allocation(d,a){
  const container=qs("allocation");
  if(a.equity===null||a.equity<=0||a.cash===null){container.innerHTML='<div class="empty">Allocation non enregistrée.</div>';return;}
  const parts=[{asset:"Liquidités",v:a.cash}];
- for(const pos of arr(d.positions)){const value=num(pos.value??pos.value_usd);if(value!==null&&value>=0)parts.push({asset:String(pos.asset??"Actif"),v:value});}
+ for(const pos of arr(d.positions)){const value=num(pos.value??pos.value_usdc);if(value!==null&&value>=0)parts.push({asset:String(pos.asset??"Actif"),v:value});}
  container.innerHTML=parts.map((p,i)=>{const per=p.v/a.equity*100,clamp=Math.max(0,Math.min(100,per));return '<div class="barrow"><div class="barlabels"><span>'+htmlEscape(p.asset)+'</span><strong>'+htmlEscape(percent(per))+'</strong></div><div class="track"><div class="fill" style="width:'+clamp.toFixed(2)+'%;background:'+(i===0?"#3cdaa8":"#75b5ff")+'"></div></div></div>';}).join("");
 }
 function timeline(id,items,empty,make){
@@ -306,7 +306,7 @@ function render(d){
  text("riskTag",label);qs("riskTag").className="tag "+(locked===true?"red":locked===false?"green":"");
  const pending=arr(d.pending_orders);
  text("pendingCount",num(d.pending_count)!==null?val(d.pending_count,0):(d.pending_orders===undefined?"—":val(pending.length,0)));
- text("fees",usd(d.fees_paid_usd??d.fees));text("cycleWhen",stamp(d.last_cycle_iso??d.as_of));
+ text("fees",usd(d.fees_paid_usdc??d.fees));text("cycleWhen",stamp(d.last_cycle_iso??d.as_of));
  text("freshness",old?"État ancien":"État horodaté");
  text("c0Again",usd(a.start));text("usdcAgain",usd(a.usdc));text("btcAgain",usd(a.btc));
  const g=a.grok,lastIt=g.last_it_iso??d.last_it_iso;

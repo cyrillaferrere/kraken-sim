@@ -12,6 +12,19 @@
 > - Versions sur `develop` : **moteur partagé V1.2 · stratégie V1.1 · UX/UI V1.1.2**. En PR expérimentale seulement : **moteur V1.3 (`VERSION_ENGINE_V12`) · stratégie V1.2**, sans fusion ni cycle.
 
 
+## [Moteur V1.6] — 25/10/2026 23h30 (Paris) — Kraken Bot (VERSION_ENGINE_V12, moteur expérimental V1.2)
+### Fonctionnel
+- Devise de compte du portefeuille V1.2 = **USDC** (demande Cyril) : capital de départ 6 605,10 USDC, cash, équité, PnL, frais, pic et positions en USDC (`v12_paper_engine.py` : `quote_currency` persisté, défaut historique USD pour les anciens états). Impact décisions : seuils/montants désormais exprimés en USDC.
+- Valorisation (`v12_kraken_public.py`) : paire Kraken XXX/USDC directe si en ligne et spread ≤ 0,3 % ; sinon XXX/USD convertie par USDC/USD de façon prudente (bid = bid_USD / ask_USDCUSD, ask = ask_USD / bid_USDCUSD). Méthode publiée (`valuation_method`, champ `valuation` par cotation). Bougies journalières (signaux, ratios) inchangées en XXX/USD.
+- Benchmark « conserver les USDC » = 6 605,10 USDC constants, rendement 0 %. USDC/USD conservé comme ligne d'information.
+- `check_report.json` / `public_state_v12.json` : `"quote_currency": "USDC"`, clés `*_usdc` (plus de clés `*_usd` pour le portefeuille).
+### Infra
+- Migration (`v12_init_check.py`) : un état USD hérité est réinitialisé en USDC **uniquement** si 0 ordre, 0 exécution, 0 position ; journalisé dans `check_report.json` (`migration`) et `migration_log.json` ; refus `USD_STATE_WITH_ACTIVITY_REFUSED` sinon. L'historique git de state-v12 est conservé.
+### UX-UI
+- `dashboard_v12_cockpit_template.html` : montants affichés en « USDC » (plus de « $ »). Impact décisions : aucun.
+### Tests
+- `tests/test_v12_usdc_quote.py`, migration et refus dans `tests/test_v12_init_check.py`, absence de « $ »/USD dans `tests/test_v12_page_render.py`.
+
 ## [Moteur V1.5] — 2026-10-25 (VERSION_ENGINE_V12, moteur expérimental V1.2)
 - Nouveau `render_v12_page.py` : rendu de la page PREPROD V1.2 PAPER (`v12/index.html` + `v12/public_state_v12.json`) à partir du `check_report.json` réel de l'init-check, via `export_v12.normalize` ; données absentes = null (« — »). Impact décisions : aucun (lecture seule de l'état V1.2, aucun ordre).
 - Nouveau `dashboard_v12_cockpit_template.html` : cockpit UX V1.2.0 (branche ux/v1.2-preprod-cockpit) avec bandeau PREPROD V1.2 PAPER et bloc contrôle init-check (décision HOLD, ordres, paires exclues, garde-fous). Impact décisions : aucun.

@@ -44,7 +44,7 @@ def normalize(raw):
         raise ValueError("invalid isolated V1.2 engine version")
     dct.update(schema_version=1,strategy_id="kraken-sim-v1.2",
                strategy_version="V1.2",version_engine=engine,
-               environment="preprod",
+               environment="preprod",quote_currency="USDC",
                source="Kraken Sim V1.2 independent PAPER ledger",
                source_detail={"strategy":"V1.2","repo":"kraken-sim-preprod",
                               "branch":"state-v12","real_cycle":True},
