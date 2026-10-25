@@ -20,7 +20,7 @@ class TestProtectedPaths(unittest.TestCase):
     def test_v11_files_are_denied(self):
         for path in ("sim.db", "cycle_v11.py", "cycle.py", "strategy/params.json",
                      ".github/workflows/sim.yml", "page_data.py",
-                     "render_page.py", "dashboard_template.html"):
+                     "render_page.py", "dashboard_template.html", "VERSION_ENGINE"):
             with self.subTest(path=path):
                 self.assertIsNotNone(FORBIDDEN.search(path))
     def test_v12_files_are_permitted(self):
