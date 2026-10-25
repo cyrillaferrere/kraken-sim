@@ -19,6 +19,16 @@
 - **Non exécuté / aucun résultat** au moment de ce commit : le backtest V1.2 sera implémenté et évalué hors échantillon avant toute sélection ou mise en fonctionnement.
 
 ## [Moteur V1.3] — 25/10/2026 — GPT-6 (préprod V1.2, infrastructure)
+### Suite aux corrections P1 de Grok Bot (branche, sans cycles)
+- `v12_signals.py` : rejette bougies imputées, passe le sizing A par paramètres ; D récupère les indicateurs V1.1 historiques.
+- `v12_rebalance.py`, `v12_backtest_core.py` : ventes partielles, rétention top K+2 de B, risque BTC quotidien, limites de corrélation et d'exposition, fills maker partiels et fallback taker, frais/spread/slippage distincts, kill-switch et délistage conventionnel, refus de valorisation gelée.
+- `v12_data.py` : manifeste SHA-256 avec vérification de couverture des paires USD historiques et délistées exigée pour le mode officiel ; données historiques exhaustives encore absentes.
+- `v12_walkforward.py`, `v12_acceptance.py` : 12 mois IS / 3 mois OOS, grille sélectionnée sur IS, critères de rejet figés, aucune sélection sans baseline V1.1 auditée ; `v12_baselines.py` modélise BTC, panier BTC/ETH/XRP mensuel et cash aux deux niveaux de frais.
+- `export_v12.py`, `dashboard_v12_template.html`, `render_preprod.py` : données absentes à null, 51 clés du contrat, horodatages UTC/Paris et rendu V1.2 autonome uniquement sur activation explicite.
+- `sim_v12.yml` : clé hôte SSH GitHub épinglée selon documentation officielle et nettoyage de la clé de déploiement même en échec ; workflow toujours uniquement en PR.
+- `tests/test_v12_*.py` : nouveaux tests delisting/staleness, confluence V1.1, invariance A/B/C/D, manifeste, baselines, OOS, export local et sécurité du workflow.
+- **Aucun résultat financier officiel, aucune simulation V1.2 lancée** : données exhaustives et replay V1.1 complet restent bloquants. Détails dans `docs/ETAT_AVANCEMENT_V1_2.md`.
+
 ### Corrections P0/P1 (revue Grok Bot PR #7)
 - `.github/workflows/guard.yml` : contrôle exhaustif de `state/**` et gel de `VERSION_ENGINE` dans les branches `strategy/*` ; tests négatifs de chemin protégés.
 - `VERSION_ENGINE_V12` : **V1.3 réservé au moteur V1.2** ; `VERSION_ENGINE` reste à V1.2 comme sur `develop`. Les exports V1.2 n’utilisent que `VERSION_ENGINE_V12`.
