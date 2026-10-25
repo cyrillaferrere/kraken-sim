@@ -7,7 +7,7 @@ on:
         description: "SHA épinglé de strategy/v1.2 (40 hex)"
         type: string
         required: true
-        default: "974541fd95fe33d28ea8d10ce39201a3c5f48ee6"
+        default: "054b7e1123521de65740db93249541f394ddebdf"
 permissions:
   contents: read
 concurrency:
