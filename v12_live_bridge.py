@@ -41,6 +41,21 @@ def paper_step(engine,snapshot,now,verified_issue=None):
     return {"tick":executed,"synthesis":synthesis,"it_decisions":accepted,
             "live_orders":0,"source":"KRAKEN_PUBLIC_PAPER"}
 
+def fetch_and_step(engine,authorized_github_user_id,github_read_token,max_pairs=40):
+    """One-shot full PUBLIC Kraken -> authorized GitHub Issue -> PAPER engine.
+
+    Deliberately NOT exposed as a CLI or scheduled workflow. Before first
+    invocation, Cyril must approve isolated state storage, token permissions,
+    trading policy and use of the PAPER executor. No exchange API keys.
+    """
+    from v12_grok_issues import fetch_latest
+    if not github_read_token or type(authorized_github_user_id) is not int or authorized_github_user_id<=0:
+        raise ValueError("GROK_ISSUE_AUTHORIZATION_REQUIRED")
+    snapshot=collect(max_pairs=max_pairs)
+    # An issue retrieval failure must never produce a fabricated trade.
+    verified_issue=fetch_latest(authorized_github_user_id,github_read_token)
+    return paper_step(engine,snapshot,snapshot["observed_at"],verified_issue)
+
 def main(argv=None):
     parser=argparse.ArgumentParser()
     parser.add_argument("--check-market",action="store_true",required=True)
