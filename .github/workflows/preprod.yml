@@ -31,7 +31,7 @@ jobs:
           DEPLOY_KEY: ${{ secrets.PREPROD_DEPLOY_KEY }}
           SITE: ${{ runner.temp }}/site
         run: |
-          mkdir -p ~/.ssh && umask 077 && printf '%s\n' "$DEPLOY_KEY" > ~/.ssh/preprod && ssh-keyscan -q github.com >> ~/.ssh/known_hosts
+          mkdir -p ~/.ssh && umask 077 && printf '%s\n' "$DEPLOY_KEY" > ~/.ssh/preprod && ssh-keyscan github.com 2>/dev/null >> ~/.ssh/known_hosts
           export GIT_SSH_COMMAND="ssh -i ~/.ssh/preprod -o IdentitiesOnly=yes"
           cd "$SITE"; echo "Site de PRÉPRODUCTION publié depuis develop@${GITHUB_SHA::7}. Ne pas modifier à la main." > README.md
           git init -q -b main && git add -A
