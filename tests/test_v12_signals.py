@@ -34,6 +34,25 @@ class TestSignals(unittest.TestCase):
         self.assertTrue(candidate_b(bars,bars,{"momentum_days":90,"skip_days":7,"sma_days":100})["eligible"])
         self.assertTrue(candidate_c(bars,{"fast_ema":50,"slow_ema":200,"target_vol":0.3})["entry"])
         self.assertIn("entry",candidate_d(bars,bars,{"btc_hysteresis_atr":0.15}))
+    def test_imputed_candles_reject_universe_and_signals(self):
+        bars=candles()
+        ts=bars[-1]["end"]
+        past=point_in_time_universe({"BTC":bars},ts)
+        self.assertIn("BTC",past)
+        altered=[dict(b) for b in bars]
+        altered[-2]["imputed"]=True
+        self.assertNotIn("BTC",point_in_time_universe({"BTC":altered},ts))
+        a=candidate_a(altered,bars,{"breakout_days":55,"exit_days":20,"atr_mult":3})
+        b=candidate_b(altered,bars,{"momentum_days":90,"skip_days":7,"sma_days":100})
+        c=candidate_c(altered,{"fast_ema":50,"slow_ema":200,"target_vol":0.3})
+        self.assertEqual(a["reason"],"warmup")
+        self.assertEqual(b["reason"],"warmup")
+        self.assertEqual(c["reason"],"warmup")
+    def test_risk_per_entry_and_cap_change_position(self):
+        data=candles()
+        default=candidate_a(data,data,{"breakout_days":55,"exit_days":20,"atr_mult":3,"risk_per_entry":0.005,"max_per_asset":0.15})
+        reduced=candidate_a(data,data,{"breakout_days":55,"exit_days":20,"atr_mult":3,"risk_per_entry":0.001,"max_per_asset":0.15})
+        self.assertGreater(default["target_weight"],reduced["target_weight"])
     def test_price_history_required(self):
         self.assertEqual(candidate_c(candles(30),{"fast_ema":50,"slow_ema":200,"target_vol":0.3})["reason"],"warmup")
 if __name__=="__main__": unittest.main()
