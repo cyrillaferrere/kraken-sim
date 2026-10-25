@@ -1,0 +1,44 @@
+# Kraken Sim V1.2 — état de livraison technique (25 octobre 2026)
+
+**Branche** : `strategy/v1.2` ; **PR** : #7 EN BROUILLON vers `develop`. **AUCUNE FUSION, aucun cycle V1.2, aucun ordre réel, aucun workflow V1.2 sur main.**
+
+## Versions et préproduction
+
+- Moteur V1.1 : `VERSION_ENGINE=V1.2` inchangé, `sim.yml` et `sim.db` intacts.
+- Moteur expérimental V1.2 : `VERSION_ENGINE_V12=V1.3`, stratégie `STRATEGY_VERSION=V1.2`. Aucune confusion des ordres.
+- Etat préprod : branche `state-v12` du dépôt `kraken-sim-preprod`, sans portefeuille fictif inventé.
+- `sim_v12.yml` présent **uniquement dans la PR**, manuel, sans cron, code SHA à épingler après accord de Cyril, calcul sans secret, publication séparée vers `state-v12`, host key GitHub épinglée.
+- `cycle_v12.py --cycle` demeure **bloqué par conception**.
+- `render_preprod.py` ne sélectionne le template V1.2 que si `PREPROD_V12_READY=1` et si la source est réellement V1.2. Le site actuel reste V1.1 en lecture seule par défaut.
+
+## Fonctionnalités développées dans la PR
+
+1. Paramètres indépendants et signaux des quatre candidats A Donchian, B dual momentum, C BTC/ETH tendance et D V1.1 hebdomadaire.
+2. D réutilise les indicateurs d'origine `backtest.ind` de V1.1, notamment ATR14, EMA et momentum ; **le replay complet V1.1 ne l'est pas**.
+3. Gestion PAPER cash/positions spot sans levier ni short, frais, spread, slippage, stop, kill-switch, Maker partiel / Taker et réduction de positions.
+4. Univers point-in-time sur chandelles journalières réelles clôturées ; rejet des chandelles imputées, des positions valorisées avec prix périmés, et traitement conventionnel des délistages documentés.
+5. Import des CSV Kraken OHLCVT et contrôle SHA-256. Mode officiel refuse tout manifeste n'attestant pas explicitement la couverture historique des actifs listés et délistés.
+6. Protocole de backtest hors ligne : fenêtre 12 mois IS / 3 mois OOS, grille IS, OOS combinées, sensibilité aux paramètres et critères de rejet `v12_acceptance.py`.
+7. Baselines séparées : BTC buy-and-hold, portefeuille BTC/ETH/XRP mensuel et cash, en tenant compte des frais.
+8. Export V1.2 avec les clés du contrat, données inconnues à `null`, source et horodatage UTC/Paris ; template V1.2 indépendant testable localement, sans réseau.
+9. Tests sur l'isolation et tous les fichiers `state/**`, version moteur, boucle de comptes, remises en cash, invariance aux données futures des quatre candidats, sécurité du workflow.
+
+## Blocages à traiter avant tout backtest OFFICIEL
+
+- **Historique exhaustif manquant** : aucun dossier contenant tous les CSV Kraken USD historiques, leur manifeste SHA-256, le catalogue de cotation et les cryptos délistées n'a été fourni à la PR. Impossible de produire honnêtement un bilan financier validé.
+- **Baseline V1.1 non reproduite** sur les mêmes données et conditions de coûts. La parité d'indicateurs D n'est pas la parité complète des cycles V1.1, positions initiales et ordres en attente. Le moteur refuse la sélection d'une stratégie sans cette preuve.
+- **Stress tests et vérification finale d'exécution** à mener sur de vraies données 2021, 2022, 2024 et récentes, y compris coûts de maker non rempli, slippage et actifs délistés. Les prix du dernier trade en cas de delisting constituent une hypothèse pouvant surestimer la valeur réellement récupérable.
+- **Moteur de cycles V1.2 durable** non intégré : avant d'activer `cycle_v12.py`, il faut satisfaire les critères d'acceptation, confirmer les résultats et obtenir l'autorisation de Cyril.
+- **Décisions séparées de Cyril** : (1) première fusion `strategy/v1.2` vers `develop` après revue Grok Bot, (2) ajout du workflow sur `main`, (3) premier cycle V1.2, (4) activation éventuelle d'un cron.
+
+## Commandes de contrôle hors ligne
+
+```bash
+python3 -m unittest discover -s tests -p 'test_v12_*.py' -v
+python3 -m unittest discover -s tests -p 'test_v11_nonregression.py' -v
+python3 tests/check_template.py
+```
+
+Ces tests vérifient le **code et ses hypothèses**, pas une performance financière réelle. Les tests CI actuellement verts ne constituent ni un bon pour fusion ni un bon pour déploiement.
+
+Voir la revue de Grok Bot dans la PR #7 et la spécification `docs/SPEC_STRATEGIE_V1_2.md`.
