@@ -526,7 +526,44 @@ setTimeout(pollExitInd, 4000); setInterval(pollExitInd, 300000);
     const decisions=Array.isArray(c.decisions)?c.decisions:[];
     const orders=Array.isArray(c.orders)?c.orders:[];
     const events=(decisions.length?decisions.map(d=>'<li>'+safe(d.asset||'—')+' · '+safe(d.action||'Décision')+' : '+safe(d.reason||'—')+'</li>').join(''):'<li>Aucune décision enregistrée pour ce cycle.</li>');
-    const orderRows=orders.length?orders.map(o=>'<li>'+safe(o.asset||'—')+' · '+safe(o.side||'Ordre')+' · '+safe(historyValue(c,'orders.notional',o.notional,'  à chaque revalorisation et chargement du state.json.
+
+    const orderRows=orders.length?orders.map(o=>'<li>'+safe(o.asset||'—')+' · '+safe(o.side||'Ordre')+' · '+safe(o.reason||'—')+'</li>').join(''):'<li>Aucun ordre enregistré pour ce cycle.</li>';
+    const positions=historyMissing(c,'positions')||!Array.isArray(c.positions)?unavailable:c.positions.length?c.positions.map(q=>safe(q.asset||'—')+' ('+safe(historyValue(c,'positions.'+q.asset+'.value',q.value,' USD'))+')').join(' · '):'Aucune position';
+    const regime=historyMissing(c,'regime')||!c.regime?unavailable:String(c.regime.state||unavailable);
+    replayBody.innerHTML='<strong>REPLAY — '+time+'</strong><div class="ux-replay-meta">Cycle '+safe(c.slot||'—')+' · '+safe(c.mode||'mode non enregistré')+' · Historique figé, sans prix LIVE</div>'+missing+'<div class="ux-replay-data">'+metric('Capital',historyValue(c,'portfolio.equity',p.equity,' USD'))+metric('Liquidités',historyValue(c,'portfolio.cash',p.cash,' USD'))+metric('Exposition',historyValue(c,'portfolio.exposure_pct',p.exposure_pct,' %'))+metric('Performance nette',historyValue(c,'portfolio.net_return_pct',p.net_return_pct,' %'))+metric('Drawdown',historyValue(c,'portfolio.cur_dd_pct',p.cur_dd_pct,' %'))+metric('Frais cumulés',historyValue(c,'portfolio.fees_total',p.fees_total,' USD'))+'</div><p><strong>Régime sur clôture :</strong> '+safe(regime)+'</p><p><strong>Positions à ce cycle :</strong> '+positions+'</p><details><summary>Décisions ('+decisions.length+')</summary><ul class="ux-replay-events">'+events+'</ul></details><details><summary>Ordres ('+orders.length+')</summary><ul class="ux-replay-events">'+orderRows+'</ul></details><p class="ux-replay-meta">Indicateurs issus de la décision quotidienne d’origine, pas nécessairement du cycle horaire affiché.</p>';
+  }
+  async function loadHistoryIndex(){
+    try{
+      const res=await fetch(historyRoot+'index.json',{cache:'no-store'});
+      if(!res.ok)throw Error('index HTTP '+res.status);
+      const idx=await res.json();
+      if(idx.schema_version!==1||!Array.isArray(idx.months))throw Error('Schéma non pris en charge');
+      replayMonths=idx.months.filter(safeHistoryFile).sort((a,b)=>String(b.month).localeCompare(String(a.month)));
+      if(!replayMonths.length){replayBody.textContent='Aucun cycle historique n’est encore publié.';return;}
+      replayMonth.innerHTML='<option value="">Sélectionner un mois</option>'+replayMonths.map(m=>'<option value="'+safe(m.month)+'">'+safe(m.month)+' ('+Number(m.n_cycles||0)+' cycles)</option>').join('');
+      replayMonth.disabled=false;
+      replayBody.textContent='Historique disponible : choisir un mois pour charger les cycles. Consultation en lecture seule.';
+    }catch(e){replayBody.textContent='Historique non encore publié sur la production. Le replay sera disponible automatiquement après le premier export historique.';replayMonth.disabled=true;}
+  }
+  replayMonth.addEventListener('change',async()=>{
+    replayCycle.disabled=true;replayCycle.innerHTML='<option>Chargement…</option>';replayBody.textContent='Chargement des cycles publiés…';
+    const meta=replayMonths.find(x=>x.month===replayMonth.value),file=meta&&safeHistoryFile(meta);
+    if(!file){replayBody.textContent='Choisir un mois valide.';return;}
+    try{
+      const res=await fetch(historyRoot+file,{cache:'no-store'});if(!res.ok)throw Error('HTTP '+res.status);
+      const obj=await res.json();if(obj.schema_version!==1||obj.month!==meta.month||!Array.isArray(obj.cycles))throw Error('Schéma incompatible');
+      replayRows=obj.cycles.filter(c=>c&&typeof c.slot==='string'&&typeof c.ts==='string').sort((a,b)=>a.ts.localeCompare(b.ts));
+      replayCycle.innerHTML='<option value="">Choisir un cycle</option>'+replayRows.map((c,i)=>'<option value="'+i+'">'+safe(c.ts_paris||c.ts)+' · '+safe(c.mode||'cycle')+'</option>').join('');
+      replayCycle.disabled=!replayRows.length;replayBody.textContent=replayRows.length?'Sélectionner un cycle pour afficher son instantané.':'Aucun cycle enregistré dans ce mois.';
+    }catch(e){replayBody.textContent='Impossible de charger les cycles de ce mois. Réessayer en sélectionnant à nouveau le mois.';}
+  });
+  replayCycle.addEventListener('change',()=>renderReplay(replayCycle.value===''?null:replayRows[Number(replayCycle.value)]||null));
+  el('replayReturn').addEventListener('click',()=>{replayCycle.value='';renderReplay(null);el('overview').scrollIntoView({behavior:'smooth'});});
+  el('uxOrderFilter').addEventListener('change',orders);
+  el('uxOrderSearch').addEventListener('input',orders);
+  decisionSummary();
+  loadHistoryIndex();
+  // La source officielle du cycle met à jour #metrics à chaque revalorisation et chargement du state.json.
   const metrics=el('metrics');new MutationObserver(()=>{if(!inUpdate)refresh()}).observe(metrics,{childList:true});
   refresh();
 })();
