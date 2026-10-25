@@ -1,3 +1,9 @@
+## [UX V1.2.3] — 26/10/2026 — suivi de liquidité PAPER XXX/USDC (en PR, non publié)
+- Ajout d'un bloc de suivi de liquidité dans le cockpit V1.2 : seuil USDC publié par moteur, paires admissibles, carnets contrôlés, spread/slippage observés, ordres refusés et motifs horodatables.
+- Valeurs absentes affichées comme non disponibles, sans supposer le succès de Depth ni inventer de statistiques ; aucune action de trading.
+- Audit initial documenté dans `docs/REVUE_LIQUIDITE_V162_UX.md` : V1.6.2 annoncée mais pas encore présente sur la branche source consultée ; vérification du seuil médian 30 j et du contrôle du carnet restant à effectuer.
+- Tests `tests/test_v12_liquidity_ux.py`. Aucune modification moteur, workflow, simulation, état ou production ; publication soumise à accord distinct de Cyril.
+
 # Journal des modifications — Kraken Sim (paper trading, aucun ordre réel)
 
 > **Convention d'ajout (obligatoire, vérifiée par `guard.yml`)**
