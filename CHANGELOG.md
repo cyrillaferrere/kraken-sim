@@ -48,6 +48,16 @@
 ### Infra
 - `guard.yml` : nouveau contrôle `perimetre-gpt6` (PR depuis `ux/*`, `feature/*`, `fix/*` : échec si chemins moteur/stratégie/sim.yml/état modifiés). Impact décisions : aucun.
 
+## [Moteur V1.3] — 25/10/2026 — GPT-6 (préprod V1.2, infrastructure)
+### Infrastructure
+- Branche strategy/v1.2 depuis develop + state-v12 dans kraken-sim-preprod. Aucune exécution de cycle ni modification main.
+- cycle_v12.py bloqué en l'attente de SPEC et accord ; v12_isolation.py refuse les chemins d'état production ; export_v12.py impose la source V1.2 et des données réelles.
+- Workflow sim_v12.yml manuel, pas de cron, pin SHA requis, calcul sans secret, publication distincte et limitée à preprod/state-v12.
+- guard.yml : exception explicite strategy/v1.2 pour GPT-6, périmètre stratégie protégeant la V1.1, tests isolation-v12. GARDE_FOUS.md mis à jour.
+### Tests et limites
+- Tests infrastructure : chemin de stockage, idempotence, export minimal, look-ahead des bougies, intégrité statique du code V1.1. Tests trading/risque/backtest non encore implémentés.
+- Aucune performance ni validation économique revendiquée. Première fusion develop et tout workflow sur main soumis à Cyril.
+
 ## [Infra] — 25/10/2026 14h05 — Kraken Bot (versions inchangées : Moteur V1.1 · Stratégie V1.1 · UX/UI V1.1)
 ### Infra
 - Préprod minimale : branche `develop`, dépôt public `cyrillaferrere/kraken-sim-preprod` (site seul, GitHub Pages), workflow `preprod.yml` (push sur develop : `render_preprod.py` rend le template de develop avec le state public de prod en lecture seule, bandeau PRÉPRODUCTION injecté à la publication, `tests/check_preprod.py`, push via clé de déploiement limitée au dépôt préprod, secret `PREPROD_DEPLOY_KEY`).
