@@ -9,7 +9,7 @@ class TestVersionIsolation(unittest.TestCase):
         shared=(ROOT/"VERSION_ENGINE").read_text(encoding="utf8").strip()
         isolated=(ROOT/"VERSION_ENGINE_V12").read_text(encoding="utf8").strip()
         self.assertEqual(shared,"V1.2")
-        self.assertEqual(isolated,"V1.4")
+        self.assertEqual(isolated,"V1.5")
         self.assertNotEqual(shared,isolated)
     def test_export_only_uses_v12_version(self):
         data={"equity":6605.10,"cash":6605.10,"positions":[],"orders":[],
