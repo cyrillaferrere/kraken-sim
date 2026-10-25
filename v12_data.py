@@ -57,11 +57,35 @@ def read_kraken_daily(path, expected_sha256):
                     "rows":len(result),"gaps_imputed":missing,
                     "first_closed":result[0]["end"],"last_closed":result[-1]["end"]}
 
-def load_manifest(data_dir):
+def require_official_coverage(manifest):
+    """Fail closed unless historical universe enumeration has been evidenced.
+    Declaration is audit metadata, not proof the exchange source is complete.
+    """
+    coverage=manifest.get("coverage",{})
+    if not isinstance(coverage,dict) or coverage.get("all_historical_usd_spot_pairs_verified") is not True:
+        raise ValueError("UNIVERSE_INCOMPLETE: historically listed and delisted USD spot pairs must be audited")
+    if not coverage.get("enumeration_source_url") or not coverage.get("enumeration_utc"):
+        raise ValueError("UNIVERSE_UNVERIFIABLE: historical listing/delisting catalogue reference required")
+    files=manifest.get("files",[])
+    declared=coverage.get("historical_pair_ids")
+    if not isinstance(declared,list) or set(declared)!={f.get("asset") for f in files}:
+        raise ValueError("UNIVERSE_INCOMPLETE: manifest does not match enumerated historical pairs")
+    for f in files:
+        if not f.get("listed_at") or f.get("status") not in ("active","delisted"):
+            raise ValueError("UNIVERSE_UNVERIFIABLE: each pair requires listing date and lifecycle status")
+        if f["status"]=="delisted" and not f.get("delisted_at"):
+            raise ValueError("UNIVERSE_UNVERIFIABLE: delisted pairs require delisting date")
+        if f["status"]=="active" and f.get("delisted_at"):
+            raise ValueError("UNIVERSE_UNVERIFIABLE: active pair has delisting date")
+    return True
+
+def load_manifest(data_dir, require_complete=False):
     root=Path(data_dir).resolve()
     p=root/"MANIFEST.json"
     if not p.is_file(): raise FileNotFoundError("Frozen data/v12/MANIFEST.json required; use MANIFEST.template.json")
     manifest=json.loads(p.read_text(encoding="utf8"))
+    if require_complete:
+        require_official_coverage(manifest)
     files=manifest.get("files")
     if not files or not isinstance(files,list): raise ValueError("Manifest must list actual pinned CSV files")
     output={}; descriptions={}
@@ -76,5 +100,8 @@ def load_manifest(data_dir):
         bars,stat=read_kraken_daily(root/filename,entry.get("sha256"))
         output[asset]=bars
         descriptions[asset]=dict(stat,source_url=entry["source_url"],
-                                 retrieved_utc=entry["retrieved_utc"])
-    return output, {"files":descriptions,"manifest_sha256":sha256_file(p)}
+                                 retrieved_utc=entry["retrieved_utc"],
+                                 listed_at=entry.get("listed_at"),
+                                 delisted_at=entry.get("delisted_at"),
+                                 status=entry.get("status"))
+    return output, {"files":descriptions,"manifest_sha256":sha256_file(p),"coverage":manifest.get("coverage"),"official_eligible":bool(require_complete)}
