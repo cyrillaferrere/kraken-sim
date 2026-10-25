@@ -60,6 +60,10 @@ class PaperEngine:
           CREATE TABLE IF NOT EXISTS marks(
             ts TEXT PRIMARY KEY,equity TEXT NOT NULL,fees TEXT NOT NULL,
             usdc_hold_usd TEXT,btc_hold_usd TEXT);
+          CREATE TABLE IF NOT EXISTS position_rules(
+            asset TEXT PRIMARY KEY,candidate TEXT NOT NULL,
+            entry_price TEXT NOT NULL,high_close TEXT NOT NULL,
+            entered_at TEXT NOT NULL);
           CREATE TABLE IF NOT EXISTS cycles(
             slot TEXT PRIMARY KEY,ts TEXT NOT NULL,status TEXT NOT NULL,
             note TEXT NOT NULL);
@@ -170,10 +174,22 @@ class PaperEngine:
     def _fill(self,portfolio,identity,asset,side,qty,px,liquidity,now):
         fee=self._fee(liquidity)
         if side=="BUY":
+            original=self.conn.execute("SELECT original_json FROM orders WHERE decision_id=?",(identity,)).fetchone()
+            if not original:raise ValueError("BUY_MUST_ORIGINATE_FROM_ADMITTED_DECISION")
+            candidate=json.loads(original[0])["candidate"]
+            existing=self.conn.execute("SELECT candidate FROM position_rules WHERE asset=?",(asset,)).fetchone()
+            if existing and existing[0]!=candidate:
+                raise ValueError("CROSS_STRATEGY_POSITION_NOT_PERMITTED")
             paid=portfolio.buy(asset,qty,px,fee)
+            if not existing:
+                self.conn.execute("""INSERT INTO position_rules
+                    (asset,candidate,entry_price,high_close,entered_at) VALUES(?,?,?,?,?)""",
+                    (asset,candidate,str(px),str(px),now.isoformat()))
         else:
             portfolio.sell(asset,qty,px,fee)
             paid=d(qty)*d(px)*fee
+            if asset not in portfolio.positions:
+                self.conn.execute("DELETE FROM position_rules WHERE asset=?",(asset,))
         self.conn.execute("""INSERT INTO fills(decision_id,asset,side,qty,price,fee,liquidity,ts)
                              VALUES(?,?,?,?,?,?,?,?)""",
                           (identity,asset,side,_money(qty),_money(px),_money(paid),
@@ -273,6 +289,63 @@ class PaperEngine:
                         (identity,original,batch["synthesis_sha256"],moment.isoformat(),
                          expires.isoformat(),"ADMITTED",_money(decision["quantity"]),verdict["reason"]))
         return result
+
+    def _protect_positions(self,p,quotes,snapshot,now,slot):
+        """Deterministic A/B/C/D exits keep working when Grok skips an IT.
+        These are daily CLOSE-based protection signals, not guaranteed stop fills.
+        """
+        from v12_signals import closed_candles,candidate_a,candidate_b,candidate_c,candidate_d
+        from v12_indicators import atr
+        bars=snapshot.get("daily_bars")
+        if not isinstance(bars,dict) or "BTC" not in bars:
+            return [{"action":"PROTECTIVE_SIGNALS_UNAVAILABLE"}]
+        btc=closed_candles(bars["BTC"],now.isoformat())
+        events=[]
+        for asset in list(p.positions):
+            rule=self.conn.execute("""SELECT candidate,entry_price,high_close
+                FROM position_rules WHERE asset=?""",(asset,)).fetchone()
+            if rule is None:
+                # Never silently assume a strategy for a position.
+                events.append({"action":"UNATTRIBUTED_POSITION_REQUIRES_REVIEW","asset":asset})
+                continue
+            if asset not in bars or asset not in quotes or not btc:
+                events.append({"action":"PROTECTIVE_SIGNALS_UNAVAILABLE","asset":asset})
+                continue
+            asset_bars=closed_candles(bars[asset],now.isoformat())
+            if not asset_bars or now-utc(asset_bars[-1]["end"])>timedelta(hours=26):
+                events.append({"action":"PROTECTIVE_SIGNALS_STALE","asset":asset})
+                continue
+            label,entry,high=rule
+            last=d(asset_bars[-1]["close"])
+            high=max(d(high),last)
+            self.conn.execute("UPDATE position_rules SET high_close=? WHERE asset=?",(str(high),asset))
+            params=SPEC["CANDIDATES"][label]
+            trigger=None
+            if label=="A":
+                signal=candidate_a(asset_bars,btc,params,highest_close_since_entry=float(high))
+                if signal.get("exit"):trigger="DONCHIAN_ATR_EXIT"
+            elif label=="B":
+                signal=candidate_b(btc,btc,params)
+                if signal.get("btc_momentum") is not None and signal["btc_momentum"]<=0:
+                    trigger="BTC_RISK_OFF"
+                elif len(asset_bars)>=21 and last<d(entry)-d(params["stop_atr_mult"])*d(atr(asset_bars,20)):
+                    trigger="B_ATR_CATASTROPHE"
+            elif label=="C":
+                signal=candidate_c(asset_bars,params)
+                if signal.get("exit"):trigger="C_EMA_EXIT"
+            elif label=="D":
+                signal=candidate_d(asset_bars,btc,params)
+                if signal.get("exit"):trigger="D_TREND_EXIT"
+            else:
+                raise ValueError("UNKNOWN_POSITION_CANDIDATE")
+            if trigger:
+                self.conn.execute("""UPDATE orders SET status='RISK_CANCELLED',reason=?
+                    WHERE status IN ('ADMITTED','MAKER_PENDING')
+                    AND json_extract(original_json,'$.asset')=?""",(trigger,asset))
+                held=p.positions[asset]["qty"]
+                self._execute_taker(p,"protect:"+slot,asset,"SELL",held,quotes,now,forced=True)
+                events.append({"action":"PROTECTIVE_SELL","asset":asset,"reason":trigger})
+        return events
 
     def _process_pending(self,p,quotes,snapshot,now):
         events=[]
@@ -379,6 +452,8 @@ class PaperEngine:
                 for asset,held in list(p.positions.items()):
                     self._execute_taker(p,"risk:"+slot,asset,"SELL",held["qty"],quotes,moment,forced=True)
                     events.append({"action":"FORCED_SELL","asset":asset})
+            if not self._get("risk_lock"):
+                events.extend(self._protect_positions(p,quotes,snapshot,moment,slot))
             if not self._get("risk_lock") and not self._get("paused"):
                 events.extend(self._process_pending(p,quotes,snapshot,moment))
             else:
