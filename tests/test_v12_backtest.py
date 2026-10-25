@@ -48,7 +48,7 @@ class TestExploratoryBacktest(unittest.TestCase):
         for bars in data.values():
             for b in bars:
                 b["low"]=b["close"]-3
-                b["volume"]=0.001
+                b["volume"]=1.0
         result=run_experiment(data,"C",C,RISK,FEES,
                               common={"maker_fill_participation_hypothesis":0.5},
                               start=data["BTC"][270]["end"],end=data["BTC"][300]["end"])
