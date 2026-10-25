@@ -9,7 +9,14 @@
 >   `## [Moteur Vx.y] — JJ/MM/AAAA HHhMM (Paris) — Kraken Bot`, `## [Stratégie Vx.y] — … — Kraken Bot` ou `## [UX Vx.y] — JJ/MM/AAAA HHhMM (Paris) — GPT6`
 >   puis les sections utiles : **Fonctionnel / UX-UI / Infra / Corrections**, une ligne par changement (fichier + impact sur les décisions, « aucun » si visuel).
 > - Les commits automatiques « état sim … » ne sont pas journalisés.
-> - Versions actuelles : **Moteur V1.1 · Stratégie V1.1 · UX/UI V1.1**.
+> - Versions actuelles : **Moteur V1.2 · Stratégie V1.1 · UX/UI V1.1**.
+
+## [Moteur V1.2] — 25/10/2026 14h45 — Kraken Bot
+### Moteur
+- `history_export.py` (nouveau) + `cycle_v11.py` : en fin de cycle réussi, ajout d'un instantané dans `state/history/AAAA-MM.json` et mise à jour de `state/history/index.json` (schema_version 1, `docs/HISTORY_SCHEMA.md`). L'appel est protégé par try/except. Impact sur les décisions : aucun.
+- Rattrapage idempotent des cycles passés (`complete:false` : portefeuille, décisions, ordres), lancé automatiquement au premier cycle sans historique ou manuellement (`python3 history_export.py`).
+### Tests / docs
+- `tests/check_history.py` (schéma vérifié sur une copie de sim.db), `docs/HISTORY_SCHEMA.md`, `docs/SPEC_FONCTIONNELLE.md`. Schéma en attente de l'accord de GPT-6.
 
 ## [Process] — 25/10/2026 14h15 — Kraken Bot (versions inchangées : Moteur V1.1 · Stratégie V1.1 · UX/UI V1.1)
 ### Docs / process
