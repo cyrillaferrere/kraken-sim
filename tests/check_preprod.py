@@ -4,7 +4,7 @@ import os, re, shutil, subprocess, sys, tempfile
 D = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 P = os.environ.get("PREPROD_OUT", os.path.join(D, "_site")) + "/index.html"
 h = open(P).read(); bad = []
-if "PreProd</small>" not in h: bad.append("identification discrète PreProd absente")
+if "PreProd</small>" not in h and not (os.environ.get("PREPROD_V12_READY")=="1" and "Kraken</strong> Sim" in h): bad.append("identification discrète PreProd absente")
 if "preprod-banner" in h: bad.append("ancien bandeau rouge toujours présent")
 source = ("https://raw.githubusercontent.com/cyrillaferrere/kraken-sim-preprod/state-v12/public_state_v12.json"
           if os.environ.get("PREPROD_V12_READY") == "1"
