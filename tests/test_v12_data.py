@@ -1,7 +1,23 @@
 import hashlib,json,tempfile,unittest
 from pathlib import Path
-from v12_data import read_kraken_daily,load_manifest
+from v12_data import read_kraken_daily,load_manifest,require_official_coverage
 class TestHistoricalData(unittest.TestCase):
+    def test_missing_historical_universe_rejected(self):
+        missing={"files":[{"asset":"BTC","file":"BTC.csv"}]}
+        with self.assertRaisesRegex(ValueError,"UNIVERSE_INCOMPLETE"):
+            require_official_coverage(missing)
+        claim={"files":[{"asset":"BTC","listed_at":"2011-01-01","status":"active"}],
+               "coverage":{"all_historical_usd_spot_pairs_verified":True,
+                           "enumeration_source_url":"https://example.invalid/registry",
+                           "enumeration_utc":"2026-10-25T17:00:00Z",
+                           "historical_pair_ids":["BTC","DELISTED"]}}
+        with self.assertRaisesRegex(ValueError,"UNIVERSE_INCOMPLETE"):
+            require_official_coverage(claim)
+        claim["coverage"]["historical_pair_ids"]=["BTC"]
+        self.assertTrue(require_official_coverage(claim))
+        claim["files"][0]["status"]="delisted"
+        with self.assertRaisesRegex(ValueError,"UNIVERSE_UNVERIFIABLE"):
+            require_official_coverage(claim)
     def test_headerless_kraken_format_and_gap(self):
         with tempfile.TemporaryDirectory() as td:
             p=Path(td)/"BTCUSD_1440.csv"
