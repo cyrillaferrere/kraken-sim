@@ -6,6 +6,7 @@ Timestamps represent OPEN of daily period; exposed 'end' is CLOSED time +86400s.
 import csv
 import hashlib
 import json
+import math
 import re
 from datetime import datetime,timezone,timedelta
 from pathlib import Path
@@ -28,10 +29,14 @@ def read_kraken_daily(path, expected_sha256):
             if not row: continue
             if len(row)!=7:
                 raise ValueError("line %d: Kraken daily OHLCVT requires exactly 7 columns"%number)
-            ts=int(float(row[0]))
-            opening,high,low,close,volume=map(float,row[1:6])
-            trades=int(float(row[6]))
-            if ts%86400 or min(opening,high,low,close)<=0 or volume<0 or trades<0:
+            try:
+                ts=int(row[0])
+                opening,high,low,close,volume=map(float,row[1:6])
+                trades=int(row[6])
+            except (ValueError,OverflowError) as exc:
+                raise ValueError("line %d: invalid numeric OHLCVT values"%number) from exc
+            if (ts%86400 or not all(math.isfinite(v) for v in (opening,high,low,close,volume)) or
+                min(opening,high,low,close)<=0 or volume<0 or trades<0):
                 raise ValueError("line %d: invalid time/price/volume"%number)
             if high<max(opening,close) or low>min(opening,close) or low>high:
                 raise ValueError("line %d: inconsistent OHLC"%number)
