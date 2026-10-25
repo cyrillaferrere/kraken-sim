@@ -29,7 +29,7 @@ def inspect_and_record(proposal,trusted_snapshot,portfolio,evidence_directory,no
     submitted=proposal if isinstance(proposal,dict) else None
     identity=result.get("decision_id")
     if not isinstance(identity,str) or not 1<=len(identity)<=192:
-        identity="invalid:"+hashlib.sha256(canonical(submitted).encode("utf8")).hexdigest()[:48]
+        identity="invalid:"+hashlib.sha256(canonical([submitted,trusted_snapshot.get("observed_at"),now.isoformat()]).encode("utf8")).hexdigest()[:48]
     evidence=dict(result)
     evidence["decision_id"]=identity
     evidence["model_id"]=submitted.get("model_id") if submitted else None
