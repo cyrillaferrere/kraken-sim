@@ -106,10 +106,36 @@ class TestPublicBridge(unittest.TestCase):
                 with patch("v12_live_bridge.collect",return_value=m),patch(
                     "v12_grok_issues.fetch_latest",return_value=verified):
                     result=fetch_and_step(engine,USER_ID,"fake-public-read-token",max_pairs=2)
-                self.assertEqual(result["it_status"],"GROK_IT_REJECTED")
+                self.assertEqual(result["it_status"],"GROK_ITS_PARTIALLY_REJECTED")
                 self.assertEqual(result["it_decisions"],[])
                 self.assertFalse(engine.wallet().positions)
                 self.assertEqual(engine.report()["marks"],1)
+            finally:engine.close()
+    def test_many_grok_its_are_processed_not_only_latest(self):
+        seed=start_market()
+        m=market_at(seed,0);m["data_origin"]="KRAKEN_PUBLIC_API"
+        with tempfile.TemporaryDirectory() as td:
+            engine=PaperEngine(td)
+            try:
+                prepared=paper_step(engine,m,m["observed_at"])
+                sha=prepared["synthesis"]["synthesis_sha256"]
+                batches=[]
+                for i in range(12):
+                    decision=proposal(m,"it-multi-%02d"%i,"BTC",0.10)
+                    decision["created_at"]=m["observed_at"]
+                    batch={"it_id":"IT-%02d"%i,"synthesis_sha256":sha,
+                           "decisions":[decision]}
+                    item=parse_decision_issue(issue(batch),USER_ID)
+                    item["issue_number"]=100+i
+                    batches.append(item)
+                with patch("v12_live_bridge.collect",return_value=m),patch(
+                    "v12_grok_issues.fetch_recent",return_value=batches):
+                    result=fetch_and_step(engine,USER_ID,"fake-public-read-token",max_pairs=2)
+                self.assertEqual(result["it_status"],"GROK_ITS_PROCESSED")
+                self.assertEqual(len(result["it_issue_numbers"]),12)
+                self.assertEqual(len(result["it_decisions"]),12)
+                self.assertFalse(engine.wallet().positions)
+                self.assertEqual(result["live_orders"],0)
             finally:engine.close()
     def test_offline_bridge_real_origin_requires_engine_and_bound_synthesis(self):
         seed=start_market()
