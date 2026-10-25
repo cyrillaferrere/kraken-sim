@@ -18,6 +18,16 @@ class TestHistoricalData(unittest.TestCase):
         claim["files"][0]["status"]="delisted"
         with self.assertRaisesRegex(ValueError,"UNIVERSE_UNVERIFIABLE"):
             require_official_coverage(claim)
+    def test_reject_non_finite_daily_ohlc(self):
+        with tempfile.TemporaryDirectory() as td:
+            p=Path(td)/"BTCUSD_1440.csv"
+            for row in ("1735689600,100,nan,99,101,1000,3\\n",
+                        "1735689600,100,101,99,101,inf,3\\n",
+                        "1735689600.5,100,101,99,101,100,3\\n"):
+                p.write_text(row.replace("\\n","\n"))
+                digest=hashlib.sha256(p.read_bytes()).hexdigest()
+                with self.assertRaises(ValueError):
+                    read_kraken_daily(p,digest)
     def test_headerless_kraken_format_and_gap(self):
         with tempfile.TemporaryDirectory() as td:
             p=Path(td)/"BTCUSD_1440.csv"
