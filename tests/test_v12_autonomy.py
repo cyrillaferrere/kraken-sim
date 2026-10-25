@@ -24,7 +24,8 @@ def fixture():
             for asset,bars in market.items()}
     snapshot={"observed_at":at,"status":"PAPER","source":"trusted-public-kraken",
               "daily_bars":market,"quotes":quotes,"paused":False,
-              "equity_peak_usd":6605.10,"cooldown_until":"1970-01-01T00:00:00Z"}
+              "equity_peak_usd":6605.10,"cooldown_until":"1970-01-01T00:00:00Z",
+              "active_policy_version":"paper-policy-0","authorized_model_id":"grok-bot-proposal"}
     decision={"decision_id":"example-grok-d1","cycle_id":"2025-11-22T00:00:00Z",
               "strategy_id":"kraken-sim-v1.2","strategy_version":"V1.2",
               "candidate":"C","model_id":"grok-bot-proposal","policy_version":"paper-policy-0",
@@ -50,6 +51,14 @@ class TestGrokPaperFirewall(unittest.TestCase):
         r=validate(d,s,Portfolio(6605.1),s["observed_at"])
         self.assertFalse(r["accepted"])
         self.assertIn("INVALID_DECISION_FIELDS",r["reason"])
+    def test_unapproved_policy_and_model_are_refused(self):
+        s,d=fixture()
+        d["policy_version"]="self-promoted-v99"
+        self.assertIn("UNAPPROVED_POLICY_OR_MODEL",
+                      validate(d,s,Portfolio(6605.1),s["observed_at"])["reason"])
+        d["policy_version"]="paper-policy-0";d["model_id"]="unauthorized"
+        self.assertIn("UNAPPROVED_POLICY_OR_MODEL",
+                      validate(d,s,Portfolio(6605.1),s["observed_at"])["reason"])
     def test_candidate_does_not_allow_bypassing_donchian(self):
         s,d=fixture()
         d["candidate"]="A"
