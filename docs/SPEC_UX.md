@@ -1,6 +1,6 @@
-# Spécification UX — Dashboard (UX/UI V1.1.1)
+# Spécification UX — Dashboard (UX/UI V1.1.2)
 
-Fichier unique : `dashboard_template.html`. Version : `const VERSION_UX = "V1.1.1";`. Propriétaire : **GPT6** (PR `ux/*` vers `develop`, fusionnées par GPT6 dès guard vert ; jamais sur `main`). Contrat d'interface : `GARDE_FOUS.md`.
+Fichier unique : `dashboard_template.html`. Version : `const VERSION_UX = "V1.1.2";`. Propriétaire : **GPT6** (PR `ux/*` vers `develop`, fusionnées par GPT6 dès guard vert ; jamais sur `main`). Contrat d'interface : `GARDE_FOUS.md`.
 
 ## 1. Structure
 - **En-tête** (`app-top`) : marque, statut, bandeau `#versions` « Moteur : Vx · Stratégie : Vy · UX/UI : Vz » (obligatoire), heures de cycle / live.
@@ -23,7 +23,7 @@ Règles : chaque bloc live affiche « LIVE : prix Kraken (bid) à HH:MM:SS » ; 
 ## 2b. Préproduction
 - URL : https://cyrillaferrere.github.io/kraken-sim-preprod/ — publiée à chaque push sur `develop` par `preprod.yml`.
 - Rendu par `render_preprod.py` : template de `develop` + `state/public_state.json` **public de prod** (lecture seule) ; backtests et leçons depuis les fichiers statiques du dépôt.
-- À la publication seulement : bandeau rouge permanent « PRÉPRODUCTION — NE PAS CONFONDRE AVEC LA SIMULATION OFFICIELLE », titre préfixé [PRÉPROD], `STATE_URL` réécrit vers le state de prod (raw GitHub). Le JS live lit donc le state de prod et les prix Kraken, comme en prod. Le template n'est pas modifié : le bandeau n'apparaît jamais en prod.
+- À la publication seulement : identification discrète « Kraken Sim PreProd » dans la marque du site préprod (sans grand bandeau rouge), titre préfixé [PRÉPROD], `STATE_URL` réécrit vers le state de prod (raw GitHub). Le JS live lit donc le state de prod et les prix Kraken, comme en prod. Le template n'est pas modifié : le bandeau n'apparaît jamais en prod.
 
 ## 3. Responsive, thème, langue
 - Points de rupture CSS : 1150 / 850 / 600 px ; `prefers-reduced-motion` respecté ; tableaux défilables horizontalement sur mobile.
@@ -46,3 +46,25 @@ Règles : chaque bloc live affiche « LIVE : prix Kraken (bid) à HH:MM:SS » ; 
 - La lecture d'un cycle passé est délimitée dans un panneau nommé **REPLAY**, qui n'affiche **pas de prix LIVE historique**. Le reste de la page continue de montrer l'état courant. `Retour au direct` ferme le détail historique et remonte à la vue d'ensemble.
 - Les cycles incomplets (`complete:false`), les champs absents (`missing`) et les historiques non encore publiés sont explicitement signalés : « Donnée non enregistrée », jamais des valeurs inventées.
 - Impact sur les décisions de trading, les stops, le capital et l'état moteur : **aucun**.
+
+## 6. Registre des corrections UX V1.1.2 — 25 octobre 2026
+
+### Livré dans cette PR (`feature/ux-v1.1.2-corrections`)
+- P0 : la V1.1.1 contenait du texte JavaScript après la fermeture `</html>`, visible en bas du dashboard. Suppression de tous les octets parasites et test automatique de fin du document.
+- P0 : contrat visuel de préproduction mis à jour, avec suppression du bandeau rouge et marque `Kraken Sim PreProd` discrète. Cette évolution n'affecte jamais la production.
+- P1 : en-tête compact ; versions sur ligne dédiée ; texte technique de provenance masqué mais conservé dans le DOM pour l'état et la mise à jour.
+- P1 : panneaux capital/BTC alignés dans une grille à deux colonnes sur desktop et une seule sur tablette/mobile ; le cours BTC relevé à chaque cycle reste repliable.
+- P1 : bloc conditions de vente réorganisé sous forme de résumés par position. Les données détaillées d'origine restent en DOM et consultables par ouverture des détails.
+- P1 : décisions présentées en priorité selon le type d'événement, avec synthèse et liste additionnelle repliable ; source brute inchangée.
+- P1 : regroupement des métriques sous les rubriques « Capital et performance », « Résultats et frais », « Risque et exposition », « Comparaisons et activité ».
+- P2 : les backtests et walk-forward restent accessibles, explicitement qualifiés de détails techniques ; les achats initiaux du socle sont repliables.
+
+### Reste à développer / recette
+- Navigation en quatre espaces et fiches crypto détaillées ; graphiques à curseurs croisés et marqueurs d'ordres.
+- Timeline des cycles et replay enrichi ; tests d'interaction navigateur avancés et contrôles chiffrés de cohérence.
+- Revoir à l'œil les alignements sur différentes largeurs, notamment les hauteurs des graphiques et les panneaux de synthèse.
+- Aucune promotion vers `main` avant validation par Cyril et contrôle technique Grok Bot.
+
+### Garantie
+- Les données dérivées sont uniquement formatées depuis les tableaux HTML officiels déjà rendus ; pas de nouveau calcul de décision d'achat/vente.
+- Le marqueur PreProd reste un indicateur clairement visible du caractère non officiel de l'interface.
