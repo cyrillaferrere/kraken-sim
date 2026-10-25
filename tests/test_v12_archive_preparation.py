@@ -67,12 +67,21 @@ class TestArchivePreparation(unittest.TestCase):
             result=prepare(arches,mapping(),Path(td)/"out")
             self.assertEqual(result["assets"],1)
             self.assertEqual(len((Path(td)/"out"/"BTCUSD_1440.csv").read_text().splitlines()),2)
+    def test_rejects_nan_ohlc_rows_without_silent_failures(self):
+        with tempfile.TemporaryDirectory() as td:
+            source=sample_zip(td,"nan.zip",btc="1735689600,100,nan,99,101,2000,5\n")
+            arches=_archives({"archives":[source]})
+            with self.assertRaisesRegex(ValueError,"BAD_OHLCVT_PRICE_OR_TIME"):
+                prepare(arches,mapping(),Path(td)/"out")
     def test_refuses_invalid_hash_origin_and_exclusion(self):
         with tempfile.TemporaryDirectory() as td:
             source=sample_zip(td,"full.zip")
             wrong=dict(source,sha256="0"*64)
             with self.assertRaisesRegex(ValueError,"ARCHIVE_HASH_MISMATCH"):
                 _archives({"archives":[wrong]})
+            tricky=dict(source,source_url="https://assets.kraken.com.evil.example/marketing/institutions/full.zip")
+            with self.assertRaisesRegex(ValueError,"ARCHIVE_UNTRUSTED_ORIGIN"):
+                _archives({"archives":[tricky]})
             wrong=dict(source,source_url="https://evil.example/full.zip")
             with self.assertRaisesRegex(ValueError,"ARCHIVE_UNTRUSTED_ORIGIN"):
                 _archives({"archives":[wrong]})
