@@ -1,6 +1,6 @@
 # Kraken Sim V1.2 — passerelle marchés réels, sans activation
 
-**25/10/2026 — PR #7 `strategy/v1.2` uniquement.** Cette livraison raccorde les deux entrées du moteur : données de marché **publiques** Kraken et décisions Grok via des **issues GitHub**.
+**25/10/2026 — PR #7 `strategy/v1.2` uniquement.** **Précision utilisateur : Grok Bot possède déjà un connecteur Kraken et gère seul les décisions en utilisant les stratégies V1.2.** Cette livraison ajoute au moteur PAPER un contrôle de valorisation autonome sur les données **publiques** Kraken, et un canal possible de décision via des issues GitHub ; elle ne remplace pas le connecteur Kraken de Grok.
 
 ### Ce qui est opérationnel au niveau du code
 
@@ -22,7 +22,7 @@ Cette commande est un **contrôle réseau manuel** : elle interroge Kraken et r�
 ### À fournir avant mise en service (pas encore effectué)
 
 1. **ID numérique GitHub du compte qui publiera les IT Grok**. Le nom du compte doit être identifié et fixé explicitement : le commentaire PR de Grok apparaît actuellement sous le compte GitHub humain, ce qui ne permet pas de présumer l'identité d'une issue future.
-2. Créer et gérer le label `it-decision` et un canal de remise du `synthesis.json` signé/figé à destination de Grok ; la routine Grok fera une IT quotidienne (~02h30 Paris) et déposera l'issue JSON liée au SHA de cette synthèse. **Une IT n'est pas un appel API Grok en continu**.
+2. Créer et gérer le canal de décision (par exemple des issues `it-decision`) et la remise d'une synthèse figée à Grok. **Aucune cadence d'une IT par jour n'est imposée : Grok peut effectuer une dizaine d'IT par jour, voire davantage selon son quota et les opportunités.** Chaque IT porte un identifiant et le SHA de la synthèse utilisée. Les cycles de suivi PAPER peuvent être indépendants des IT.
 3. Configurer un environnement d'exécution stable pour les cycles PAPER (dossier SQLite hors dépôt, persistant d'un cycle à l'autre, accès minimum aux données). Le module `fetch_and_step()` existe mais n'a **aucun workflow, cron ni CLI actif**. Les données de trading PAPER de l'essai ne sont pas sur le dashboard préprod.
 4. Définir un accès GitHub en **lecture seule** pour les issues, les droits du compte Grok et la distribution des synthèses/états, plus vérification réelle de l'API Kraken, des minima d'ordre et des spreads avant activation.
 5. Faire une dernière revue et obtenir le **GO de Cyril distinct pour activation** de la V1.2. Le `cycle_v12.py --cycle` d'origine reste volontairement bloqué ; aucun changement de `sim.yml`, main ou V1.1.

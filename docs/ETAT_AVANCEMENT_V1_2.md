@@ -46,7 +46,7 @@ La [vision d'architecture autonomie et apprentissage](VISION_AUTONOMIE_APPRENTIS
 - La première exécution restera soumise à l'accord distinct de Cyril après tests de l'exécuteur et contrôles de sécurité.
 
 ## Revue Grok Bot : six P1 livrées en DRY-RUN, pas en fonctionnement autonome réel
-- **P1-A** : séparation admission de l'IT et exécution au cycle suivant, avec quotes récentes réévaluées et TTL compatible avec le cron espacé.
+- **P1-A** : séparation admission de chaque IT et exécution PAPER ultérieure, avec quotes récentes revérifiées ; **les IT Grok ne sont pas limitées à une par jour** (environ dix ou davantage possibles, selon forfait).
 - **P1-B** : exécuteur PAPER persistant indépendant, idempotence des décisions et cycles, maker/taker, sorties déterministes A/B/C/D et liquidation d'urgence.
 - **P1-C** : limites, pic d'equity, kill-switch et politiques actifs **chargés de la base du moteur**, jamais du document Grok.
 - **P1-D** : référence USDC HOLD sur quotes USDC/USD observées (pas de peg imposé).
@@ -56,6 +56,7 @@ La [vision d'architecture autonomie et apprentissage](VISION_AUTONOMIE_APPRENTIS
 - La refonte UX de préprod reste un chantier distinct après finalisation du contrat de données.
 
 ## Raccordement API Kraken publique / issues Grok (code non activé)
+- **Clarification métier** : Grok Bot possède déjà son connecteur Kraken. Il décide des opérations PAPER à chaque IT selon sa propre cadence flexible (potentiellement 10+ IT par jour), et non à 02h30 quotidiennement. Le collecteur public du moteur est un contrôle indépendant des prix/du portefeuille fictif, pas une substitution au connecteur Grok.
 - Collecteur `v12_kraken_public.py` : API publiques Kraken uniquement, quote USDC/USD, historique OHLC journalier clos, préfiltre volume avant filtres V1.2.
 - Lecteur `v12_grok_issues.py` : auteur vérifié par ID numérique, label, JSON, SHA. `v12_live_bridge.py` raccorde la lecture avec `PaperEngine`; les protections de risque tournent avant toute requête GitHub et ne dépendent pas de Grok.
 - Tests déterministes hors réseau `tests/test_v12_real_bridge.py`. **Aucun cron, aucune IT Grok programmée, aucun test effectif sur cours live n'ont été exécutés par la CI.**

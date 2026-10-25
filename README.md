@@ -1,3 +1,5 @@
+> **FRÉQUENCE GROK V1.2 :** Grok Bot possède déjà un connecteur Kraken et décide **à chaque IT** (potentiellement ~10 IT/jour ou davantage), sans routine quotidienne unique imposée. Le moteur PAPER vérifie indépendamment les cotations, tient les comptes et applique les garde-fous. Voir [clarification du raccordement](docs/BRANCHEMENT_KRAKEN_GROK_V12.md).
+
 > **RACCORDEMENT V1.2 EN PR (non activé) :** [Kraken public et issues Grok](docs/BRANCHEMENT_KRAKEN_GROK_V12.md). Vérification manuelle sans ordre : `python3 v12_live_bridge.py --check-market --max-pairs 8`. La vraie IT Grok, l'ordonnancement et le dashboard ne tournent pas encore.
 
 > **ÉTAPE V1.2 — correction des 6 P1 Grok :** [simulation PAPER synthétique 30 jours](docs/REVIEW_GROK_P1_30J_V12.md), `python3 cycle_v12.py --dry-run --out /tmp/kraken-v12-test`. Les ordres sont **fictifs et hors ligne** ; **aucune IT Grok, aucun cron ni ordre réel activé**. `--cycle` reste bloqué.

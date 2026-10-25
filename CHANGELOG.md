@@ -11,6 +11,12 @@
 > - Les commits automatiques « état sim … » ne sont pas journalisés.
 > - Versions sur `develop` : **moteur partagé V1.2 · stratégie V1.1 · UX/UI V1.1.2**. En PR expérimentale seulement : **moteur V1.3 (`VERSION_ENGINE_V12`) · stratégie V1.2**, sans fusion ni cycle.
 
+## [Stratégie V1.2] — 25/10/2026 — correction de cadrage IT / connecteur Kraken — Cyril / GPT-6
+### Fonctionnel
+- **Précision utilisateur (sans modification de stratégie)** : Grok Bot réalise ses analyses **par IT à fréquence variable, possiblement 10 fois par jour ou davantage**. La recommandation d'IT quotidienne vers 02h30 n'est **pas une exigence utilisateur** et ne doit plus guider l'ordonnanceur.
+- Grok dispose **déjà d'un connecteur Kraken**. Il analyse le marché, prend les décisions de gestion fictive selon la V1.2 et apprend de ses résultats ; le moteur PAPER est un système d'exécution, de comptabilité, de risques et de vérification indépendante des cours.
+- **Aucun changement de paramètres V1.2, de code d'exécution, de cron, de V1.1 ou de production**. Documentation et PR uniquement.
+
 ## [Stratégie V1.2] — 25/10/2026 — Kraken Bot (SPEC) / GPT-6 (paramètres expérimentaux)
 ### Fonctionnel
 - Spécification et critères de rejet pre-enregistrés par Grok Bot avant backtest ; `strategy/v1_2/params.json` fige les hypothèses des candidats A Donchian, B dual momentum, C BTC/ETH tendance, D V1.1 hebdomadaire.

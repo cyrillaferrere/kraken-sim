@@ -2,6 +2,8 @@
 
 **Décision produit (25/10/2026).** La finalité de Kraken Sim est de vérifier en **paper trading** si Grok Bot peut être un gestionnaire de portefeuille crypto autonome, avant toute éventuelle délégation réelle du portefeuille aujourd'hui détenu en USDC. La fiabilité, la gestion des risques et la traçabilité comptent autant que le rendement.
 
+**Cadence corrigée :** Grok intervient par IT, librement, **potentiellement une dizaine de fois par jour ou davantage** ; aucune IT quotidienne unique ni horaire de 02h30 n'est imposé. **Grok dispose déjà d'un connecteur Kraken** et reste l'unique décideur stratégique ; le moteur PAPER tient les comptes, contrôle les risques et vérifie indépendamment les prix. Dix IT ne signifient pas dix ordres.
+
 Cette décision **complète** la SPEC V1.2 A/B/C/D de Grok Bot sans la réécrire. Les stratégies A/B/C/D restent des modèles de référence et de comparaison ; elles ne constituent pas nécessairement la décision autonome de l'agent.
 
 **État d'autorisation :** aucune clé privée Kraken, aucun ordre réel, aucune mise en service V1.2 ni cycle V1.2 autorisé à ce stade. La PR #7 reste en brouillon. Cyril seul autorise, en étapes distinctes, la première fusion vers develop, l'installation/activation du workflow, le premier cycle papier, et plus tard toute mise en réel. Aucune promotion automatique de PAPER vers LIVE.

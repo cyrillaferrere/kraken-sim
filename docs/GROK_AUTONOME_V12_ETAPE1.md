@@ -2,6 +2,8 @@
 
 **État : code préparatoire dans la PR #7 — pas de cycle ni de négociation LIVE.** Date : 25 octobre 2026.
 
+**Précision utilisateur :** Grok Bot possède déjà un connecteur Kraken et peut réaliser **environ 10 IT par jour, parfois davantage**. Ne pas imposer une seule IT quotidienne ou la fenêtre 02h30. Les interventions peuvent conduire à BUY/SELL/HOLD sans quota artificiel d'une décision par jour. Le collecteur public du moteur est une contre-vérification indépendante pour le portefeuille simulé, pas un nouveau connecteur à installer chez Grok.
+
 ## Principe retenu
 
 Le moteur suit **exclusivement la stratégie V1.2 préenregistrée par Grok Bot** dans `docs/SPEC_STRATEGIE_V1_2.md` et `strategy/v1_2/params.json`. Grok est le décideur, pas un générateur de stratégies non contrôlées :

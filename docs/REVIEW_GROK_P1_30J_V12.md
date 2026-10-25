@@ -62,7 +62,7 @@ CI vérifiée le 25/10/2026 : **121 tests V1.2 + 2 tests statiques V1.1** à ce 
 
 1. Le collecteur réseau Kraken **public** avec données horodatées, volumes, spread, positions et flux trades n'est pas branché au moteur autonome.
 2. L'identité de l'émetteur Grok et le canal GitHub Issue `it-decision` ne sont pas authentifiés ni automatisés ; les décisions du test sont **fabriquées dans le code**, non émises par Grok.
-3. La synthèse automatique quotidienne à environ **02h30 Europe/Paris**, la routine Grok et les IT extraordinaires plafonnées ne sont **ni configurées ni actives**.
+3. La remise des synthèses et la réception des IT de Grok, **à cadence flexible pouvant atteindre 10 IT/jour ou davantage**, ne sont ni configurées ni actives. Aucune cadence fixe de 02h30 ni plafond d'une IT quotidienne n'est validé.
 4. Les sorties A/B/C/D sont implémentées de façon **déterministe à la clôture des bougies**, mais n'ont pas été auditées sur une session vivante avec carnet réel, gaps, pannes et retards d'API. Les limites de stops ne sont pas des garanties de prix de sortie.
 5. Les outcomes mesurent ici la **performance du portefeuille autour d'une décision**, pas la causalité ni la qualité prédictive de cette décision isolée. Une évaluation pertinente de Grok exigera une période prospective et une méthode de comparaison préenregistrée.
 6. Le benchmark USDC est initialisé à une quantité **théorique**, pas aux USDC détenus réellement. Son suivi en USD dépend entièrement des quotes authentifiées.
