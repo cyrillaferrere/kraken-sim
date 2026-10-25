@@ -15,7 +15,7 @@ from decimal import Decimal
 from pathlib import Path
 from v12_accounting import d
 from v12_indicators import sma
-from v12_rebalance import bounded, retained_momentum_candidates
+from v12_rebalance import bounded, retained_momentum_candidates, correlation_allowed
 from v12_signals import (closed_candles,point_in_time_universe,
                          candidate_a,candidate_b,candidate_c,candidate_d)
 
@@ -228,7 +228,8 @@ def validate(decision,snapshot,portfolio,now=None):
         if weight<=0:
             raise ValueError("STRATEGY_ZERO_TARGET_WEIGHT")
         ask=d(quote["ask"])
-        slip=d(decision["max_slippage_pct"])
+        base_slip=SPEC["COSTS"]["slippage"]["major" if asset in ("BTC","ETH") else "other"]
+        slip=max(d(decision["max_slippage_pct"]),d(base_slip))
         fee=d(SPEC["COSTS"]["F2"]["taker"])
         # Risk checks assume worst allowed price and highest pre-registered fee.
         estimated=quantity*ask*(1+slip)*(1+fee)
@@ -240,9 +241,19 @@ def validate(decision,snapshot,portfolio,now=None):
         if (now_value+estimated)/equity>d(str(weight))+d("0.00000001"):
             raise ValueError("ABOVE_CANDIDATE_TARGET_WEIGHT")
         exposure=sum(p["qty"]*prices[a] for a,p in portfolio.positions.items())
-        ceiling=min(d(SPEC["RISK"]["max_exposure"]),d(SPEC["CANDIDATES"][decision["candidate"]]["max_exposure"]))
+        ceiling=(d(1) if decision["candidate"]=="C" else
+                 min(d(SPEC["RISK"]["max_exposure"]),d(SPEC["CANDIDATES"][decision["candidate"]]["max_exposure"])))
         if (exposure+estimated)/equity>ceiling+d("0.00000001"):
             raise ValueError("EXPOSURE_CAP")
+        # Candidate C intentionally excludes the cross-asset correlation veto (§6).
+        if decision["candidate"]!="C":
+            current_weights={a:float(p["qty"]*prices[a]/equity)
+                             for a,p in portfolio.positions.items() if a!=asset}
+            if not correlation_allowed(asset,float(estimated/equity),current_weights,bars,
+                         window=int(SPEC["RISK"]["correlation_window_days"]),
+                         threshold=float(SPEC["RISK"]["correlation_max"]),
+                         max_group=float(SPEC["RISK"]["correlated_weight_max"])):
+                raise ValueError("CORRELATED_GROUP_EXPOSURE_CAP")
         return reasoned(decision,True,"V12_STRATEGY_AND_RISK_PASSED",weight)
     except (ValueError,TypeError,KeyError,OverflowError,ArithmeticError,IndexError,AttributeError) as exc:
         return reasoned(decision if isinstance(decision,dict) else {},False,str(exc))
