@@ -41,7 +41,7 @@ def reasoned(decision,accepted,reason,max_weight=None):
             "candidate":decision.get("candidate"),"accepted":accepted,
             "reason":reason,"max_strategy_weight":max_weight}
 
-def _schema(decision,now,snapshot):
+def _schema(decision,now,snapshot,risk_state,phase):
     if not isinstance(decision,dict) or set(decision)!=REQUIRED:
         raise ValueError("INVALID_DECISION_FIELDS")
     if any(not isinstance(decision[k],str) or not decision[k].strip() or len(decision[k])>256
@@ -51,8 +51,8 @@ def _schema(decision,now,snapshot):
         raise ValueError("INVALID_DECISION_IDENTIFIERS")
     if decision["strategy_id"]!=STRATEGY_ID or decision["strategy_version"]!="V1.2":
         raise ValueError("FOREIGN_STRATEGY")
-    if (decision["policy_version"]!=snapshot.get("active_policy_version") or
-        decision["model_id"]!=snapshot.get("authorized_model_id")):
+    if (decision["policy_version"]!=risk_state.get("active_policy_version") or
+        decision["model_id"]!=risk_state.get("authorized_model_id")):
         raise ValueError("UNAPPROVED_POLICY_OR_MODEL")
     if decision["candidate"] not in SPEC["CANDIDATES"]:
         raise ValueError("CANDIDATE_NOT_IN_FROZEN_V12")
@@ -62,7 +62,10 @@ def _schema(decision,now,snapshot):
         raise ValueError("ORDER_TYPE_NOT_SUPPORTED")
     if not isinstance(decision["reason"],str) or not 8<=len(decision["reason"])<=2000:
         raise ValueError("MISSING_REASON")
-    if not isinstance(decision["ttl_seconds"],int) or isinstance(decision["ttl_seconds"],bool) or not 1<=decision["ttl_seconds"]<=3600:
+    if not isinstance(decision["ttl_seconds"],int) or isinstance(decision["ttl_seconds"],bool):
+        raise ValueError("INVALID_TTL")
+    limit=7*86400 if decision["candidate"]=="B" else 26*3600
+    if not 1<=decision["ttl_seconds"]<=limit:
         raise ValueError("INVALID_TTL")
     for k,hi in (("confidence",1),("max_slippage_pct",0.01)):
         v=decision[k]
@@ -76,7 +79,7 @@ def _schema(decision,now,snapshot):
         raise ValueError("INVALID_TRADE_QUANTITY")
     created=utc(decision["created_at"])
     asof=utc(decision["market_data_asof"])
-    observed=utc(snapshot["observed_at"])
+    observed=utc(snapshot["observed_at"] if phase=="admission" else snapshot.get("signal_asof",snapshot["observed_at"]))
     if created>now+timedelta(seconds=2):
         raise ValueError("FUTURE_DECISION")
     if now-created>timedelta(seconds=decision["ttl_seconds"]):
@@ -85,7 +88,7 @@ def _schema(decision,now,snapshot):
         raise ValueError("UNTRUSTED_MARKET_SNAPSHOT")
     return qty
 
-def _quotes(snapshot,now,portfolio):
+def _quotes(snapshot,now,portfolio,phase):
     if snapshot.get("status")!="PAPER" or snapshot.get("source")!="trusted-public-kraken":
         raise ValueError("UNTRUSTED_OR_LIVE_MARKET_SNAPSHOT")
     quotes=snapshot.get("quotes")
@@ -98,7 +101,8 @@ def _quotes(snapshot,now,portfolio):
     for a,q in quotes.items():
         if not isinstance(q,dict):
             raise ValueError("MALFORMED_QUOTES")
-        if now-utc(q["as_of"])>timedelta(minutes=5) or utc(q["as_of"])>now+timedelta(seconds=2):
+        quote_reference=utc(snapshot["observed_at"]) if phase=="admission" else now
+        if quote_reference-utc(q["as_of"])>timedelta(minutes=5) or utc(q["as_of"])>quote_reference+timedelta(seconds=2):
             raise ValueError("STALE_QUOTES")
         bid,ask=d(q["bid"]),d(q["ask"])
         if bid<=0 or ask<bid:
@@ -192,22 +196,29 @@ def _candidate_buy_weight(label,asset,market,portfolio,snapshot,asof):
         raise ValueError("D_NOT_IN_TOP_CONFIRMED")
     return float(ps["max_per_asset"])
 
-def validate(decision,snapshot,portfolio,now=None):
-    """Independent deterministic evaluation. No order or ledger is changed."""
+def validate(decision,snapshot,portfolio,now=None,risk_state=None,phase="execution"):
+    """Pure risk preflight. Engine owns risk_state; admission may use older quotes,
+    execution MUST provide fresh quotes and repeat all applicable checks.
+    No order or ledger is changed; direct caller is not a trusted engine.
+    """
     now=utc(now) if isinstance(now,str) else (now or datetime.now(timezone.utc))
     if now.tzinfo is None:
         raise ValueError("timezone required")
     now=now.astimezone(timezone.utc)
     try:
-        quantity=_schema(decision,now,snapshot)
-        if snapshot.get("paused") is True and decision["action"]=="BUY":
+        if phase not in ("admission","execution"):
+            raise ValueError("INVALID_GATE_PHASE")
+        if not isinstance(risk_state,dict) or risk_state.get("engine_controlled") is not True:
+            raise ValueError("TRUSTED_ENGINE_RISK_STATE_REQUIRED")
+        quantity=_schema(decision,now,snapshot,risk_state,phase)
+        if risk_state.get("paused") is True and decision["action"]=="BUY":
             raise ValueError("MANUAL_PAUSE")
         if decision["action"]=="CANCEL":
             raise ValueError("CANCEL_REQUIRES_PENDING_ENGINE")
         # HOLD logs can be valid without market data, and should still be attributed.
         if decision["action"]=="HOLD":
             return reasoned(decision,True,"HOLD_LOGGED_NO_ORDER")
-        prices=_quotes(snapshot,now,portfolio)
+        prices=_quotes(snapshot,now,portfolio,phase)
         asset=decision["asset"]
         if asset not in snapshot["quotes"] or asset not in snapshot.get("daily_bars",{}):
             raise ValueError("ASSET_QUOTE_OR_HISTORY_MISSING")
@@ -216,12 +227,13 @@ def validate(decision,snapshot,portfolio,now=None):
         if equity<=0:raise ValueError("ZERO_EQUITY")
         current=portfolio.positions.get(asset)
         if decision["action"]=="SELL":
-            if current is None or quantity>current["qty"]:
-                raise ValueError("NO_SHORT_SELLING")
+            reserved=d(risk_state.get("reserved_sell_quantities",{}).get(asset,0))
+            if current is None or quantity+reserved>current["qty"]:
+                raise ValueError("NO_SHORT_SELLING_OR_RESERVED")
             return reasoned(decision,True,"RISK_REDUCTION_PERMITTED")
-        if snapshot.get("risk_lock") is True or now<utc(snapshot.get("cooldown_until","1970-01-01T00:00:00Z")):
+        if risk_state.get("risk_lock") is True or now<utc(risk_state.get("cooldown_until","1970-01-01T00:00:00Z")):
             raise ValueError("RISK_LOCK_OR_COOLDOWN")
-        peak=d(snapshot["equity_peak_usd"])
+        peak=d(risk_state["equity_peak_usd"])
         if peak<equity:
             peak=equity
         if equity<=peak*(1-d(SPEC["RISK"]["peak_drawdown_kill"])):
@@ -238,15 +250,15 @@ def validate(decision,snapshot,portfolio,now=None):
         estimated=quantity*ask*(1+slip)*(1+fee)
         if estimated<max(d(SPEC["COMMON"]["min_order_usd"]),d(quote.get("min_order_usd",0))):
             raise ValueError("BELOW_MIN_NOTIONAL")
-        if estimated>portfolio.cash:
+        if estimated>d(portfolio.cash)-d(risk_state.get("reserved_buy_usd",0)):
             raise ValueError("INSUFFICIENT_CASH_NO_LEVERAGE")
         now_value=(current["qty"]*prices[asset] if current else d(0))
         if (now_value+estimated)/equity>d(str(weight))+d("0.00000001"):
             raise ValueError("ABOVE_CANDIDATE_TARGET_WEIGHT")
         exposure=sum(p["qty"]*prices[a] for a,p in portfolio.positions.items())
-        ceiling=(d(1) if decision["candidate"]=="C" else
-                 min(d(SPEC["RISK"]["max_exposure"]),d(SPEC["CANDIDATES"][decision["candidate"]]["max_exposure"])))
-        if (exposure+estimated)/equity>ceiling+d("0.00000001"):
+        ceiling=min(d(SPEC["RISK"]["max_exposure"]),
+                    d(SPEC["CANDIDATES"][decision["candidate"]]["max_exposure"]))
+        if (exposure+estimated+d(risk_state.get("pending_exposure_usd",0)))/equity>ceiling+d("0.00000001"):
             raise ValueError("EXPOSURE_CAP")
         # Candidate C intentionally excludes the cross-asset correlation veto (§6).
         if decision["candidate"]!="C":
