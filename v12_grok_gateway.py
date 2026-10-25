@@ -11,7 +11,7 @@ from datetime import datetime, timezone
 from v12_autonomy import utc,validate
 from v12_learning import append,canonical,open_journal,verify
 
-def inspect_and_record(proposal,trusted_snapshot,portfolio,evidence_directory,now):
+def inspect_and_record(proposal,trusted_snapshot,portfolio,evidence_directory,now,risk_state=None,phase="admission"):
     """Return audited PREVIEW ONLY; never mutates Portfolio or places an order.
 
     No model call is made. At deployment, only an independently authenticated
@@ -21,7 +21,7 @@ def inspect_and_record(proposal,trusted_snapshot,portfolio,evidence_directory,no
     now=utc(now) if isinstance(now,str) else now.astimezone(timezone.utc)
     if not isinstance(trusted_snapshot,dict):
         raise ValueError("TRUSTED_SNAPSHOT_REQUIRED")
-    result=(validate(proposal,trusted_snapshot,portfolio,now) if proposal is not None else
+    result=(validate(proposal,trusted_snapshot,portfolio,now,risk_state=risk_state,phase=phase) if proposal is not None else
             {"status":"PREFLIGHT_ONLY_NOT_EXECUTED","decision_id":None,
              "candidate":None,"accepted":False,"reason":"GROK_UNAVAILABLE_NO_TRADE",
              "max_strategy_weight":None})
