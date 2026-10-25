@@ -13,3 +13,4 @@
 - [ ] Aucune logique de trading modifiée
 - [ ] `VERSION_UX` (UX) ou `VERSION_ENGINE` (moteur) incrémentée, entrée `## [UX|Moteur Vx.y]` en tête du CHANGELOG
 - [ ] Stratégie : jamais par GPT6 ; sinon `STRATEGY_VERSION` incrémentée + entrée avec backtest
+- [ ] PR GPT-6 (`ux/*`, `feature/*`, `fix/*`) vers `develop` : fusion par GPT-6 dès guard vert, sans moteur / `VERSION_ENGINE` / `strategy/` / `params.json` / `sim.yml` / `state/` / `sim.db` (sinon revue technique Kraken Bot). Jamais vers `main`.
