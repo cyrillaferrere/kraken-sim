@@ -51,6 +51,9 @@ def _schema(decision,now,snapshot):
         raise ValueError("INVALID_DECISION_IDENTIFIERS")
     if decision["strategy_id"]!=STRATEGY_ID or decision["strategy_version"]!="V1.2":
         raise ValueError("FOREIGN_STRATEGY")
+    if (decision["policy_version"]!=snapshot.get("active_policy_version") or
+        decision["model_id"]!=snapshot.get("authorized_model_id")):
+        raise ValueError("UNAPPROVED_POLICY_OR_MODEL")
     if decision["candidate"] not in SPEC["CANDIDATES"]:
         raise ValueError("CANDIDATE_NOT_IN_FROZEN_V12")
     if decision["action"] not in ACTIONS:
