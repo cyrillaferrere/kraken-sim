@@ -11,6 +11,8 @@ Le dashboard V2 est publié, les prix publics Kraken sont visibles. Le moteur `v
 
 **Important :** actualiser le navigateur toutes les 10 secondes n'implique pas que le moteur calcule ou publie effectivement un nouveau cycle toutes les 10 secondes. Le workflow V2 actuel est toujours sans cron, et la stratégie reste à brancher. Le déclenchement d'une cadence de 10 secondes exige un orchestrateur compatible (un cron GitHub Actions n'est pas adapté à une fréquence de 10 secondes), un mécanisme anti-chevauchement et un GO explicite. Ne pas activer le trading réel.
 
+Les 12 scénarios d'acceptation du CDC §10 sont automatisés dans `v2/test_acceptance_v2.py` avec des fixtures synthétiques ; ils ne remplacent pas un essai de bout en bout sur données Kraken vérifiées.
+
 ## Revue PR #34 — correctifs demandés par GrokBot (26/10/2026)
 
 La spécification normative est le commentaire du CDC dans l'issue #33, et non les anciens exemples du présent README. **Les allocations sont des fractions de l'enveloppe** : 0,30 signifie 30 % des 2 000 USDC, et non 30 % du portefeuille total. Le capital de référence 6 605,10 USDC est un garde-fou du CDC, **pas une initialisation automatique de `state.json`**.
