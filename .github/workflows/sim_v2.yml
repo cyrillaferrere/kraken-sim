@@ -1,46 +1,28 @@
-name: Kraken Sim V2 — PAPER opportuniste
+name: Kraken Sim V2 — vérification sans ordres (en attente GrokBot)
 on:
   workflow_dispatch:
-  schedule:
-    - cron: '17 */4 * * *'
 permissions:
-  contents: write
-concurrency:
-  group: kraken-sim-v2-paper
-  cancel-in-progress: false
+  contents: read
 jobs:
-  simulate:
+  validate:
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    timeout-minutes: 12
     steps:
       - uses: actions/checkout@v4
-        with:
-          persist-credentials: true
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Vérifier la syntaxe du moteur
-        run: python -m py_compile v2/engine.py
-      - name: Exécuter un cycle PAPER V2
-        run: python v2/engine.py
-      - name: Publier uniquement l'état V2
-        shell: bash
+      - name: Contrôler que V2 n'invente pas de capital
         run: |
-          set -euo pipefail
-          git config user.name kraken-sim-v2-paper
-          git config user.email kraken-sim-v2-paper@users.noreply.github.com
-          git add v2/state.json
-          if git diff --cached --quiet; then
-            echo "Aucun nouvel état"
-            exit 0
-          fi
-          git commit -m "state(v2): cycle PAPER $GITHUB_RUN_ID"
-          for i in 1 2 3; do
-            git fetch origin main
-            git rebase origin/main
-            if git push origin HEAD:main; then exit 0; fi
-            sleep 3
-          done
-          echo "::error::Publication état V2 impossible"
-          exit 1
+          python -m py_compile v2/engine.py
+          python v2/engine.py
+          python - <<'PY'
+          import json
+          d=json.load(open("v2/state.json"))
+          assert d.get("initial") is None
+          assert d.get("cash") is None
+          assert d.get("equity") is None
+          assert d.get("pnl_pct") is None
+          assert not d.get("orders")
+          print("V2 en attente des donnees validees GrokBot")
+          PY
