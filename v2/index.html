@@ -53,7 +53,7 @@ let count=0;
 for(const [asset,aliases] of Object.entries(MARKET_PAIRS)){
   const entries=Object.entries(data.result||{});
   const norm=s=>String(s).replace(/[^A-Z0-9]/gi,'').toUpperCase();
-  const matches=entries.find(([key,val])=>aliases.some(alias=>norm(key)===norm(alias))||aliases.some(alias=>norm(val?.wsname||'')===norm(alias)));
+  const matches=entries.find(([key,val])=>aliases.some(alias=>norm(key)===norm(alias))||aliases.some(alias=>norm(val?.wsname||'')===norm(alias))||aliases.some(alias=>norm(val?.altname||'')===norm(alias)));
   if(!matches)continue;
   const ticker=matches[1],price=Number(ticker.c?.[0]),open=Number(ticker.o);
   if(!Number.isFinite(price)||price<=0)continue;
