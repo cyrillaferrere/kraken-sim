@@ -1,5 +1,15 @@
 # Journal des modifications — Kraken Sim (paper trading, aucun ordre réel)
 
+## [Infra V2.0.1] — 26/10/2026 — GPT-6 — préparation des routines (non activées)
+### Fonctionnel
+- `v2/run_cycle.py` : préparation d'un cycle PAPER hors ligne avec validation des entrées, sortie candidate atomique et refus de publication directe ; aucun effet sur les ordres réels.
+- `v2/reports/TEMPLATE.md` : gabarit du rapport d'analyse quotidien, faits sourcés, opinions séparées, valeurs inconnues null.
+### Infra
+- `v2/test_run_cycle.py`, `v2/test_report.py` : tests de non-régression des routines et de l'absence de données inventées.
+- `v2/check_report.py`, `.github/workflows/v2_report.yml` : validation des rapports soumis, sans génération automatique.
+- `.github/workflows/sim_v2.yml` : compilation des routines et rappel du cron à :40 UTC **désactivé**.
+- `v2/README.md` : cadences, responsabilités et préconditions documentées. Aucun déploiement.
+
 ## [Moteur V2.0.1 · UX V2.0.1] — 26/10/2026 — GPT-6 — PR #34 (brouillon, non fusionnée)
 ### Fonctionnel
 - `v2/plan_contract.py`, `v2/plan.schema.json` : plan libre GrokBot, allocations fractionnelles sur l'enveloppe, validation stricte et conservation du dernier plan valide.
