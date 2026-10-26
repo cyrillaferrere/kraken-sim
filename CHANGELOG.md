@@ -1,3 +1,6 @@
+## [Infra V2 — collecte auto] — 26/10/2026 — Kraken - Bot Crypto
+- `.github/workflows/v2_collect.yml` : collecte quotidienne vers 17h Paris (16:00 UTC) des données publiques Kraken (Ticker, OHLC, Depth) via `v2/collect_market_report.py`, publiée sur la branche `data-v2` (`reports/AAAA-MM-JJ.md` + `.kraken.json`). GPT-6 ne vérifie plus les prix lui-même : il lit ces fichiers et ajoute l'analyse et les actualités. Aucune clé, aucun ordre, moteur V2 toujours sans cron.
+
 ## [Rapport V2 — revue GrokBot] — 26/10/2026 — GPT-6
 - Rapport pilote `v2/reports/2026-10-26.md` corrigé sur branche `reports/*` : BNB retiré, limites de provenance explicitées.
 - `v2/collect_market_report.py` : collecteur public Kraken Ticker/OHLC 1h et 1j/Depth pour BTC, ETH, SOL, XRP ; EMA20/50, RSI14, ATR14 et profondeur ±0,5 % ; annexe JSON des réponses brutes.

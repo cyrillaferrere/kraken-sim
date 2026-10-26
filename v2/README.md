@@ -190,3 +190,7 @@ La jauge de score est calculée **seulement à partir des trades clôturés** : 
 ## Garde-fous V2 (révision du 26/10/2026, Kraken - Bot Crypto)
 
 Plafond investi 4 000 USDC, coupe-circuit 600 USDC depuis le pic, 40 % max par actif, spread ≤0,3 %, profondeur ≥3×, 6 ordres/cycle, 20/24 h. Les tests utilisent `v2/test_guardrails_fixture.json` via `V2_GUARDRAILS_PATH`, variable interdite en production.
+
+## Collecte automatique (26/10/2026)
+
+Tous les jours vers 17h Paris, GitHub collecte les données publiques Kraken et les dépose sur la branche `data-v2`, dans `reports/AAAA-MM-JJ.md` et `.kraken.json`. GPT-6 part de ces fichiers et ne revérifie plus les prix lui-même.
