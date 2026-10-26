@@ -25,7 +25,7 @@ class TestThreshold(unittest.TestCase):
         self.assertEqual(SPEC["LIQUIDITY"]["rollback_min_median_daily_usdc_volume_30d"],5000000)
         self.assertFalse(SPEC["LIQUIDITY"]["rollback_automated"])
     def test_version(self):
-        self.assertEqual((ROOT/"VERSION_ENGINE_V12").read_text().strip(),"V1.6.2")
+        self.assertEqual((ROOT/"VERSION_ENGINE_V12").read_text().strip(),"V1.6.3")
 
 class TestMedian(unittest.TestCase):
     def test_median_30d_uses_last_30_closed_bars_volume_x_close(self):

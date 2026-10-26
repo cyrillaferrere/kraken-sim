@@ -159,3 +159,13 @@ Demande de Cyril (résident français, zone euro). Mises en œuvre dans le Moteu
 - **Alerte `LIQUIDITY_REVIEW` :** levée dans l'état et les logs si, sur au moins 20 tentatives, plus de 5 % des ordres sont refusés ou si le slippage médian dépasse 0,15 %.
 - **Critère de repli :** si l'alerte est levée, retour au seuil de **5 M USDC** (`UNIVERSE.min_median_daily_usdc_volume_30d=5000000`) par un correctif versionné, après décision de Cyril. Ce repli est documenté mais **pas automatisé**.
 
+
+## 26/10/2026 — Moteur V1.6.3 : plafond d'exposition crypto 1 500 USDC
+
+- **Base du plafond : coût investi frais inclus** (Σ quantité × coût moyen, `avg_cost` incluant les frais) + notionnel des ordres BUY en attente. Ce n'est **pas** la valeur de marché : une hausse de prix ne force aucune vente, une baisse ne libère pas de budget.
+- `RISK.max_crypto_exposure_usdc = 1500`, `RISK.crypto_exposure_basis = COST_INVESTED_INCL_FEES`.
+- Appliqué par le moteur (`validate`, phases admission et exécution) : dépassement → refus `CRYPTO_EXPOSURE_CAP_USDC`. Les ratios existants (exposition max, poids par candidat) restent appliqués en plus.
+- Dimensionnement : budget d'un ordre = min(poids candidat × equity, plafond − investi) ; quantité calculée avec marge frais F2 + slippage ; contrôle de profondeur sur ce montant.
+- Cycle `--cycle` : repris sur l'état publié (6 605,10 USDC au départ, pas de réinitialisation), décisions moteur déterministes (priorité C, A, D, B), HOLD motivé si aucun signal. PAPER uniquement, USDC uniquement, aucune clé Kraken.
+- Rapport : bloc `exposure` (plafond, base, investi, valeur de marché — null si un prix manque —, budget restant, USDC restant).
+- Backtest non recalculé avec ce plafond.

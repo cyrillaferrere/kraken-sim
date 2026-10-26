@@ -38,7 +38,7 @@ def _f(v):
 
 
 def build_state(report):
-    if report.get("mode") != "INIT_CHECK_HOLD_ONLY":
+    if report.get("mode") not in ("INIT_CHECK_HOLD_ONLY", "PAPER_CYCLE"):
         raise ValueError("unexpected report mode")
     if report.get("quote_currency") != "USDC":
         raise ValueError("V1.2 report must be in USDC (Moteur >= V1.6)")
@@ -65,7 +65,7 @@ def build_state(report):
     decisions = []
     for dec in report.get("decisions") or []:
         reason = dec.get("reason") or ""
-        action = "HOLD" if "HOLD" in reason or "hold" in str(dec.get("decision_id", "")) else None
+        action = dec.get("action") or ("HOLD" if "HOLD" in reason or "hold" in str(dec.get("decision_id", "")) else None)
         decisions.append({"action": action, "asset": "Portefeuille", "created_at": ts,
                           "reason": f"{reason} · {dec.get('decision_id')} · acceptée={dec.get('accepted')}",
                           "decision_id": dec.get("decision_id"), "accepted": dec.get("accepted")})
@@ -73,7 +73,8 @@ def build_state(report):
     data = report.get("data") or {}
     raw = {
         "equity": equity, "cash": cash, "C0": _f(report.get("initial_capital_usdc")),
-        "positions": positions, "portfolio": portfolio, "orders": [], "pending_orders": [],
+        "positions": positions, "portfolio": portfolio,
+        "orders": list(report.get("fills_log") or []), "pending_orders": [],
         "pending_count": report.get("orders"),
         "decisions": decisions, "as_of": ts, "last_cycle_iso": ts,
         "usdc_hold_usdc": _f(bench.get("usdc_hold_usdc")),
@@ -85,8 +86,12 @@ def build_state(report):
         "risk": {"risk_lock": guards.get("risk_lock"), "paused": None,
                  "kill_count": guards.get("kill_count")},
         "candidate_signals": signals,
-        "grok": {"status": "Décision HOLD (init-check moteur, pas une IT Grok)",
-                 "last_action": "HOLD — 0 ordre, 0 exécution, 0 trade"},
+        "grok": ({"status": "Décision HOLD (init-check moteur, pas une IT Grok)",
+                  "last_action": "HOLD — 0 ordre, 0 exécution, 0 trade"}
+                 if report.get("mode") == "INIT_CHECK_HOLD_ONLY" else
+                 {"status": "Cycle PAPER moteur V1.6.3 (décisions moteur déterministes, pas une IT Grok)",
+                  "last_action": (", ".join(f"{f['side']} {f['asset']}" for f in report.get("cycle_fills") or [])
+                                  or "HOLD — aucun ordre ce cycle")}),
         "init_check": {
             "mode": report.get("mode"), "decisions": decisions,
             "orders": report.get("orders"), "fills": report.get("fills"),
@@ -102,6 +107,9 @@ def build_state(report):
         "compliance": report.get("compliance"),
         # Moteur V1.6.2 : bloc facultatif lu par le dashboard (PR #22) ; absent -> null.
         "liquidity_monitor": report.get("liquidity_monitor"),
+        # Moteur V1.6.3 : plafond crypto (coût investi), montant investi, USDC restant ; absent -> null.
+        "crypto_exposure": report.get("exposure"),
+        "cycle_mode": report.get("mode"),
     }
     return normalize(raw)
 

@@ -27,6 +27,26 @@ def min_median_volume_usdc():
     Rétrocompatible avec l'ancienne clé min_median_daily_usd_volume."""
     u=SPEC["UNIVERSE"]
     return float(u.get("min_median_daily_usdc_volume_30d",u.get("min_median_daily_usd_volume")))
+def max_crypto_exposure_usdc():
+    """Moteur V1.6.3 : plafond d'exposition crypto en USDC (coût investi, frais
+    inclus). None = pas de plafond absolu (seuls les ratios s'appliquent)."""
+    v=SPEC["RISK"].get("max_crypto_exposure_usdc")
+    return None if v is None else d(str(v))
+
+from contextlib import contextmanager
+@contextmanager
+def crypto_cap_disabled():
+    """Réservé aux fixtures synthétiques hors ligne antérieures à V1.6.3
+    (scénarios dimensionnés en % de l'equity). Jamais utilisé par --cycle."""
+    old=SPEC["RISK"].get("max_crypto_exposure_usdc")
+    SPEC["RISK"]["max_crypto_exposure_usdc"]=None
+    try:yield
+    finally:SPEC["RISK"]["max_crypto_exposure_usdc"]=old
+
+def invested_cost_usdc(portfolio):
+    """Coût investi = somme qty x coût moyen (frais d'achat inclus), en USDC."""
+    return sum((p["qty"]*p["avg_cost"] for p in portfolio.positions.values()),d(0))
+
 ACTIONS=frozenset(("BUY","SELL","HOLD","CANCEL"))
 REQUIRED=frozenset(("decision_id","cycle_id","strategy_id","strategy_version",
  "candidate","model_id","policy_version","market_data_asof","created_at",
@@ -266,6 +286,10 @@ def validate(decision,snapshot,portfolio,now=None,risk_state=None,phase="executi
                     d(SPEC["CANDIDATES"][decision["candidate"]]["max_exposure"]))
         if (exposure+estimated+d(risk_state.get("pending_exposure_usd",0)))/equity>ceiling+d("0.00000001"):
             raise ValueError("EXPOSURE_CAP")
+        cap=max_crypto_exposure_usdc()
+        if cap is not None and (invested_cost_usdc(portfolio)+estimated+
+                d(risk_state.get("pending_exposure_usd",0)))>cap+d("0.00000001"):
+            raise ValueError("CRYPTO_EXPOSURE_CAP_USDC")
         # Candidate C intentionally excludes the cross-asset correlation veto (§6).
         if decision["candidate"]!="C":
             current_weights={a:float(p["qty"]*prices[a]/equity)

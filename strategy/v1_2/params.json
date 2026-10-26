@@ -67,7 +67,9 @@
     "correlation_window_days": 60,
     "correlation_max": 0.85,
     "correlated_weight_max": 0.4,
-    "max_exposure": 0.9
+    "max_exposure": 0.9,
+    "max_crypto_exposure_usdc": 1500,
+    "crypto_exposure_basis": "COST_INVESTED_INCL_FEES"
   },
   "CANDIDATES": {
     "A": {

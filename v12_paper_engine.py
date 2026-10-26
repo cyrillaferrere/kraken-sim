@@ -250,6 +250,7 @@ class PaperEngine:
         from v12_liquidity import book_from_snapshot,check_order,record
         result=check_order(book_from_snapshot(books.get(asset)),side,qty)
         self._put("liquidity_metrics",record(self._get("liquidity_metrics"),result))
+        self.gate_log=getattr(self,"gate_log",[])+[dict(result,asset=asset,side=side)]
         if not result["accepted"]:
             raise ValueError(result["reason"])
 

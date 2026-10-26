@@ -58,6 +58,11 @@ def grok_decision(template,market,identity,asset,quantity,ttl=26*3600):
 
 class TestPaperEngine30Days(unittest.TestCase):
     def test_complete_accelerated_30day_simulation_with_missing_its_duplicate_and_kill(self):
+        # Scénario pré-V1.6.3 dimensionné en % de l'equity : plafond 1 500 USDC désactivé.
+        from v12_autonomy import crypto_cap_disabled
+        with crypto_cap_disabled():
+            self._scenario()
+    def _scenario(self):
         base,model=fixture()
         with tempfile.TemporaryDirectory() as td:
             engine=PaperEngine(td)
