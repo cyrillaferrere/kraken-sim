@@ -24,7 +24,7 @@ from decimal import Decimal,ROUND_DOWN
 from pathlib import Path
 
 from v12_accounting import d
-from v12_autonomy import (SPEC,STRATEGY_ID,_bars,_candidate_buy_weight,
+from v12_autonomy import (SPEC,wide_spread_assets,asset_cost_usdc,_risk_share,STRATEGY_ID,_bars,_candidate_buy_weight,
                           invested_cost_usdc,max_crypto_exposure_usdc,utc)
 from v12_isolation import state_dir
 from v12_liquidity import monitor as liquidity_monitor
@@ -76,9 +76,20 @@ def plan(engine,snapshot,synth,now):
     sig=synth["synthesis"]["signals"]
     fee=d(SPEC["COSTS"]["F2"]["taker"]);mn=d(SPEC["COMMON"]["min_order_usd"])
     decisions=[];skipped=[];seen=set(p.positions)
+    wide=wide_spread_assets(snapshot)
+    per_buy=cap*_risk_share("max_buy_share_per_cycle") if cap is not None and _risk_share("max_buy_share_per_cycle") is not None else None
+    per_asset=cap*_risk_share("max_per_asset_share") if cap is not None and _risk_share("max_per_asset_share") is not None else None
+    for a in sorted(p.positions):
+        if per_asset is not None and asset_cost_usdc(p,a)>=per_asset:
+            skipped.append({"candidate":"*","asset":a,"reason":"ASSET_SHARE_CAP_NO_NEW_BUY",
+                            "cost_usdc":float(asset_cost_usdc(p,a)),"limit_usdc":float(per_asset)})
     for label in PRIORITY:
         for s in sig.get(label,[]):
             asset=s["asset"]
+            if asset in wide:
+                if not any(x["asset"]==asset and x["reason"]=="PAIR_EXCLUDED_SPREAD" for x in skipped):
+                    skipped.append({"candidate":label,"asset":asset,"reason":"PAIR_EXCLUDED_SPREAD"})
+                continue
             if asset in seen or not (s.get("entry") or s.get("eligible")) or s.get("exit"):continue
             try:weight=d(str(_candidate_buy_weight(label,asset,bars,p,snapshot,asof)))
             except (ValueError,KeyError,TypeError) as exc:
@@ -87,13 +98,15 @@ def plan(engine,snapshot,synth,now):
             ask=d(quotes[asset]["ask"])
             slip=d(SPEC["COSTS"]["slippage"]["major" if asset in ("BTC","ETH") else "other"])
             budget=min(weight*equity,remaining)
+            if per_buy is not None:budget=min(budget,per_buy)
+            if per_asset is not None:budget=min(budget,per_asset-asset_cost_usdc(p,asset))
             factor=max(SIZING_MARGIN,(1+slip)*(1+fee))
             qty=(budget/(ask*factor)).quantize(Decimal("0.00000001"),rounding=ROUND_DOWN)
             if qty<=0 or qty*ask*(1+slip)*(1+fee)<mn:
                 skipped.append({"candidate":label,"asset":asset,"reason":"BUDGET_BELOW_MIN_ORDER",
                                 "budget_usdc":float(budget)});continue
             decisions.append(_base(engine,synth,now,asset,"BUY",qty,label,
-                f"Moteur V1.6.3 : signal {label} {asset}, poids {float(weight):.4f}, "
+                f"Moteur V1.6.4 : signal {label} {asset}, poids {float(weight):.4f}, "
                 f"budget {float(budget):.2f} USDC (plafond crypto {cap} USDC, coût investi)."))
             remaining-=qty*ask*factor;seen.add(asset)
             if remaining<mn:break
@@ -101,7 +114,7 @@ def plan(engine,snapshot,synth,now):
     if not decisions:
         why="aucun signal d'entrée validé" if remaining>=mn else "budget crypto épuisé"
         decisions.append(_base(engine,synth,now,"BTC","HOLD",0,"C",
-            f"Moteur V1.6.3 : HOLD, {why} ({len(skipped)} candidat(s) écarté(s))."))
+            f"Moteur V1.6.4 : HOLD, {why} ({len(skipped)} candidat(s) écarté(s))."))
     return decisions,skipped
 
 def run(state,collector=None,max_pairs=40):
