@@ -142,7 +142,11 @@ function drawMarketSpark(asset){
  $('marketPlotEmpty').style.display=points.length>1?'none':'flex';if(points.length<2)return;
  const prices=points.map(p=>p.price),loRaw=Math.min(...prices),hiRaw=Math.max(...prices),pad=(hiRaw-loRaw)*.15||hiRaw*.002||1,lo=loRaw-pad,hi=hiRaw+pad;
  const left=12*ratio,right=12*ratio,top=10*ratio,bottom=12*ratio,plotW=w-left-right,plotH=ht-top-bottom;
- const x=t=>left+plotW*Math.max(0,Math.min(1,(t-start)/MARKET_WINDOW_MS)),y=v=>top+plotH*(hi-v)/(hi-lo);
+ const availableStart=points[0].ts,span=Math.max(1,now-availableStart);
+ const x=t=>left+plotW*Math.max(0,Math.min(1,(t-availableStart)/span)),y=v=>top+plotH*(hi-v)/(hi-lo);
+ const availableHours=(now-availableStart)/3600000;
+ const axis=document.querySelector('.market-time-axis span:first-child');if(axis)axis.textContent=availableHours>=23.5?'Il y a 24 h':'Il y a '+Math.floor(availableHours)+' h';
+ const midAxis=document.querySelector('.market-time-axis span:nth-child(2)');if(midAxis)midAxis.textContent=availableHours>=23.5?'Il y a 12 h':'Milieu de période';
  const rising=points.at(-1).price>=points[0].price,color=rising?'#34d399':'#fb7185';
  ctx.strokeStyle='rgba(147,164,185,.09)';ctx.lineWidth=ratio;
  for(let i=1;i<=3;i++){const yy=top+i*plotH/4;ctx.beginPath();ctx.moveTo(left,yy);ctx.lineTo(w-right,yy);ctx.stroke()}
@@ -166,19 +170,27 @@ function marketSparkUpdate(asset,price){
 }
 async function loadMarketHistory(){
  const assets=['BTC','ETH','BNB','XRP','SOL'],pairs={BTC:'XBTUSDC',ETH:'ETHUSDC',BNB:'BNBUSDC',XRP:'XRPUSDC',SOL:'SOLUSDC'};
+ // Kraken OHLC est limite a 720 bougies : 1 min = 12 h, 5 min = 60 h.
+ // Charger les 5 min pour couvrir reellement 24 h, puis les 1 min pour le detail recent.
  await Promise.all(assets.map(async asset=>{
   try{
-   const res=await fetch('https://api.kraken.com/0/public/OHLC?pair='+encodeURIComponent(pairs[asset])+'&interval=1',{cache:'no-store'});
-   if(!res.ok)throw Error('HTTP '+res.status);
-   const json=await res.json();if(json.error?.length)throw Error(json.error.join(', '));
-   const key=Object.keys(json.result||{}).find(k=>k!=='last');const candles=key?json.result[key]:null;
-   if(!Array.isArray(candles))throw Error('Historique indisponible');
+   const get=async interval=>{
+    const res=await fetch('https://api.kraken.com/0/public/OHLC?pair='+encodeURIComponent(pairs[asset])+'&interval='+interval,{cache:'no-store'});
+    if(!res.ok)throw Error('HTTP '+res.status);
+    const json=await res.json();if(json.error?.length)throw Error(json.error.join(', '));
+    const key=Object.keys(json.result||{}).find(k=>k!=='last'),candles=key?json.result[key]:null;
+    if(!Array.isArray(candles))throw Error('Historique indisponible');
+    return candles.map(c=>({ts:Number(c[0])*1000,price:Number(c[4])})).filter(p=>Number.isFinite(p.ts)&&Number.isFinite(p.price)&&p.price>0);
+   };
+   const coarse=await get(5),fine=await get(1);
    const now=Date.now(),cutoff=now-MARKET_WINDOW_MS;
-   const points=candles.map(c=>({ts:Number(c[0])*1000,price:Number(c[4])})).filter(p=>Number.isFinite(p.ts)&&Number.isFinite(p.price)&&p.price>0&&p.ts>=cutoff&&p.ts<=now);
-   if(!points.length)throw Error('Aucune bougie');
-   // Preserve les cotations live plus recentes deja recues pendant le chargement.
-   const merged=new Map([...points,...marketHistory[asset]].map(p=>[Math.floor(p.ts/MARKET_BUCKET_MS),p]));
-   marketHistory[asset]=[...merged.values()].sort((a,b)=>a.ts-b.ts);
+   // La granularite 1 min remplace la 5 min pour les douze dernieres heures.
+   const fineStart=fine.length?fine[0].ts:Infinity;
+   const points=coarse.filter(p=>p.ts<fineStart).concat(fine).filter(p=>p.ts>=cutoff&&p.ts<=now);
+   if(points.length<2)throw Error('Historique insuffisant');
+   const newestCandle=fine.length?fine.at(-1).ts:coarse.at(-1).ts;
+   const live=marketHistory[asset].filter(p=>p.ts>newestCandle);
+   marketHistory[asset]=points.concat(live).sort((a,b)=>a.ts-b.ts);
    marketHistoryLoaded[asset]=true;drawMarketSpark(asset);
   }catch(err){marketHistoryLoaded[asset]=false;console.warn('Historique Kraken '+asset+' indisponible',err)}
  }));
