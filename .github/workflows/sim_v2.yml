@@ -1,29 +1,41 @@
-name: Kraken Sim V2 — vérification sans ordres (en attente GrokBot)
+name: Kraken Sim V2 — CI PAPER (no orders)
 on:
   workflow_dispatch:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'v2/**'
+      - '.github/workflows/sim_v2.yml'
+      - 'CHANGELOG.md'
   push:
     branches: [main]
     paths:
-      - 'v2/paper_executor.py'
-      - 'v2/test_paper_executor.py'
-      - 'v2/engine.py'
+      - 'v2/**'
       - '.github/workflows/sim_v2.yml'
 permissions:
   contents: read
 jobs:
   validate:
-    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    concurrency:
+      group: v2-ci-${{ github.ref }}
+      cancel-in-progress: false
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Contrôler que V2 n'invente pas de capital
+      - name: Compile and test PAPER-only modules
         run: |
-          python -m py_compile v2/engine.py v2/paper_executor.py v2/test_paper_executor.py
+          python -m py_compile v2/engine.py v2/paper_executor.py v2/plan_contract.py v2/check_pr_policy.py v2/run_cycle.py v2/check_report.py
           python -m unittest discover -s v2 -p 'test_*.py' -v
-          python v2/engine.py
+      - name: Check V2 PR boundaries and guardrail approvals
+        if: github.event_name == 'pull_request'
+        run: python v2/check_pr_policy.py
+      - name: Check no fabricated published portfolio
+        run: |
           python - <<'PY'
           import json
           d=json.load(open("v2/state.json"))
@@ -32,5 +44,7 @@ jobs:
           assert d.get("equity") is None
           assert d.get("pnl_pct") is None
           assert not d.get("orders")
-          print("V2 en attente des donnees validees GrokBot")
+          print("Public V2 remains uninitialized")
           PY
+# schedule: (DISABLED until written GO from Cyril)\n#   - cron: '40 * * * *'  # UTC, GitHub Actions uses UTC\n# Hourly engine: 40 * * * * (UTC) — DISABLED until Cyril's explicit GO.
+# No publication, no private Kraken API, no deployment key in this CI.
