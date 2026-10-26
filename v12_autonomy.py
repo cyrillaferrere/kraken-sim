@@ -27,6 +27,14 @@ def min_median_volume_usdc():
     Rétrocompatible avec l'ancienne clé min_median_daily_usd_volume."""
     u=SPEC["UNIVERSE"]
     return float(u.get("min_median_daily_usdc_volume_30d",u.get("min_median_daily_usd_volume")))
+def _risk_share(key):
+    v=SPEC["RISK"].get(key)
+    return None if v is None else d(str(v))
+
+def asset_cost_usdc(portfolio,asset):
+    p=portfolio.positions.get(asset)
+    return d(0) if not p else d(p["qty"])*d(p["avg_cost"])
+
 def max_crypto_exposure_usdc():
     """Moteur V1.6.3 : plafond d'exposition crypto en USDC (coût investi, frais
     inclus). None = pas de plafond absolu (seuls les ratios s'appliquent)."""
@@ -114,6 +122,18 @@ def _schema(decision,now,snapshot,risk_state,phase):
         raise ValueError("UNTRUSTED_MARKET_SNAPSHOT")
     return qty
 
+SPREAD_GLOBAL_ASSETS=("BTC","ETH")
+
+def wide_spread_assets(snapshot):
+    """Moteur V1.6.4 : paires au spread > 0,3 % (exclues individuellement)."""
+    out=set()
+    for a,q in (snapshot.get("quotes") or {}).items():
+        try:
+            bid,ask=d(q["bid"]),d(q["ask"])
+            if bid>0 and ask>=bid and (ask-bid)/((ask+bid)/2)>d("0.003"):out.add(a)
+        except (KeyError,TypeError,ArithmeticError):pass
+    return out
+
 def _quotes(snapshot,now,portfolio,phase):
     if snapshot.get("status")!="PAPER" or snapshot.get("source")!="trusted-public-kraken":
         raise ValueError("UNTRUSTED_OR_LIVE_MARKET_SNAPSHOT")
@@ -133,7 +153,9 @@ def _quotes(snapshot,now,portfolio,phase):
         bid,ask=d(q["bid"]),d(q["ask"])
         if bid<=0 or ask<bid:
             raise ValueError("BROKEN_BID_ASK")
-        if (ask-bid)/((ask+bid)/2)>d("0.003"):
+        # V1.6.4 : seul un spread large sur BTC/ETH bloque globalement ; les
+        # autres paires larges sont exclues individuellement (voir validate).
+        if (ask-bid)/((ask+bid)/2)>d("0.003") and a in SPREAD_GLOBAL_ASSETS:
             raise ValueError("EXCESSIVE_SPREAD")
     return {a:d(q["bid"]) for a,q in quotes.items()}
 
@@ -257,6 +279,8 @@ def validate(decision,snapshot,portfolio,now=None,risk_state=None,phase="executi
             if current is None or quantity+reserved>current["qty"]:
                 raise ValueError("NO_SHORT_SELLING_OR_RESERVED")
             return reasoned(decision,True,"RISK_REDUCTION_PERMITTED")
+        if asset in wide_spread_assets(snapshot):
+            raise ValueError("PAIR_EXCLUDED_SPREAD")
         if risk_state.get("risk_lock") is True or now<utc(risk_state.get("cooldown_until","1970-01-01T00:00:00Z")):
             raise ValueError("RISK_LOCK_OR_COOLDOWN")
         peak=d(risk_state["equity_peak_usd"])
@@ -290,6 +314,14 @@ def validate(decision,snapshot,portfolio,now=None,risk_state=None,phase="executi
         if cap is not None and (invested_cost_usdc(portfolio)+estimated+
                 d(risk_state.get("pending_exposure_usd",0)))>cap+d("0.00000001"):
             raise ValueError("CRYPTO_EXPOSURE_CAP_USDC")
+        if cap is not None:
+            buy_share=_risk_share("max_buy_share_per_cycle")
+            if buy_share is not None and estimated>cap*buy_share+d("0.00000001"):
+                raise ValueError("BUY_ABOVE_PER_CYCLE_SHARE")
+            asset_share=_risk_share("max_per_asset_share")
+            pend_asset=d(risk_state.get("pending_buy_usd_by_asset",{}).get(asset,0))
+            if asset_share is not None and asset_cost_usdc(portfolio,asset)+pend_asset+estimated>cap*asset_share+d("0.00000001"):
+                raise ValueError("ASSET_SHARE_CAP")
         # Candidate C intentionally excludes the cross-asset correlation veto (§6).
         if decision["candidate"]!="C":
             current_weights={a:float(p["qty"]*prices[a]/equity)

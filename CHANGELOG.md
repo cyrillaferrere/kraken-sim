@@ -12,6 +12,19 @@
 > - Versions sur `develop` : **moteur partagé V1.2 · stratégie V1.1 · UX/UI V1.1.2**. En PR expérimentale seulement : **moteur V1.3 (`VERSION_ENGINE_V12`) · stratégie V1.2**, sans fusion ni cycle.
 
 
+## [Moteur V1.6.4] — 26/10/2026 01h15 (Paris) — Kraken Bot (VERSION_ENGINE_V12, moteur expérimental V1.2)
+### Fonctionnel
+- `v12_autonomy.py` : plafond par actif `max_per_asset_share=0.40` (600 USDC de coût investi + achats en attente par crypto, refus `ASSET_SHARE_CAP`) et plafond par achat `max_buy_share_per_cycle=0.25` (375 USDC, refus `BUY_ABOVE_PER_CYCLE_SHARE`). Position au-dessus du plafond : aucune vente forcée, seuls les nouveaux achats sont bloqués.
+- `v12_cycle.py` : budget d'achat = min(poids × equity, budget restant, 375, 600 − coût de l'actif) ; actifs au-dessus de 40 % listés `ASSET_SHARE_CAP_NO_NEW_BUY`.
+### Corrections
+- `v12_autonomy.py` : un spread > 0,3 % sur une paire hors BTC/ETH ne bloque plus tous les achats (`EXCESSIVE_SPREAD` global) ; la paire seule est exclue (`PAIR_EXCLUDED_SPREAD`). BTC/ETH au-delà de 0,3 % bloquent toujours globalement.
+- `v12_paper_engine.py` : `pending_buy_usd_by_asset` dans l'état de risque.
+- `tests/test_v12_exposure_cap.py` : 7 tests V1.6.4.
+
+## [Stratégie V1.2] — 26/10/2026 01h15 (Paris) — Kraken Bot (paramètres expérimentaux, accompagne Moteur V1.6.4)
+### Fonctionnel
+- `strategy/v1_2/params.json` : `RISK.max_per_asset_share=0.40`, `RISK.max_buy_share_per_cycle=0.25`. Backtest **non recalculé** avec ces plafonds.
+
 ## [Moteur V1.6.3] — 26/10/2026 00h59 (Paris) — Kraken Bot (VERSION_ENGINE_V12, moteur expérimental V1.2)
 ### Fonctionnel
 - `v12_autonomy.py` : plafond absolu d'exposition crypto `RISK.max_crypto_exposure_usdc` (1 500 USDC) sur le **coût investi frais inclus** (Σ qty × avg_cost) + ordres en attente ; refus `CRYPTO_EXPOSURE_CAP_USDC` à l'admission et à l'exécution.

@@ -69,7 +69,7 @@
     "correlated_weight_max": 0.4,
     "max_exposure": 0.9,
     "max_crypto_exposure_usdc": 1500,
-    "crypto_exposure_basis": "COST_INVESTED_INCL_FEES"
+    "crypto_exposure_basis": "COST_INVESTED_INCL_FEES", "max_per_asset_share": 0.40, "max_buy_share_per_cycle": 0.25
   },
   "CANDIDATES": {
     "A": {

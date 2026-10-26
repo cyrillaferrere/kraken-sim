@@ -126,7 +126,7 @@ class PaperEngine:
              "paused":self._get("paused"),"risk_lock":self._get("risk_lock"),
              "cooldown_until":self._get("cooldown_until"),
              "equity_peak_usd":self._get("equity_peak_usd")}
-        sells={};reserved=d(0)
+        sells={};reserved=d(0);by_asset={}
         if snapshot is not None:
             for row in self.conn.execute(
                 "SELECT decision_id,original_json,remaining FROM orders WHERE status IN ('ADMITTED','MAKER_PENDING')"):
@@ -142,10 +142,13 @@ class PaperEngine:
                         # A missing quote never releases reserved budget.
                         reserved=d(self._get("initial_capital_usd"))*10
                     else:
-                        reserved+=qty*d(quote["ask"])*d("1.02")
+                        amount=qty*d(quote["ask"])*d("1.02")
+                        reserved+=amount
+                        by_asset[act["asset"]]=by_asset.get(act["asset"],d(0))+amount
         out["reserved_sell_quantities"]={a:str(q) for a,q in sells.items()}
         out["reserved_buy_usd"]=str(reserved)
         out["pending_exposure_usd"]=str(reserved)
+        out["pending_buy_usd_by_asset"]={a:str(v) for a,v in by_asset.items()}
         return out
 
     # Per-pair exclusion policy (moteur V1.4): an invalid / too-wide quote

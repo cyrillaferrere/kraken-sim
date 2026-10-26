@@ -169,3 +169,11 @@ Demande de Cyril (résident français, zone euro). Mises en œuvre dans le Moteu
 - Cycle `--cycle` : repris sur l'état publié (6 605,10 USDC au départ, pas de réinitialisation), décisions moteur déterministes (priorité C, A, D, B), HOLD motivé si aucun signal. PAPER uniquement, USDC uniquement, aucune clé Kraken.
 - Rapport : bloc `exposure` (plafond, base, investi, valeur de marché — null si un prix manque —, budget restant, USDC restant).
 - Backtest non recalculé avec ce plafond.
+
+## 26/10/2026 — Moteur V1.6.4 : diversification et exclusion de spread par paire
+
+- **Plafond par actif :** `RISK.max_per_asset_share = 0.40` du plafond crypto, soit **600 USDC** de coût investi frais inclus (+ achats en attente) par crypto. Refus `ASSET_SHARE_CAP`.
+- **Plafond par achat :** `RISK.max_buy_share_per_cycle = 0.25`, soit **375 USDC** maximum par ordre d'achat (frais et slippage estimés inclus). Refus `BUY_ABOVE_PER_CYCLE_SHARE`.
+- **Positions existantes au-dessus de 40 % (cas BTC ≈ 1 468 USDC au 26/10/2026) :** pas de vente forcée (une vente forcée créerait des frais et un événement de marché non issu de la stratégie). Tout nouvel achat de l'actif est bloqué tant que son coût investi dépasse 600 USDC ; seules les règles de sortie normales de la stratégie peuvent le réduire. Signalé dans le rapport (`ASSET_SHARE_CAP_NO_NEW_BUY`).
+- **Spread :** conformément à la règle d'univers (spread ≤ 0,3 %), une paire hors BTC/ETH au spread > 0,3 % est **exclue individuellement** (`PAIR_EXCLUDED_SPREAD`) et ne bloque plus les achats des autres paires. Un spread > 0,3 % sur BTC ou ETH reste un blocage global (`EXCESSIVE_SPREAD`).
+- Backtest non recalculé avec ces plafonds.
