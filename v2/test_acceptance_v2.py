@@ -1,6 +1,8 @@
 """Twelve CDC §10 acceptance scenarios. Fixtures are synthetic, never published."""
 import copy
+import os
 import unittest
+os.environ["V2_GUARDRAILS_PATH"] = os.path.join(os.path.dirname(os.path.abspath(__file__)), "test_guardrails_fixture.json")
 from decimal import Decimal
 from datetime import datetime, timezone
 

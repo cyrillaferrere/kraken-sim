@@ -1,6 +1,8 @@
 """Tests of the V2 plan contract. All prices and amounts are synthetic fixtures."""
 import sys
+import os
 import unittest
+os.environ["V2_GUARDRAILS_PATH"] = os.path.join(os.path.dirname(os.path.abspath(__file__)), "test_guardrails_fixture.json")
 from datetime import datetime, timezone
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))

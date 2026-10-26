@@ -5,6 +5,10 @@
 - `v2/check_report.py` et `.github/workflows/v2_report.yml` : contrôle des futurs rapports techniques, pilote conservé en attente de collecte vérifiée.
 - Aucune activation de routine, aucun ordre, aucun changement V1/V1.2 ; la collecte live n'a pas pu être exécutée dans cette session.
 
+## [Garde-fous V2 — v2-guardrails-1 rév. 2] — 26/10/2026 — Kraken - Bot Crypto
+- `v2/guardrails.json` : plafond investi 2 000 → 4 000 USDC (≈60 % du capital de 6 605,10), coupe-circuit 300 → 600 USDC depuis le pic. Inchangés : 40 % max par actif, spread ≤0,3 %, profondeur ≥3×, 6 ordres/cycle, 20/24 h. Décision du stratège, délégation explicite de Cyril (« ces règles c'est à toi de les définir »).
+- Tests : figés sur `v2/test_guardrails_fixture.json` (valeurs historiques) via `V2_GUARDRAILS_PATH`, pour ne plus casser à chaque révision des garde-fous. Cette variable ne doit jamais être définie dans un workflow de production.
+
 # Journal des modifications — Kraken Sim (paper trading, aucun ordre réel)
 
 ## [Infra V2.0.1] — 26/10/2026 — GPT-6 — préparation des routines (non activées)

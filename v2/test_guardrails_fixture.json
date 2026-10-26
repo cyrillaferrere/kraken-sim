@@ -1,0 +1,14 @@
+{
+  "schema": "v2-guardrails-1",
+  "reference_capital_usdc": "6605.10",
+  "max_invested_usdc": "2000",
+  "max_asset_fraction": "0.40",
+  "kill_drawdown_usdc": "300",
+  "max_spread_pct": "0.3",
+  "min_depth_multiple": "3",
+  "min_order_usdc": "25",
+  "max_orders_per_cycle": 6,
+  "max_orders_24h": 20,
+  "max_market_age_seconds": 600,
+  "max_clock_skew_seconds": 120
+}
