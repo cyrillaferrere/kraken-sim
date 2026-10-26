@@ -1,6 +1,13 @@
 name: Kraken Sim V2 — vérification sans ordres (en attente GrokBot)
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'v2/paper_executor.py'
+      - 'v2/test_paper_executor.py'
+      - 'v2/engine.py'
+      - '.github/workflows/sim_v2.yml'
 permissions:
   contents: read
 jobs:
