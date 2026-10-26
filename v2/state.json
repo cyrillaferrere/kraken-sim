@@ -1,0 +1,19 @@
+{
+  "schema": 1,
+  "engine": "V2.0.0",
+  "strategy": "V2.0",
+  "ux": "V2.0.0",
+  "mode": "PAPER",
+  "initial": 6605.1,
+  "cash": 6605.1,
+  "positions": {},
+  "equity": 6605.1,
+  "pnl_pct": 0,
+  "fees": 0,
+  "cycles": 0,
+  "orders": [],
+  "history": [],
+  "signals": [],
+  "updated": null,
+  "status": "INITIALIZED"
+}
