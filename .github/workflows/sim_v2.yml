@@ -27,13 +27,13 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Check V2 PR boundaries and guardrail approvals
-        if: github.event_name == 'pull_request'
-        run: python v2/check_pr_policy.py
       - name: Compile and test PAPER-only modules
         run: |
           python -m py_compile v2/engine.py v2/paper_executor.py v2/plan_contract.py v2/check_pr_policy.py
           python -m unittest discover -s v2 -p 'test_*.py' -v
+      - name: Check V2 PR boundaries and guardrail approvals
+        if: github.event_name == 'pull_request'
+        run: python v2/check_pr_policy.py
       - name: Check no fabricated published portfolio
         run: |
           python - <<'PY'
