@@ -10,7 +10,7 @@ INITIAL = 6605.10
 FEE = 0.004
 SLIPPAGE = 0.0015
 ASSETS = ["BTC", "ETH", "SOL", "XRP", "ADA", "LINK", "AVAX", "DOT"]
-PAIRS = {a: f"{a}USDC" for a in ASSETS}
+PAIRS = {a: ("XBTUSDC" if a == "BTC" else f"{a}USDC") for a in ASSETS}
 WEIGHTS = {"short": 0.20, "medium": 0.30, "long": 0.50}
 
 def api(endpoint, params):
@@ -131,6 +131,7 @@ def run():
         held[asset] = held.get(asset,0)+qty
         orders.append({"asset":asset,"side":"BUY","qty":qty,"price":px,"fee":fee})
     s["positions"] = held
+    s["position_values"] = {a: round(q*prices[a]["bid"], 6) for a,q in held.items()}
     s["equity"] = s["cash"] + sum(q*prices[a]["bid"] for a,q in held.items())
     s["pnl_pct"] = 100*(s["equity"]/s["initial"]-1)
     s["slot"] = slot; s["cycles"] = s.get("cycles",0)+1
