@@ -39,7 +39,7 @@ class AcceptanceCDC(unittest.TestCase):
     def test_04_cap_2000(self):
         s = state()
         s.update({"cash": 4615.10, "positions": {"BTC": 19.9},
-                  "cost_basis": {"BTC": "1990"}})
+                  "cost_basis": {"BTC": "1990"}, "peak_equity": 4814.10})
         m = market()
         m["quotes"]["BTC"].update({"price": "10", "asks": [["10.01", "1000"]],
                                     "bids": [["9.99", "1000"]]})
