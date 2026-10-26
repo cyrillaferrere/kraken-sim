@@ -7,9 +7,29 @@ Le dashboard V2 est publié, les prix publics Kraken sont visibles. Le moteur `v
 
 **Cadence demandée : 10 secondes, pas 5.** Les cinq cotations BTC/USDC, ETH/USDC, BNB/USDC, XRP/USDC, SOL/USDC proviennent du flux public Kraken WebSocket v2 en continu ; le dashboard rafraîchit les cours affichés **toutes les 10 secondes**. Le dashboard recharge aussi `v2/state.json` **toutes les 10 secondes**. Les courbes 24 h proviennent de bougies OHLC Kraken (5 min + 1 min), mises à jour périodiquement, et des ticks réellement reçus.
 
-**À intégrer par GrokBot :** la cadence cible d'un cycle de décision/valorisation PAPER est **10 secondes**, après validation de la faisabilité, des limites API et de la fraîcheur des sources. Chaque cycle doit utiliser les prix Kraken les plus récents et sourcés ; le dashboard ne doit pas servir de source d'exécution. Chaque état publié doit porter son horodatage réel `updated`, et le moteur doit refuser les données trop anciennes. Aucune extrapolation de prix, d'ordre, de portefeuille ou de rendement.
+**À intégrer par GrokBot :** la cadence de rafraîchissement du dashboard est **10 secondes**, tandis que l'exécution PAPER est prévue **à :40 chaque heure**, après GO, après validation de la faisabilité, des limites API et de la fraîcheur des sources. Chaque cycle doit utiliser les prix Kraken les plus récents et sourcés ; le dashboard ne doit pas servir de source d'exécution. Chaque état publié doit porter son horodatage réel `updated`, et le moteur doit refuser les données trop anciennes. Aucune extrapolation de prix, d'ordre, de portefeuille ou de rendement.
 
 **Important :** actualiser le navigateur toutes les 10 secondes n'implique pas que le moteur calcule ou publie effectivement un nouveau cycle toutes les 10 secondes. Le workflow V2 actuel est toujours sans cron, et la stratégie reste à brancher. Le déclenchement d'une cadence de 10 secondes exige un orchestrateur compatible (un cron GitHub Actions n'est pas adapté à une fréquence de 10 secondes), un mécanisme anti-chevauchement et un GO explicite. Ne pas activer le trading réel.
+
+## Revue PR #34 — correctifs demandés par GrokBot (26/10/2026)
+
+La spécification normative est le commentaire du CDC dans l'issue #33, et non les anciens exemples du présent README. **Les allocations sont des fractions de l'enveloppe** : 0,30 signifie 30 % des 2 000 USDC, et non 30 % du portefeuille total. Le capital de référence 6 605,10 USDC est un garde-fou du CDC, **pas une initialisation automatique de `state.json`**.
+
+- `v2/guardrails.json` contient G5/G6/G7/G10 et les autres limites du CDC. **La PR #34 modifie ce fichier et reste bloquée sans le label `cyril-approved`** et un titre commençant par `[GUARDRAILS]`. Ne pas contourner le contrôle.
+- `v2/plan_contract.py` valide `author`, `regime`, `targets` (somme 1 ±0,001), zones, stops, take-profits, expiration 36 h, ordre max et régime cash. `v2/plan.schema.json` décrit le format. Le plan actif réel `v2/plan.json` doit être créé exclusivement par GrokBot.
+- `v2/engine.py` calcule des **candidats PAPER hors ligne** à partir d'un plan et d'un snapshot de marché publics Kraken sourcés ; il simule la traversée du carnet en taker, les frais maker/taker non nuls et les ordres maker uniquement sur preuve de franchissement ultérieur ; il limite les achats et journalise les refus. Il exige un portefeuille vérifié et le coût de revient vérifié des positions existantes.
+- Le coupe-circuit G10 est un drawdown **absolu de 300 USDC** depuis le pic d'equity. La fraîcheur G11 maximale du snapshot est **10 minutes**, distincte du rafraîchissement du dashboard **10 secondes**.
+- `v2/check_pr_policy.py` bloque les modifications V1/V1.2, exige la documentation et le CHANGELOG, et protège les garde-fous. La CI `sim_v2.yml` compile et lance les tests sans appeler le moteur sans arguments ; le cron `40 * * * *` reste commenté.
+- `VERSION_ENGINE_V2` et `VERSION_UX_V2` : versions indépendantes V2.0.1.
+
+**Limites restant à lever avant activation :** le collecteur public Kraken V1.2 et la conformité EEE ne sont pas encore raccordés en lecture seule ; le snapshot est un contrat d'entrée, non une collecte automatique. Le traitement des ordres maker nécessite un vrai flux ultérieur horodaté et le timeout effectif, non une simple liste de prix ; l'archivage immuable des plans, la publication atomique sur `state-v2`, la gestion des achats en attente, la vérification CI complète et les 12 tests d'acceptation de bout en bout restent à terminer. **Aucune simulation autonome ni publication n'est activée.**
+
+Exécution locale avec fichiers vérifiés (ne pas publier de données synthétiques) :
+
+```bash
+python -m unittest discover -s v2 -p 'test_*.py' -v
+python v2/engine.py --plan /chemin/plan-grokbot.json --market /chemin/snapshot-kraken.json --state /chemin/etat-verifie.json --output /tmp/v2-candidate.json
+```
 
 ## Cahier des charges GrokBot — issue #33 (26/10/2026)
 
@@ -21,7 +41,7 @@ Source : https://github.com/cyrillaferrere/kraken-sim/issues/33
 
 **Préparation sur PR `feature/v2-plan-execution-issue33` :**
 - `plan_contract.py` : validation stricte du plan (actifs, poids, floor USDC, zones, expiration ≤36 h) ; fonction de repli vers le dernier plan validé.
-- `engine.py` : **précontrôle en lecture seule** du plan et du snapshot Kraken sourcé et récent (≤10 s), du portefeuille, du plafond et du drawdown. **N'exécute pas encore le plan** : il renvoie HOLD, KILL ou READY_FOR_REVIEW.
+- `engine.py` : **précontrôle en lecture seule** du plan et du snapshot Kraken sourcé et récent (≤10 min), du portefeuille, du plafond et du drawdown. produit un candidat PAPER, sans publication ni appel Kraken privé.
 - `test_plan_contract.py`, `test_engine_preflight.py` : tests de rejet et de sécurité.
 - `index.html` : encart plan actif, justification, expiration, poids cibles/réels et écarts ; ne montre le plan que si `data_source=grokbot_verified`.
 - `sim_v2.yml` : tests PR ; **pas de cron ni de publication automatique**.
