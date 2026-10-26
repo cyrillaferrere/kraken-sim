@@ -177,3 +177,11 @@ Demande de Cyril (résident français, zone euro). Mises en œuvre dans le Moteu
 - **Positions existantes au-dessus de 40 % (cas BTC ≈ 1 468 USDC au 26/10/2026) :** pas de vente forcée (une vente forcée créerait des frais et un événement de marché non issu de la stratégie). Tout nouvel achat de l'actif est bloqué tant que son coût investi dépasse 600 USDC ; seules les règles de sortie normales de la stratégie peuvent le réduire. Signalé dans le rapport (`ASSET_SHARE_CAP_NO_NEW_BUY`).
 - **Spread :** conformément à la règle d'univers (spread ≤ 0,3 %), une paire hors BTC/ETH au spread > 0,3 % est **exclue individuellement** (`PAIR_EXCLUDED_SPREAD`) et ne bloque plus les achats des autres paires. Un spread > 0,3 % sur BTC ou ETH reste un blocage global (`EXCESSIVE_SPREAD`).
 - Backtest non recalculé avec ces plafonds.
+
+## Moteur V1.6.5 — enveloppe initiale de 2 000 USDC (26/10/2026, décision de Cyril)
+
+- Le plafond d'exposition crypto passe de 1 500 à 2 000 USDC (coût investi, frais inclus).
+- Au premier cycle sur un portefeuille vide, l'enveloppe est répartie à parts égales sur les paires éligibles (au plus 4, aujourd'hui BTC, ETH, SOL et XRP), soit environ 500 USDC chacune. Chaque achat reste soumis à toutes les portes : poids cible du candidat, profondeur, spread, 40 % maximum par actif et 25 % du plafond maximum par achat.
+- Ensuite, les règles normales de la stratégie reprennent la main.
+- L'état V1.2 a été remis à zéro (6 605,10 USDC) ; l'ancien état est archivé dans `archive/2026-10-26-run1/` sur la branche state-v12.
+- Le backtest n'a pas été recalculé avec ces paramètres.

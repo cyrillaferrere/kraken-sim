@@ -83,6 +83,31 @@ def plan(engine,snapshot,synth,now):
         if per_asset is not None and asset_cost_usdc(p,a)>=per_asset:
             skipped.append({"candidate":"*","asset":a,"reason":"ASSET_SHARE_CAP_NO_NEW_BUY",
                             "cost_usdc":float(asset_cost_usdc(p,a)),"limit_usdc":float(per_asset)})
+    # V1.6.5 : enveloppe initiale répartie à parts égales sur les paires éligibles (portefeuille vide).
+    if cap is not None and SPEC["RISK"].get("initial_envelope_split") and not p.positions and invested_cost_usdc(p)==0:
+        elig=[]
+        for label in PRIORITY:
+            for s in sig.get(label,[]):
+                a=s["asset"]
+                if a in [x for x,_ in elig] or a in wide or a not in quotes or s.get("exit"):continue
+                if s.get("eligible") or s.get("entry"):elig.append((a,label))
+        elig=elig[:int(SPEC["RISK"].get("initial_envelope_max_assets",4))]
+        if len(elig)>=2:
+            share=remaining/len(elig)
+            if per_asset is not None:share=min(share,per_asset)
+            for a,label in elig:
+                try:w=d(str(_candidate_buy_weight(label,a,bars,p,snapshot,asof)))
+                except (ValueError,KeyError,TypeError) as exc:
+                    skipped.append({"candidate":label,"asset":a,"reason":str(exc)});continue
+                if w<=0:continue
+                budget=min(share,w*equity)
+                ask=d(quotes[a]["ask"]);slip=d(SPEC["COSTS"]["slippage"]["major" if a in ("BTC","ETH") else "other"])
+                factor=max(SIZING_MARGIN,(1+slip)*(1+fee))
+                qty=(budget/(ask*factor)).quantize(Decimal("0.00000001"),rounding=ROUND_DOWN)
+                if qty<=0 or qty*ask*factor<mn:continue
+                decisions.append(_base(engine,synth,now,a,"BUY",qty,label,
+                    f"Moteur V1.6.5 : enveloppe initiale {cap} USDC répartie sur {len(elig)} paires, {float(budget):.2f} USDC sur {a} (candidat {label})."))
+            if decisions:return decisions,skipped
     for label in PRIORITY:
         for s in sig.get(label,[]):
             asset=s["asset"]
