@@ -103,15 +103,15 @@ function graph(h){let canvas=$('chart'),ctx=canvas.getContext('2d'),w=canvas.wid
 function renderV2Plan(s){
  const verified=s.data_source==='grokbot_verified',p=verified?s.active_plan:null;
  const ok=p&&typeof p==='object'&&p.plan_id&&p.targets&&typeof p.targets==='object';
- $('v2PlanStatus').textContent=!ok?'En attente':p.expired?'Expiré · conservation':'Plan actif';
+ $('v2PlanStatus').textContent=!ok?'En attente':(p.expired||Date.now()>=Date.parse(p.expires_at))?'Expiré · conservation':'Plan actif';
  $('v2PlanRationale').textContent=ok&&typeof p.rationale==='string'?p.rationale:'Aucun plan stratégique vérifié publié.';
  $('v2PlanId').textContent='Plan : '+(ok?p.plan_id:'—');
  $('v2PlanExpiry').textContent='Expiration : '+(ok&&p.expires_at?new Date(p.expires_at).toLocaleString('fr-FR',{timeZone:'Europe/Paris'}):'—');
  const rows=ok?Object.entries(p.targets).filter(([a,v])=>typeof v==='number'&&Number.isFinite(v)):[];
  $('v2PlanTargets').innerHTML=rows.length?rows.map(([asset,target])=>{
   const actual=Number.isFinite(s.equity)&&s.equity>0?(asset==='USDC'?100*s.cash/s.equity:100*(s.position_values?.[asset]||0)/s.equity):null;
-  const difference=Number.isFinite(actual)?actual-target:null;
-  return '<tr><td>'+esc(asset)+'</td><td class="num">'+fmt(target,1)+' %</td><td class="num">'+(Number.isFinite(actual)?fmt(actual,1)+' %':'—')+'</td><td class="num">'+(difference===null?'—':(difference>0?'+':'')+fmt(difference,1)+' pts')+'</td></tr>'
+  const targetPct=target*100;const difference=Number.isFinite(actual)?actual-targetPct:null;
+  return '<tr><td>'+esc(asset)+'</td><td class="num">'+fmt(targetPct,1)+' %</td><td class="num">'+(Number.isFinite(actual)?fmt(actual,1)+' %':'—')+'</td><td class="num">'+(difference===null?'—':(difference>0?'+':'')+fmt(difference,1)+' pts')+'</td></tr>'
  }).join(''):'<tr><td colspan="4" class="empty">En attente du plan et des positions vérifiées</td></tr>';
 }
 function render(s){
