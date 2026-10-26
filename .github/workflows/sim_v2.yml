@@ -1,0 +1,46 @@
+name: Kraken Sim V2 — PAPER opportuniste
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '17 */4 * * *'
+permissions:
+  contents: write
+concurrency:
+  group: kraken-sim-v2-paper
+  cancel-in-progress: false
+jobs:
+  simulate:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Vérifier la syntaxe du moteur
+        run: python -m py_compile v2/engine.py
+      - name: Exécuter un cycle PAPER V2
+        run: python v2/engine.py
+      - name: Publier uniquement l'état V2
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name kraken-sim-v2-paper
+          git config user.email kraken-sim-v2-paper@users.noreply.github.com
+          git add v2/state.json
+          if git diff --cached --quiet; then
+            echo "Aucun nouvel état"
+            exit 0
+          fi
+          git commit -m "state(v2): cycle PAPER $GITHUB_RUN_ID"
+          for i in 1 2 3; do
+            git fetch origin main
+            git rebase origin/main
+            if git push origin HEAD:main; then exit 0; fi
+            sleep 3
+          done
+          echo "::error::Publication état V2 impossible"
+          exit 1
