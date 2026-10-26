@@ -63,6 +63,22 @@ class EngineTests(unittest.TestCase):
         s = execute_plan(p, state(), market(), now=NOW)
         self.assertEqual(len(s["orders"]), 0)
 
+    def test_expired_stop_loss_sells(self):
+        p = plan()
+        p["expires_at"] = "2026-10-25T11:30:00Z"
+        p["stop_loss_pct"] = {"BTC": 0.10}
+        m = market()
+        m["quotes"]["BTC"]["price"] = "80"
+        m["quotes"]["BTC"]["asks"] = [["80.1", "100"]]
+        m["quotes"]["BTC"]["bids"] = [["79.9", "100"]]
+        s = state()
+        s["cash"] = 6505.10
+        s["positions"] = {"BTC": 1}
+        s["cost_basis"] = {"BTC": "100"}
+        t = execute_plan(p, s, m, now=NOW)
+        self.assertEqual(len(t["orders"]), 1)
+        self.assertEqual(t["orders"][0]["side"], "SELL")
+
     def test_kill_switch_300(self):
         s = state()
         s["cash"] = 6305.10
