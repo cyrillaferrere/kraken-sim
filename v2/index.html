@@ -254,7 +254,7 @@ function renderAnalytics(s){
 window.addEventListener('resize',()=>{for(const a of Object.keys(marketHistory))drawMarketSpark(a)});
 
 async function load(){try{let r=await fetch('state.json?nocache='+Date.now(),{cache:'no-store'});if(!r.ok)throw Error('HTTP '+r.status);render(await r.json())}catch(e){$('status').textContent='Données indisponibles';$('updated').textContent='Erreur de chargement : '+e.message}}
-load();setInterval(load,60000);
+load();setInterval(load,10000);
 
 // Flux des cotations, indépendant de l'état PAPER et sans clé privée.
 // REST public : au maximum une requête par intervalle ; jamais de valeur inventée.
@@ -274,7 +274,7 @@ function connectMarket(){if(marketConnecting||marketSocket?.readyState===WebSock
  ws.onerror=()=>{marketStatus('Connexion Kraken indisponible',false)};
  ws.onclose=()=>{marketConnecting=false;marketSocket=null;marketStatus('Reconnexion Kraken…',false)};
 }catch(e){marketConnecting=false;marketSocket=null;marketStatus('WebSocket indisponible',false)}}
-function flushMarket(){for(const [asset,tick] of latestTicks){marketRender(asset,tick.price,tick.change)}const fresh=marketLastOk&&Date.now()-marketLastOk<20000;marketStatus(fresh?'Marché en direct · '+latestTicks.size+'/5':'Flux interrompu · reconnexion',fresh);if((!marketSocket||marketSocket.readyState===WebSocket.CLOSED)&&Date.now()-marketLastConnect>5000)connectMarket()}
-loadMarketHistory();connectMarket();setInterval(flushMarket,5000);setInterval(loadMarketHistory,10*60*1000);
+function flushMarket(){for(const [asset,tick] of latestTicks){marketRender(asset,tick.price,tick.change)}const fresh=marketLastOk&&Date.now()-marketLastOk<20000;marketStatus(fresh?'Marché en direct · '+latestTicks.size+'/5':'Flux interrompu · reconnexion',fresh);if((!marketSocket||marketSocket.readyState===WebSocket.CLOSED)&&Date.now()-marketLastConnect>10000)connectMarket()}
+loadMarketHistory();connectMarket();setInterval(flushMarket,10000);setInterval(loadMarketHistory,10*60*1000);
 
 </script></body></html>
