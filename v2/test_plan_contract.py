@@ -6,12 +6,12 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from plan_contract import validate_plan, accept_or_keep, InvalidPlan, guardrails
 
-NOW = datetime(2026, 10, 26, 12, tzinfo=timezone.utc)
+NOW = datetime(2026, 10, 25, 12, tzinfo=timezone.utc)
 
 
 def plan():
     return {"plan_id": "synthetic-plan", "author": "kraken-bot-crypto",
-            "created_at": "2026-10-26T11:00:00Z", "expires_at": "2026-10-27T11:00:00Z",
+            "created_at": "2026-10-25T11:00:00Z", "expires_at": "2026-10-26T11:00:00Z",
             "regime": "neutral", "targets": {"BTC": 0.2, "USDC": 0.8},
             "buy_zones": {"BTC": ["1", "2"]}, "sell_zones": {"BTC": ["3", "4"]},
             "stop_loss_pct": {"BTC": 0.10}, "take_profit_pct": {},
@@ -25,12 +25,12 @@ class PlanTests(unittest.TestCase):
 
     def test_expired_kept_as_expired(self):
         p = plan()
-        p["expires_at"] = "2026-10-26T11:30:00Z"
+        p["expires_at"] = "2026-10-25T11:30:00Z"
         self.assertTrue(validate_plan(p, NOW)["expired"])
 
     def test_max_36_hours(self):
         p = plan()
-        p["expires_at"] = "2026-10-28T11:00:00Z"
+        p["expires_at"] = "2026-10-27T11:00:00Z"
         with self.assertRaises(InvalidPlan):
             validate_plan(p, NOW)
 
