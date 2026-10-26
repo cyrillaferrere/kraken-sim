@@ -1,3 +1,39 @@
+## Routines préparées (non activées)
+
+Le rôle GPT-6 est de préparer les routines et les contrôles, pas de choisir les ordres à la place de Kraken - Bot Crypto. L'issue #33 distingue trois cadences :
+
+| Routine | Cadence prévue | Responsable | État |
+|---|---|---|---|
+| Rafraîchissement des cotations du dashboard | 10 secondes | Frontend / Kraken public | Déjà en place |
+| Rapport d'analyse sourcé | Quotidien avant 18h30 Europe/Paris | GPT-6 | Gabarit + CI prêts, automatisation de rédaction non activée |
+| Plan stratégique | Vers 8h et 19h Europe/Paris | Kraken - Bot Crypto | En attente de GrokBot ; jamais généré par le moteur |
+| Exécution PAPER | Chaque heure à :40 UTC | GitHub Actions V2 | Routine hors ligne prête, cron désactivé |
+| Publication du résultat | Après cycle accepté | Déploiement dédié `state-v2` | Non raccordée, pas de publication |
+| Incident, données absentes ou périmées | À chaque tentative | Routine V2 | Rejet et conservation de l'état précédent |
+
+### Routine PAPER `v2/run_cycle.py`
+
+Préconditions bloquantes : plan validé, snapshot Kraken public avec provenance et frais, portefeuille initial vérifié par GrokBot et dernier état validé. En absence d'un seul de ces éléments, le cycle est rejeté sans publication. Le programme génère uniquement un **fichier candidat inédit**, écrit de manière atomique, et ne remplace ni `v2/state.json` ni une branche GitHub. La protection de rejeu et l'intervalle minimal de 45 minutes sont appliqués par le moteur.
+
+```bash
+python v2/run_cycle.py \
+  --plan /chemin/plan-grokbot.json \
+  --market /chemin/snapshot-kraken.json \
+  --state /chemin/etat-valide.json \
+  --output /tmp/v2-candidate-unique.json
+```
+
+Ce n'est pas encore une routine **autonome** : il manque la collecte Kraken V1.2 conforme EEE, la récupération du dernier état `state-v2`, l'archivage des plans et la publication avec clé de déploiement dédiée, puis une validation bout en bout. Il est interdit de remplacer ces entrées par des données de démonstration.
+
+### Routine d'analyse GPT-6
+
+- `v2/reports/TEMPLATE.md` : six sections obligatoires, séparation des faits et opinions, provenance et horodatages UTC, valeurs inconnues `null`.
+- `v2/check_report.py` et `.github/workflows/v2_report.yml` : validation des rapports datés soumis en PR, sans rédaction automatique ni données inventées.
+- Le rapport doit être produit **avant 18h30 Paris**, sur une branche `reports/*` ou via PR ; le moteur n'en tient jamais compte directement.
+- Le plan est créé uniquement par Kraken - Bot Crypto, vers 8h et 19h, après relecture éventuelle du rapport.
+
+**Ne pas activer** le cron V2, les publications, la rédaction quotidienne ou les décisions sans les raccordements, la revue GrokBot et le GO de Cyril. La CI et les tests utilisent des données synthétiques **uniquement en test**, jamais dans l'état public.
+
 # Kraken Sim V2 — Passation GrokBot
 
 **État au 26/10/2026 : préparation technique, PAS de simulation autonome active.**
