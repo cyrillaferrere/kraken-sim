@@ -43,6 +43,25 @@ class PaperExecutorTests(unittest.TestCase):
         with self.assertRaises(RejectedCycle):
             apply_cycle(s, cycle())
 
+    def test_reject_replayed_older_cycle_id(self):
+        a = apply_cycle(PENDING, cycle())
+        b = apply_cycle(a, cycle("cycle-b", "2026-10-25T13:00:00Z"))
+        with self.assertRaises(RejectedCycle):
+            apply_cycle(b, cycle("cycle-a", "2026-10-25T14:00:00Z"))
+
+    def test_reject_changed_initial(self):
+        a = apply_cycle(PENDING, cycle())
+        x = cycle("cycle-b", "2026-10-25T13:00:00Z")
+        x["initial_usdc"] = "1001"
+        with self.assertRaises(RejectedCycle):
+            apply_cycle(a, x)
+
+    def test_exact_internal_ledger(self):
+        x = cycle(decisions=[{"asset": "BTC", "side": "BUY", "qty": "0.1", "price": "100", "fee": "0.01"}])
+        a = apply_cycle(PENDING, x)
+        self.assertEqual(a["_ledger"]["cash"], "989.99")
+        self.assertEqual(a["_ledger"]["positions"]["BTC"], "0.1")
+
     def test_reject_out_of_order(self):
         s = apply_cycle(PENDING, cycle())
         with self.assertRaises(RejectedCycle):
