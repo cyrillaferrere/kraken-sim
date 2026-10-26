@@ -10,7 +10,7 @@ on:
         description: "SHA épinglé de strategy/v1.2 (40 hex)"
         type: string
         required: true
-        default: "8a5068ef0941b1743653626920e8920e08616897"
+        default: "a3f5435622c799412621df791620dd738d253b8f"
       mode:
         description: "init-check (HOLD, 0 ordre) ou cycle (ordres PAPER, plafond 1 500 USDC)"
         type: choice
@@ -22,7 +22,7 @@ concurrency:
   group: kraken-sim-v12
   cancel-in-progress: false
 env:
-  V12_REVIEWED_CODE_SHA: ${{ inputs.code_sha || '8a5068ef0941b1743653626920e8920e08616897' }}
+  V12_REVIEWED_CODE_SHA: ${{ inputs.code_sha || 'a3f5435622c799412621df791620dd738d253b8f' }}
   V12_MODE: ${{ github.event_name == 'schedule' && 'cycle' || inputs.mode || 'init-check' }}
   V12_MIN_INTERVAL_MIN: '45'
 jobs:
