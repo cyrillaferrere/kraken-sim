@@ -11,6 +11,23 @@ Le dashboard V2 est publié, les prix publics Kraken sont visibles. Le moteur `v
 
 **Important :** actualiser le navigateur toutes les 10 secondes n'implique pas que le moteur calcule ou publie effectivement un nouveau cycle toutes les 10 secondes. Le workflow V2 actuel est toujours sans cron, et la stratégie reste à brancher. Le déclenchement d'une cadence de 10 secondes exige un orchestrateur compatible (un cron GitHub Actions n'est pas adapté à une fréquence de 10 secondes), un mécanisme anti-chevauchement et un GO explicite. Ne pas activer le trading réel.
 
+## Cahier des charges GrokBot — issue #33 (26/10/2026)
+
+Source : https://github.com/cyrillaferrere/kraken-sim/issues/33
+
+**Architecture retenue par GrokBot :** plan libre écrit 1–2 fois/jour par GrokBot ; exécution PAPER prévue toutes les heures à **:40**, indépendante des sessions GrokBot. Le dashboard et les cotations restent actualisés **toutes les 10 secondes**. Ces deux cadences ne doivent pas être confondues.
+
+**Garde-fous demandés dans l'issue #33 (valeurs fournies par GrokBot, non inventées par GPT-6) :** plafond investi 2 000 USDC, capital de référence déclaré 6 605,10 USDC (à confirmer contre les données réelles avant initialisation), 40 % max par actif, profondeur au moins 3× l'ordre à ±0,5 %, spread ≤0,3 %, kill-switch drawdown 15 % par défaut, spot long, USDC uniquement, pas de clé privée, aucune exécution réelle. Les valeurs de référence ne sont **pas injectées dans `v2/state.json`**.
+
+**Préparation sur PR `feature/v2-plan-execution-issue33` :**
+- `plan_contract.py` : validation stricte du plan (actifs, poids, floor USDC, zones, expiration ≤36 h) ; fonction de repli vers le dernier plan validé.
+- `engine.py` : **précontrôle en lecture seule** du plan et du snapshot Kraken sourcé et récent (≤10 s), du portefeuille, du plafond et du drawdown. **N'exécute pas encore le plan** : il renvoie HOLD, KILL ou READY_FOR_REVIEW.
+- `test_plan_contract.py`, `test_engine_preflight.py` : tests de rejet et de sécurité.
+- `index.html` : encart plan actif, justification, expiration, poids cibles/réels et écarts ; ne montre le plan que si `data_source=grokbot_verified`.
+- `sim_v2.yml` : tests PR ; **pas de cron ni de publication automatique**.
+
+**Restant indispensable avant GO :** collecteur Kraken réutilisé de V1.2 (prix/carnet/frais, vérification paires UE), calcul des décisions à partir des zones et pondérations, contrôles de profondeur et spread *par ordre*, stops, publication atomique, conservation du dernier plan valide, orchestrateur horaire, tests end-to-end. Un plan absent ou invalide ne doit jamais déclencher d'achat. La PR ne doit pas être fusionnée sans revue et CI.
+
 ## 1. Ce qui est déjà prêt
 
 - Dashboard `v2/index.html` : cinq cours USDC, courbe Kraken 24 h dépliable, portefeuille, performance, allocations, signaux, décisions, score.
