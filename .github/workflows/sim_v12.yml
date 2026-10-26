@@ -1,5 +1,5 @@
-name: Kraken Sim V1.2 — préprod manuelle isolée (init-check HOLD seul)
-# Déclenchement MANUEL uniquement : aucun schedule, aucune clé Kraken, aucun ordre.
+name: Kraken Sim V1.2 — préprod manuelle isolée (init-check ou cycle PAPER, manuel)
+# Déclenchement MANUEL uniquement : aucun schedule, aucune clé Kraken, aucun ordre réel (PAPER uniquement).
 on:
   workflow_dispatch:
     inputs:
@@ -7,7 +7,12 @@ on:
         description: "SHA épinglé de strategy/v1.2 (40 hex)"
         type: string
         required: true
-        default: "74bd7375388cb6872137721c5240841359357a65"
+        default: "3636db6d09041230acf5c6b2221aadf77ebbc9bf"
+      mode:
+        description: "init-check (HOLD, 0 ordre) ou cycle (ordres PAPER, plafond 1 500 USDC)"
+        type: choice
+        options: [init-check, cycle]
+        default: init-check
 permissions:
   contents: read
 concurrency:
@@ -15,6 +20,7 @@ concurrency:
   cancel-in-progress: false
 env:
   V12_REVIEWED_CODE_SHA: ${{ inputs.code_sha }}
+  V12_MODE: ${{ inputs.mode || 'init-check' }}
 jobs:
   check:
     if: github.ref == 'refs/heads/main'
@@ -48,17 +54,23 @@ jobs:
         run: |
           git clone --depth 1 --branch state-v12 https://github.com/cyrillaferrere/kraken-sim-preprod.git "$RUNNER_TEMP/v12state"
           git -C "$RUNNER_TEMP/v12state" rev-parse HEAD > "$RUNNER_TEMP/v12_previous_sha"
-      - name: Init-check HOLD seul (données publiques Kraken, 0 ordre)
+      - name: Init-check ou cycle PAPER (données publiques Kraken, aucune clé)
         working-directory: code
         env:
           V12_STATE_DIR: ${{ runner.temp }}/v12state
-        run: python3 cycle_v12.py --init-check --state-dir "$V12_STATE_DIR"
+        shell: bash
+        run: |
+          case "$V12_MODE" in
+            init-check) python3 cycle_v12.py --init-check --state-dir "$V12_STATE_DIR" ;;
+            cycle) python3 cycle_v12.py --cycle --state-dir "$V12_STATE_DIR" ;;
+            *) echo "::error::mode inconnu"; exit 1 ;;
+          esac
       - name: Contrôle zéro ordre et construction de l'artefact
         shell: bash
         run: |
           set -euo pipefail
           R="$RUNNER_TEMP/v12state/check_report.json"
-          python3 -c "import json,sys;r=json.load(open(sys.argv[1]));assert r['orders']==0 and r['fills']==0 and r['trades']==0 and r['mode']=='INIT_CHECK_HOLD_ONLY' and r['quote_currency']=='USDC',r" "$R"
+          python3 -c "import json,sys;r=json.load(open(sys.argv[1]));m=sys.argv[2];ok=r['quote_currency']=='USDC' and (r['mode']=='INIT_CHECK_HOLD_ONLY' and r['orders']==0 and r['fills']==0 and r['trades']==0 if m=='init-check' else r['mode']=='PAPER_CYCLE' and r['live_orders']==0 and r['api_keys_used'] is False and r['exposure']['invested_usdc']<=r['exposure']['max_crypto_exposure_usdc']+1e-6);assert ok,r" "$R" "$V12_MODE"
           mkdir -p "$RUNNER_TEMP/v12out"
           cp "$RUNNER_TEMP/v12_previous_sha" "$RUNNER_TEMP/v12out/previous_sha"
           for f in paper_engine_v12.db grok_paper_evidence_v12.db check_report.json; do
@@ -71,7 +83,7 @@ jobs:
         run: |
           set -euo pipefail
           python3 code/render_v12_page.py --report "$RUNNER_TEMP/v12state/check_report.json" --out "$RUNNER_TEMP/v12out/site"
-          python3 -c "import json,sys;d=json.load(open(sys.argv[1]));assert d['strategy_id']=='kraken-sim-v1.2' and d['environment']=='preprod' and d['orders']==[] and d['quote_currency']=='USDC',d" "$RUNNER_TEMP/v12out/site/public_state_v12.json"
+          python3 -c "import json,sys;d=json.load(open(sys.argv[1]));assert d['strategy_id']=='kraken-sim-v1.2' and d['environment']=='preprod' and (d['orders']==[] or '$V12_MODE'=='cycle') and d['quote_currency']=='USDC',d" "$RUNNER_TEMP/v12out/site/public_state_v12.json"
           grep -q 'PREPROD V1.2 PAPER' "$RUNNER_TEMP/v12out/site/index.html"
       - uses: actions/upload-artifact@v4
         with:
@@ -87,13 +99,13 @@ jobs:
         with:
           name: v12-next-state
           path: ${{ runner.temp }}/v12out
-      - name: Publication limitée à preprod/state-v12 (si 0 ordre)
+      - name: Publication limitée à preprod/state-v12 (0 ordre réel)
         env:
           DEPLOY_KEY: ${{ secrets.PREPROD_DEPLOY_KEY }}
         shell: bash
         run: |
           set -euo pipefail
-          python3 -c "import json,sys;r=json.load(open(sys.argv[1]));assert r['orders']==0 and r['fills']==0,r" "$RUNNER_TEMP/v12out/check_report.json" || { echo "::error::ordres != 0, aucune publication"; exit 1; }
+          python3 -c "import json,sys;r=json.load(open(sys.argv[1]));m=sys.argv[2];ok=r['quote_currency']=='USDC' and (r['mode']=='INIT_CHECK_HOLD_ONLY' and r['orders']==0 and r['fills']==0 and r['trades']==0 if m=='init-check' else r['mode']=='PAPER_CYCLE' and r['live_orders']==0 and r['api_keys_used'] is False and r['exposure']['invested_usdc']<=r['exposure']['max_crypto_exposure_usdc']+1e-6);assert ok,r" "$RUNNER_TEMP/v12out/check_report.json" "$V12_MODE" || { echo "::error::contrôle PAPER échoué, aucune publication"; exit 1; }
           test -n "$DEPLOY_KEY" || { echo "::error::clef absente"; exit 1; }
           mkdir -p "$HOME/.ssh"; chmod 700 "$HOME/.ssh"
           (umask 077; printf '%s\n' "$DEPLOY_KEY" > "$HOME/.ssh/v12")
@@ -110,7 +122,7 @@ jobs:
           git config user.email kraken-sim-bot@users.noreply.github.com
           if [ -f "$RUNNER_TEMP/v12out/migration_log.json" ]; then cp "$RUNNER_TEMP/v12out/migration_log.json" .; git add migration_log.json; fi
           git add paper_engine_v12.db grok_paper_evidence_v12.db check_report.json
-          git diff --cached --quiet || git commit -m "state V1.2 init-check run $GITHUB_RUN_ID (code ${V12_REVIEWED_CODE_SHA::7}, 0 ordre)"
+          git diff --cached --quiet || git commit -m "state V1.2 $V12_MODE run $GITHUB_RUN_ID (code ${V12_REVIEWED_CODE_SHA::7}, PAPER, 0 ordre réel)"
           git push origin HEAD:state-v12
           # Page : uniquement le dossier v12/ de la branche main (Pages), sans force-push.
           git clone --depth 1 --branch main git@github.com:cyrillaferrere/kraken-sim-preprod.git "$RUNNER_TEMP/v12pages"
@@ -120,6 +132,6 @@ jobs:
           git config user.email kraken-sim-bot@users.noreply.github.com
           git add -A v12
           git diff --cached --name-only | grep -qv '^v12/' && { echo "::error::modification hors v12/"; exit 1; } || true
-          git diff --cached --quiet || git commit -m "page V1.2 PAPER run $GITHUB_RUN_ID (code ${V12_REVIEWED_CODE_SHA::7}, 0 ordre)"
+          git diff --cached --quiet || git commit -m "page V1.2 PAPER $V12_MODE run $GITHUB_RUN_ID (code ${V12_REVIEWED_CODE_SHA::7}, 0 ordre réel)"
           git push origin HEAD:main
           rm -f "$HOME/.ssh/v12"
