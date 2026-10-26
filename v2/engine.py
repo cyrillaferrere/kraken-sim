@@ -99,12 +99,17 @@ def market_eligibility(q, asset, limits):
     return None
 
 
-def maker_fill(q, side, limit, later_prices):
-    """Only fill if a subsequent trade crosses the limit. Missing evidence => no fill."""
-    if not isinstance(later_prices, list):
+def maker_fill(q, side, limit, later_trades, *, placed_at=None, timeout_min=30):
+    """Maker fill requires a timestamped independent trade AFTER placement and BEFORE timeout."""
+    if not isinstance(later_trades, list) or placed_at is None:
         return False
-    for price in later_prices:
-        p = dec(price, "subsequent trade", min_value=Decimal("0.000000000000000001"))
+    for trade in later_trades:
+        if not isinstance(trade, dict) or "ts" not in trade or "price" not in trade:
+            continue
+        trade_time = utc(trade["ts"], "maker trade time")
+        if not placed_at < trade_time <= placed_at + timedelta(minutes=timeout_min):
+            continue
+        p = dec(trade["price"], "subsequent trade", min_value=Decimal("0.000000000000000001"))
         if (side == "BUY" and p <= limit) or (side == "SELL" and p >= limit):
             return True
     return False
@@ -219,7 +224,7 @@ def execute_plan(plan, previous, snapshot, *, now=None, limits=None):
             # Maker orders only fill when independently supplied subsequent trades cross limit.
             if style == "maker_first":
                 later = snapshot.get("subsequent_trades", {}).get(asset)
-                if not maker_fill(q, side, price, later):
+                if not maker_fill(q, side, price, later, placed_at=utc(snapshot['ts'], 'market timestamp'), timeout_min=p['execution']['maker_timeout_min']):
                     reject(asset, side, "MAKER_TIMEOUT")
                     continue
                 execution_price = price
