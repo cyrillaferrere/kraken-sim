@@ -180,10 +180,12 @@ def execute_plan(plan, previous, snapshot, *, now=None, limits=None):
             current = qty * price
             stop = False
             take = False
-            if qty and asset in p["stop_loss_pct"] and asset in entry_prices:
-                stop = price <= dec(entry_prices[asset], "entry") * (1 - p["stop_loss_pct"][asset])
-            if qty and asset in p["take_profit_pct"] and asset in entry_prices:
-                take = price >= dec(entry_prices[asset], "entry") * (1 + p["take_profit_pct"][asset])
+            if qty:
+                entry = dec(entry_prices[asset], "entry") if asset in entry_prices else cost_basis[asset] / qty
+                if asset in p["stop_loss_pct"]:
+                    stop = price <= entry * (1 - p["stop_loss_pct"][asset])
+                if asset in p["take_profit_pct"]:
+                    take = price >= entry * (1 + p["take_profit_pct"][asset])
             delta = target - current
             if side == "SELL":
                 if not qty or (not (stop or take or p["regime"] == "cash") and delta >= -envelope * Decimal("0.02")):
