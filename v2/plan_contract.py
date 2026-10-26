@@ -1,5 +1,6 @@
 """Kraken Sim V2 plan contract, fractions of the 2000 USDC envelope (not percentages)."""
 import json
+import os
 from datetime import datetime, timezone, timedelta
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
@@ -26,7 +27,7 @@ def dec(v, field, *, min_value=Decimal("0"), max_value=None):
 
 
 def guardrails(path=None):
-    raw = json.loads(Path(path or ROOT / "guardrails.json").read_text(encoding="utf-8"))
+    raw = json.loads(Path(path or os.environ.get("V2_GUARDRAILS_PATH") or ROOT / "guardrails.json").read_text(encoding="utf-8"))
     keys = ("reference_capital_usdc", "max_invested_usdc", "max_asset_fraction",
             "kill_drawdown_usdc", "max_spread_pct", "min_depth_multiple", "min_order_usdc")
     result = {k: dec(raw[k], k) for k in keys}

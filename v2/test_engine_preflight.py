@@ -1,6 +1,8 @@
 """Synthetic PAPER engine acceptance tests. Never publish test capital as market data."""
 import sys
+import os
 import unittest
+os.environ["V2_GUARDRAILS_PATH"] = os.path.join(os.path.dirname(os.path.abspath(__file__)), "test_guardrails_fixture.json")
 from datetime import datetime, timezone
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
