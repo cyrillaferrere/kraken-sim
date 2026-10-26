@@ -28,11 +28,40 @@
 .market-coin.flash-down{animation:flashRed .9s ease}
 @media(max-width:950px){.market-strip{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:590px){.market-strip{grid-template-columns:1fr}.market-coin .coin-chart{height:155px}.market-head h2{font-size:21px}.market-coin .coin-price{font-size:27px}}
+/* Terminal unique : un graphique principal, cinq cours toujours visibles. */
+.market-terminal{background:#121e2d;border:1px solid #2b3b50;border-radius:16px;overflow:hidden;margin:0 0 24px}
+.market-terminal .market-head{padding:20px 24px 14px;margin:0;align-items:center}
+.market-terminal .market-head h2{font-size:22px}
+.market-tabs{display:flex;gap:7px;padding:0 24px 14px;flex-wrap:wrap}
+.market-tab{border:1px solid #35475c;background:#18283b;color:#aabbd0;padding:8px 19px;border-radius:7px;font:600 13px system-ui;cursor:pointer;transition:background .2s,border-color .2s,color .2s}
+.market-tab:hover{background:#253950;color:#fff}
+.market-tab.active{background:#26465c;border-color:#418c9b;color:#e7fff7}
+.market-stage{margin:0 16px;background:linear-gradient(180deg,#101b2b,#101a28);border:1px solid #26364b;border-radius:12px;overflow:hidden}
+.market-stage-header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:18px 22px 4px}
+.market-stage-values{display:flex;align-items:baseline;gap:18px;flex-wrap:wrap}
+#marketSelectedPrice{font-size:clamp(26px,3vw,38px);font-variant-numeric:tabular-nums;letter-spacing:-.045em}
+#marketSelectedChange{font-size:14px;font-weight:650}
+#marketSelectedChange.up{color:var(--green)}#marketSelectedChange.down{color:var(--red)}
+.market-period{font-size:12px;color:var(--muted);border:1px solid #35475c;padding:5px 10px;border-radius:6px}
+.market-plot{height:300px;position:relative;padding:0 8px}
+#marketMainChart{display:block;width:100%;height:100%}
+.market-plot-empty{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:13px;pointer-events:none}
+.market-time-axis{display:flex;justify-content:space-between;padding:0 24px 15px;color:#8194ab;font-size:11px}
+.market-terminal .market-ticker{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:0;margin-top:16px;border-top:1px solid #293b50}
+.market-terminal .market-coin{min-height:0;display:flex;flex-direction:column;gap:5px;cursor:pointer;align-items:flex-start;background:transparent;border:0;border-right:1px solid #293b50;border-radius:0;box-shadow:none;padding:16px 19px;transition:background .2s;overflow:hidden}
+.market-terminal .market-coin:last-child{border-right:0}
+.market-terminal .market-coin:hover,.market-terminal .market-coin.active{background:#1b2e41}
+.market-terminal .market-coin.active{box-shadow:inset 0 3px 0 #34d399}
+.market-terminal .market-coin .coin-name{font-size:12px;color:#9db0c7;font-weight:750}
+.market-terminal .market-coin .coin-price{font-size:20px;letter-spacing:-.03em}
+.market-terminal .market-coin .coin-change{font-size:12px;margin:0}
+@media(max-width:900px){.market-terminal .market-ticker{grid-template-columns:repeat(3,minmax(0,1fr))}.market-terminal .market-coin{border-bottom:1px solid #293b50}}
+@media(max-width:580px){.market-terminal .market-head{padding:16px}.market-tabs{padding:0 16px 12px}.market-tab{flex:1;padding:9px 5px;text-align:center}.market-stage{margin:0 9px}.market-stage-header{padding:14px 12px 0}.market-plot{height:220px}.market-terminal .market-ticker{grid-template-columns:repeat(2,minmax(0,1fr))}.market-terminal .market-coin{padding:12px}.market-terminal .market-coin .coin-price{font-size:18px}}
 </style></head><body>
 <header><div><strong style="font-size:19px"><b>Kraken</b> Sim <span class="muted">V2</span></strong><div class="muted" style="font-size:12px">Portefeuille opportuniste · Production PAPER</div></div><div><span class="tag" id="status">Chargement…</span> <span class="tag">Aucun ordre réel</span></div></header>
 <main><div class="eyebrow">Cockpit de simulation</div><h1>Une stratégie. Trois horizons.<br>Une allocation intelligente.</h1><p class="muted">Capital dynamique entre USDC et opportunités court, moyen et long terme. Résultats simulés, après frais et slippage.</p>
 <div class="metrics"><div class="metric"><div class="eyebrow">Valeur portefeuille</div><strong id="equity">—</strong><small>USDC</small></div><div class="metric"><div class="eyebrow">Performance nette</div><strong id="pnl">—</strong><small>Depuis le démarrage V2</small></div><div class="metric"><div class="eyebrow">Réserve USDC</div><strong id="cash">—</strong><small id="cashpct">—</small></div><div class="metric"><div class="eyebrow">Cycles / ordres</div><strong id="activity">—</strong><small>Simulation PAPER</small></div></div>
-<section class="market-panel" aria-label="Cours Kraken en direct"><div class="market-head"><div><span class="eyebrow">Marché en direct</span><h2>Marché Kraken <span class="market-currency">/ USDC</span></h2><div class="market-sub">Évolution réelle des cours sur 24 heures</div></div><div class="market-meta"><span id="marketStatus">Connexion en cours…</span><span id="marketUpdated">—</span></div></div><div class="market-strip" id="marketStrip" aria-live="off"><article class="market-coin" data-asset="BTC"><div class="coin-top"><span class="coin-symbol">BTC</span><span class="coin-name">Bitcoin <small>/ USDC</small></span><span class="coin-range">24 h</span></div><div class="coin-values"><strong class="coin-price">—</strong><span class="coin-change">—</span></div><div class="coin-chart"><canvas class="spark" aria-label="Cours BTC sur 24 heures"></canvas></div><div class="coin-axis"><span>−24 h</span><span>Maintenant</span></div></article><article class="market-coin" data-asset="ETH"><div class="coin-top"><span class="coin-symbol">ETH</span><span class="coin-name">Ethereum <small>/ USDC</small></span><span class="coin-range">24 h</span></div><div class="coin-values"><strong class="coin-price">—</strong><span class="coin-change">—</span></div><div class="coin-chart"><canvas class="spark" aria-label="Cours ETH sur 24 heures"></canvas></div><div class="coin-axis"><span>−24 h</span><span>Maintenant</span></div></article><article class="market-coin" data-asset="BNB"><div class="coin-top"><span class="coin-symbol">BNB</span><span class="coin-name">BNB <small>/ USDC</small></span><span class="coin-range">24 h</span></div><div class="coin-values"><strong class="coin-price">—</strong><span class="coin-change">—</span></div><div class="coin-chart"><canvas class="spark" aria-label="Cours BNB sur 24 heures"></canvas></div><div class="coin-axis"><span>−24 h</span><span>Maintenant</span></div></article><article class="market-coin" data-asset="XRP"><div class="coin-top"><span class="coin-symbol">XRP</span><span class="coin-name">XRP <small>/ USDC</small></span><span class="coin-range">24 h</span></div><div class="coin-values"><strong class="coin-price">—</strong><span class="coin-change">—</span></div><div class="coin-chart"><canvas class="spark" aria-label="Cours XRP sur 24 heures"></canvas></div><div class="coin-axis"><span>−24 h</span><span>Maintenant</span></div></article><article class="market-coin" data-asset="SOL"><div class="coin-top"><span class="coin-symbol">SOL</span><span class="coin-name">Solana <small>/ USDC</small></span><span class="coin-range">24 h</span></div><div class="coin-values"><strong class="coin-price">—</strong><span class="coin-change">—</span></div><div class="coin-chart"><canvas class="spark" aria-label="Cours SOL sur 24 heures"></canvas></div><div class="coin-axis"><span>−24 h</span><span>Maintenant</span></div></article></div></section>
+<section class="market-panel market-terminal" aria-label="Cours Kraken en direct"><div class="market-head"><div><span class="eyebrow">Marché en direct</span><h2>Marché Kraken <span class="market-currency">/ USDC</span></h2><div class="market-sub">Cours réels et historique glissant 24 heures</div></div><div class="market-meta"><span id="marketStatus">Connexion en cours…</span><span id="marketUpdated">—</span></div></div><div class="market-tabs" role="tablist" aria-label="Sélectionner une cryptomonnaie"><button class="market-tab active" type="button" role="tab" aria-selected="true" data-market-tab="BTC">BTC</button><button class="market-tab" type="button" role="tab" aria-selected="false" data-market-tab="ETH">ETH</button><button class="market-tab" type="button" role="tab" aria-selected="false" data-market-tab="BNB">BNB</button><button class="market-tab" type="button" role="tab" aria-selected="false" data-market-tab="XRP">XRP</button><button class="market-tab" type="button" role="tab" aria-selected="false" data-market-tab="SOL">SOL</button></div><div class="market-stage"><div class="market-stage-header"><div><span class="eyebrow" id="marketSelectedName">Bitcoin / USDC</span><div class="market-stage-values"><strong id="marketSelectedPrice">—</strong><span id="marketSelectedChange">—</span></div></div><span class="market-period">24 heures</span></div><div class="market-plot"><canvas id="marketMainChart" aria-label="Graphique 24 heures du cours sélectionné"></canvas><div id="marketPlotEmpty" class="market-plot-empty">Chargement de l’historique Kraken…</div></div><div class="market-time-axis"><span>Il y a 24 h</span><span>Il y a 12 h</span><span>Maintenant</span></div></div><div class="market-ticker" id="marketStrip" aria-label="Cours des cinq cryptomonnaies"><div class="market-coin active" data-asset="BTC"><span class="coin-name">BTC</span><strong class="coin-price">—</strong><span class="coin-change">—</span></div><div class="market-coin" data-asset="ETH"><span class="coin-name">ETH</span><strong class="coin-price">—</strong><span class="coin-change">—</span></div><div class="market-coin" data-asset="BNB"><span class="coin-name">BNB</span><strong class="coin-price">—</strong><span class="coin-change">—</span></div><div class="market-coin" data-asset="XRP"><span class="coin-name">XRP</span><strong class="coin-price">—</strong><span class="coin-change">—</span></div><div class="market-coin" data-asset="SOL"><span class="coin-name">SOL</span><strong class="coin-price">—</strong><span class="coin-change">—</span></div></div></section>
 <section class="bot-score" aria-label="Jauge de performance du bot"><div class="bot-score-top"><div><span class="eyebrow">Évaluation des décisions clôturées</span><h2>Jauge du bot</h2></div><div class="bot-score-value" id="botScore">—</div></div><div class="bot-score-track" role="progressbar" aria-label="Part de points positifs" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="botScoreTrack"><div class="bot-score-fill" id="botScoreFill"></div></div><div class="bot-score-detail"><span id="botWins">Gains nets : —</span><span id="botLosses">Pertes nettes : —</span><span id="botScoreStatus">En attente des trades validés par GrokBot</span></div><p class="bot-score-note">Gain net réalisé : +1 pt · Perte nette réalisée : −2 pts · Égalité : 0 pt. Indicateur d'observation, sans influence sur les ordres.</p></section>
 <div class="analytics-grid"><section class="analytics-card"><h2>Performance nette du bot</h2><div class="chart-key"><span><i></i>Valeur du portefeuille</span><span><i class="green"></i>Capital initial validé</span></div><canvas id="performanceChart" aria-label="Courbe de performance du portefeuille"></canvas><div class="chart-caption" id="performanceCaption">En attente de l'historique GrokBot</div></section><section class="analytics-card"><h2>Exposition crypto / USDC</h2><div class="chart-key"><span><i></i>Exposition crypto</span><span><i class="green"></i>Réserve USDC</span></div><canvas id="exposureChart" aria-label="Évolution de l'exposition crypto et de la réserve USDC"></canvas><div class="chart-caption" id="exposureCaption">En attente des allocations GrokBot</div></section><section class="analytics-card"><h2>Score du bot</h2><canvas id="scoreChart" aria-label="Historique du score de trading"></canvas><div class="chart-caption" id="scoreCaption">En attente des trades clôturés validés par GrokBot</div></section><section class="analytics-card"><h2>Activité du bot</h2><div id="activityFeed" class="activity-list"><div class="empty">En attente des décisions GrokBot</div></div></section></div>
 <div class="layout"><section class="panel"><h2>Évolution du portefeuille</h2><canvas id="chart" aria-label="Évolution de la valeur du portefeuille"></canvas><p id="chartEmpty" class="empty">En attente des données publiées par GrokBot.</p></section><section class="panel"><h2>Allocation actuelle</h2><div class="bar" id="alloc"></div><div class="legend"><span><i class="dot cash"></i>USDC</span><span><i class="dot"></i>Positions crypto</span></div><div class="note">Les allocations ne sont pas fixes : le moteur ajuste l'exposition en fonction des signaux. Le maintien intégral en USDC reste possible.</div></section></div>
@@ -100,41 +129,31 @@ function drawLine(canvas,series,color='#60a5fa',baseline=null){
 }
 const MARKET_WINDOW_MS=24*60*60*1000,MARKET_BUCKET_MS=60*1000;
 const marketHistoryLoaded=Object.fromEntries(['BTC','ETH','BNB','XRP','SOL'].map(a=>[a,false]));
+let selectedMarket='BTC';
+const MARKET_NAMES={BTC:'Bitcoin',ETH:'Ethereum',BNB:'BNB',XRP:'XRP',SOL:'Solana'};
+function selectMarket(asset){if(!marketHistory[asset])return;selectedMarket=asset;document.querySelectorAll('[data-market-tab]').forEach(el=>{const active=el.dataset.marketTab===asset;el.classList.toggle('active',active);el.setAttribute('aria-selected',String(active))});document.querySelectorAll('.market-coin').forEach(el=>el.classList.toggle('active',el.dataset.asset===asset));$('marketSelectedName').textContent=MARKET_NAMES[asset]+' / USDC';const tick=latestTicks.get(asset);$('marketSelectedPrice').textContent=tick?marketFmt(tick.price):'—';$('marketSelectedChange').textContent=tick&&Number.isFinite(tick.change)?(tick.change>=0?'+':'')+tick.change.toLocaleString('fr-FR',{maximumFractionDigits:2,minimumFractionDigits:2})+' % / 24 h':'—';$('marketSelectedChange').className=tick&&Number.isFinite(tick.change)?(tick.change>=0?'up':'down'):'';drawMarketSpark(asset)}
 function drawMarketSpark(asset){
- const canvas=marketNodes[asset]?.querySelector('canvas.spark');if(!canvas)return;
- const box=canvas.getBoundingClientRect();if(!box.width)return;
+ if(asset!==selectedMarket)return;
+ const canvas=$('marketMainChart'),box=canvas.getBoundingClientRect();if(!box.width)return;
  const ratio=Math.min(window.devicePixelRatio||1,2),w=Math.round(box.width*ratio),ht=Math.round(box.height*ratio);
  if(canvas.width!==w||canvas.height!==ht){canvas.width=w;canvas.height=ht}
  const ctx=canvas.getContext('2d');ctx.clearRect(0,0,w,ht);
- const now=Date.now(),start=now-MARKET_WINDOW_MS;
- const points=marketHistory[asset].filter(p=>p.ts>=start&&p.ts<=now&&Number.isFinite(p.price)&&p.price>0);
- if(points.length<2)return;
- const prices=points.map(p=>p.price),loRaw=Math.min(...prices),hiRaw=Math.max(...prices);
- const pad=(hiRaw-loRaw)*.18||hiRaw*.002||1,lo=loRaw-pad,hi=hiRaw+pad;
- const margin=3*ratio,plotH=ht-2*margin,plotW=w-2*margin;
- const x=t=>margin+plotW*Math.max(0,Math.min(1,(t-start)/MARKET_WINDOW_MS));
- const y=v=>margin+plotH*(hi-v)/(hi-lo);
- const rising=points.at(-1).price>=points[0].price;
- const stroke=rising?'#34d399':'#fb7185';
- const fill=ctx.createLinearGradient(0,0,0,ht);
- fill.addColorStop(0,rising?'rgba(52,211,153,.16)':'rgba(251,113,133,.14)');
- fill.addColorStop(1,'rgba(18,30,45,0)');
- // Lissage visuel par courbes quadratiques passant par les points réels.
- // Pas d'interpolation des valeurs financières ni de création de prix fictifs.
+ const now=Date.now(),start=now-MARKET_WINDOW_MS,points=marketHistory[asset].filter(p=>p.ts>=start&&p.ts<=now&&Number.isFinite(p.price)&&p.price>0);
+ $('marketPlotEmpty').style.display=points.length>1?'none':'flex';if(points.length<2)return;
+ const prices=points.map(p=>p.price),loRaw=Math.min(...prices),hiRaw=Math.max(...prices),pad=(hiRaw-loRaw)*.15||hiRaw*.002||1,lo=loRaw-pad,hi=hiRaw+pad;
+ const left=12*ratio,right=12*ratio,top=10*ratio,bottom=12*ratio,plotW=w-left-right,plotH=ht-top-bottom;
+ const x=t=>left+plotW*Math.max(0,Math.min(1,(t-start)/MARKET_WINDOW_MS)),y=v=>top+plotH*(hi-v)/(hi-lo);
+ const rising=points.at(-1).price>=points[0].price,color=rising?'#34d399':'#fb7185';
+ ctx.strokeStyle='rgba(147,164,185,.09)';ctx.lineWidth=ratio;
+ for(let i=1;i<=3;i++){const yy=top+i*plotH/4;ctx.beginPath();ctx.moveTo(left,yy);ctx.lineTo(w-right,yy);ctx.stroke()}
  const path=new Path2D();path.moveTo(x(points[0].ts),y(points[0].price));
- for(let i=1;i<points.length-1;i++){
-   const p=points[i],n=points[i+1];
-   path.quadraticCurveTo(x(p.ts),y(p.price),(x(p.ts)+x(n.ts))/2,(y(p.price)+y(n.price))/2);
- }
- const last=points.at(-1);
- path.lineTo(x(last.ts),y(last.price));
- ctx.save();ctx.beginPath();ctx.rect(0,0,w,ht);ctx.clip();
- const area=new Path2D(path);area.lineTo(x(last.ts),ht);area.lineTo(x(points[0].ts),ht);area.closePath();
- ctx.fillStyle=fill;ctx.fill(area);
- ctx.strokeStyle=stroke;ctx.lineWidth=1.8*ratio;ctx.lineJoin='round';ctx.lineCap='round';ctx.stroke(path);
- ctx.beginPath();ctx.arc(x(last.ts),y(last.price),3*ratio,0,Math.PI*2);ctx.fillStyle=stroke;ctx.fill();
- ctx.beginPath();ctx.arc(x(last.ts),y(last.price),5.8*ratio,0,Math.PI*2);ctx.strokeStyle=rising?'rgba(52,211,153,.24)':'rgba(251,113,133,.24)';ctx.lineWidth=2*ratio;ctx.stroke();
- ctx.restore();
+ for(let i=1;i<points.length-1;i++){const p=points[i],n=points[i+1];path.quadraticCurveTo(x(p.ts),y(p.price),(x(p.ts)+x(n.ts))/2,(y(p.price)+y(n.price))/2)}
+ const last=points.at(-1);path.lineTo(x(last.ts),y(last.price));
+ const gradient=ctx.createLinearGradient(0,top,0,ht);gradient.addColorStop(0,rising?'rgba(52,211,153,.20)':'rgba(251,113,133,.17)');gradient.addColorStop(1,'rgba(16,26,40,0)');
+ const area=new Path2D(path);area.lineTo(x(last.ts),ht);area.lineTo(x(points[0].ts),ht);area.closePath();ctx.fillStyle=gradient;ctx.fill(area);
+ ctx.strokeStyle=color;ctx.lineWidth=2*ratio;ctx.lineJoin='round';ctx.lineCap='round';ctx.stroke(path);
+ ctx.beginPath();ctx.arc(x(last.ts),y(last.price),4*ratio,0,Math.PI*2);ctx.fillStyle=color;ctx.fill();
+ ctx.beginPath();ctx.arc(x(last.ts),y(last.price),8*ratio,0,Math.PI*2);ctx.strokeStyle=rising?'rgba(52,211,153,.20)':'rgba(251,113,133,.20)';ctx.lineWidth=3*ratio;ctx.stroke();
 }
 function marketSparkUpdate(asset,price){
  const h=marketHistory[asset],now=Date.now();
@@ -188,11 +207,12 @@ load();setInterval(load,60000);
 // REST public : au maximum une requête par intervalle ; jamais de valeur inventée.
 const MARKET_SYMBOLS=['BTC/USDC','ETH/USDC','BNB/USDC','XRP/USDC','SOL/USDC'];
 const marketNodes=Object.fromEntries([...document.querySelectorAll('.market-coin')].map(el=>[el.dataset.asset,el]));
-for(const el of Object.values(marketNodes)){if(!el.querySelector('canvas.spark')){const canvas=document.createElement('canvas');canvas.className='spark';canvas.setAttribute('aria-label','Cours '+el.dataset.asset+' sur 24 heures');el.querySelector('.coin-chart')?.appendChild(canvas)}}
+document.querySelectorAll('[data-market-tab]').forEach(el=>el.addEventListener('click',()=>selectMarket(el.dataset.marketTab)));
+document.querySelectorAll('.market-coin').forEach(el=>{el.setAttribute('role','button');el.setAttribute('tabindex','0');el.addEventListener('click',()=>selectMarket(el.dataset.asset));el.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();selectMarket(el.dataset.asset)}})});
 let marketSocket=null,marketLastOk=0,marketConnecting=false,marketLastConnect=0;
 const latestTicks=new Map();
 const marketFmt=n=>Number(n).toLocaleString('fr-FR',{maximumFractionDigits:n>=100?2:n>=1?4:6,minimumFractionDigits:2});
-function marketRender(asset,price,change){const el=marketNodes[asset];if(!el)return;marketSparkUpdate(asset,price);el.querySelector('.coin-price').textContent=marketFmt(price);const c=el.querySelector('.coin-change');c.textContent=Number.isFinite(change)?(change>=0?'+':'')+change.toLocaleString('fr-FR',{maximumFractionDigits:2,minimumFractionDigits:2})+' % / 24 h':'Variation 24 h indisponible';c.className='coin-change'+(Number.isFinite(change)?(change>=0?' up':' down'):'')}
+function marketRender(asset,price,change){const el=marketNodes[asset];if(!el)return;marketSparkUpdate(asset,price);el.querySelector('.coin-price').textContent=marketFmt(price);const c=el.querySelector('.coin-change');c.textContent=Number.isFinite(change)?(change>=0?'+':'')+change.toLocaleString('fr-FR',{maximumFractionDigits:2,minimumFractionDigits:2})+' % / 24 h':'Variation 24 h indisponible';c.className='coin-change'+(Number.isFinite(change)?(change>=0?' up':' down'):'');if(asset===selectedMarket){$('marketSelectedPrice').textContent=marketFmt(price);$('marketSelectedChange').textContent=c.textContent;$('marketSelectedChange').className=Number.isFinite(change)?(change>=0?'up':'down'):''}}
 function marketStatus(message,live){$('marketStatus').textContent=message;document.querySelector('.market-head')?.classList.toggle('live',!!live);$('marketUpdated').textContent=marketLastOk?'Dernier tick : '+new Date(marketLastOk).toLocaleTimeString('fr-FR',{timeZone:'Europe/Paris'}):'—'}
 function marketTick(item){const symbol=String(item.symbol||'').toUpperCase(),asset=symbol.split('/')[0];if(!marketNodes[asset]||!symbol.endsWith('/USDC'))return;const price=Number(item.last),change=Number(item.change_pct);if(Number.isFinite(price)&&price>0){latestTicks.set(asset,{price,change:Number.isFinite(change)?change:null});marketLastOk=Date.now()}}
 function connectMarket(){if(marketConnecting||marketSocket?.readyState===WebSocket.OPEN||marketSocket?.readyState===WebSocket.CONNECTING)return;marketConnecting=true;marketLastConnect=Date.now();marketStatus('Connexion Kraken…',false);try{
@@ -203,6 +223,6 @@ function connectMarket(){if(marketConnecting||marketSocket?.readyState===WebSock
  ws.onclose=()=>{marketConnecting=false;marketSocket=null;marketStatus('Reconnexion Kraken…',false)};
 }catch(e){marketConnecting=false;marketSocket=null;marketStatus('WebSocket indisponible',false)}}
 function flushMarket(){for(const [asset,tick] of latestTicks){marketRender(asset,tick.price,tick.change)}const fresh=marketLastOk&&Date.now()-marketLastOk<20000;marketStatus(fresh?'Marché en direct · '+latestTicks.size+'/5':'Flux interrompu · reconnexion',fresh);if((!marketSocket||marketSocket.readyState===WebSocket.CLOSED)&&Date.now()-marketLastConnect>5000)connectMarket()}
-loadMarketHistory();connectMarket();setInterval(flushMarket,5000);setInterval(loadMarketHistory,10*60*1000);
+selectMarket('BTC');loadMarketHistory();connectMarket();setInterval(flushMarket,5000);setInterval(loadMarketHistory,10*60*1000);
 
 </script></body></html>
