@@ -90,8 +90,10 @@ class EngineTests(unittest.TestCase):
 
     def test_maker_crossing(self):
         from decimal import Decimal
-        self.assertFalse(maker_fill({}, "BUY", Decimal("100"), ["101"]))
-        self.assertTrue(maker_fill({}, "BUY", Decimal("100"), ["99"]))
+        placed = datetime(2026, 10, 25, 12, tzinfo=timezone.utc)
+        self.assertFalse(maker_fill({}, "BUY", Decimal("100"), [{"ts": "2026-10-25T12:01:00Z", "price": "101"}], placed_at=placed))
+        self.assertTrue(maker_fill({}, "BUY", Decimal("100"), [{"ts": "2026-10-25T12:01:00Z", "price": "99"}], placed_at=placed))
+        self.assertFalse(maker_fill({}, "BUY", Decimal("100"), [{"ts": "2026-10-25T13:01:00Z", "price": "99"}], placed_at=placed))
 
     def test_reject_overweight(self):
         p = plan()
