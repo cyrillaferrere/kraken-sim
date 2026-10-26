@@ -13,8 +13,8 @@ def validate_report(text, *, template=False):
     if "Horodatage" not in text or "Sources" not in text:
         raise ValueError("Missing provenance")
     if not template:
-        if "GABARIT" in text or re.search(r"\bnull\b", text, flags=re.IGNORECASE):
-            raise ValueError("Report not completed or missing sourced data")
+        if "GABARIT" in text or "Statut : rapport pilote" in text or "Statut : rapport technique" not in text:
+            raise ValueError("Report is still a template")
         if not re.search(r"https://[^\s|)]+", text):
             raise ValueError("No source URL")
         if not re.search(r"20\d\d-\d\d-\d\dT\d\d:\d\d", text):

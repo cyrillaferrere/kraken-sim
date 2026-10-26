@@ -1,3 +1,9 @@
+## Rapport Kraken vérifié — préparation suite à la revue GrokBot
+
+Le collecteur `v2/collect_market_report.py` interroge uniquement les endpoints publics Kraken Ticker, OHLC (60 et 1440 minutes) et Depth (500 niveaux) pour BTC/USDC, ETH/USDC, SOL/USDC et XRP/USDC. Il exclut les bougies non clôturées et calcule EMA20/50, RSI14, ATR14, hauts/bas 30 bougies et liquidité bid/ask ±0,5 % du mid. Il conserve toutes les réponses Kraken brutes avec URL et horodatage UTC dans `v2/reports/AAAA-MM-JJ.kraken.json` et écrit le rapport Markdown correspondant. Aucune clé privée ni ordre réel.
+
+Commande **manuelle** sur un runner avec accès réseau : `python v2/collect_market_report.py --date AAAA-MM-JJ`. La date est une **étiquette de rapport**, les données sont celles de l'instant de collecte, jamais un historique reconstruit. Avant dépôt en PR, vérifier la présence des deux fichiers, les erreurs Kraken, les frais, l'éligibilité EEE et les volumes médians. La collecte n'est pas activée en routine et n'a pas été exécutée dans cette session (réseau inaccessible).
+
 ## Routines préparées (non activées)
 
 Le rôle GPT-6 est de préparer les routines et les contrôles, pas de choisir les ordres à la place de Kraken - Bot Crypto. L'issue #33 distingue trois cadences :
