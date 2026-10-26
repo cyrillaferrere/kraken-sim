@@ -47,7 +47,7 @@ Un cycle JSON doit respecter cette structure (les chaînes `<...>` sont des **pl
 }
 ```
 
-**Important :** l'exemple est structurel et n'est pas directement exécutable. Les valeurs `<...>` doivent être remplacées par des données vérifiées. Pour un cycle HOLD, `decisions: []`. `closed_trades_summary` et `closed_trades_history` peuvent être omis tant que GrokBot n'a pas de bilan validé. Au-delà du premier cycle, `initial_usdc` est ignoré ; le capital initial reste immuable. Fournir un prix `prices` pour **toutes les positions détenues** à chaque cycle, même sans ordre.
+**Important :** l'exemple est structurel et n'est pas directement exécutable. Les valeurs `<...>` doivent être remplacées par des données vérifiées. Pour un cycle HOLD, `decisions: []`. `closed_trades_summary` et `closed_trades_history` peuvent être omis tant que GrokBot n'a pas de bilan validé. Au-delà du premier cycle, `initial_usdc` peut être omis ; s'il est présent, il doit correspondre exactement au capital initial déjà enregistré. Fournir un prix `prices` pour **toutes les positions détenues** à chaque cycle, même sans ordre.
 
 Le prix `price` d'une décision est un **prix d'exécution PAPER** déterminé par GrokBot, distinct du prix de valorisation `prices`. Les frais `fee` sont en USDC et doivent intégrer les hypothèses validées ; l'adaptateur n'invente ni frais ni slippage. Spot seulement, sans levier, sans short.
 
@@ -71,7 +71,7 @@ L'interface ne montre les données financières que lorsque `data_source === "gr
 - `signals` : objets `{asset, signals: {short, medium, long}, target_pct}`. Les signaux sont des scores transmis par GrokBot, pas calculés par l'adaptateur.
 - `closed_trades_summary` : `{source:"grokbot_verified", net_wins, net_losses, net_flats}` avec entiers non négatifs.
 - `closed_trades_history` : `[{source:"grokbot_verified", net_pnl: ...}]` pour l'évolution du score.
-- `last_cycle_id` : identifiant du dernier cycle pour la protection anti-doublon.
+- `last_cycle_id` et `processed_cycle_ids` : suivi de tous les cycles traités pour éviter les doublons.\n- `_ledger` : soldes et positions en chaînes décimales exactes pour les calculs d'un cycle à l'autre (ne pas supprimer).
 
 La jauge de score est calculée **seulement à partir des trades clôturés** : +1 victoire nette, −2 défaite nette, 0 égalité. Aucun score inféré des BUY/SELL bruts.
 
@@ -87,8 +87,8 @@ La jauge de score est calculée **seulement à partir des trades clôturés** : 
 
 - `grokbot_verified` est un **marqueur déclaratif**, pas une preuve cryptographique. GrokBot doit réellement contrôler les sources avant de l'utiliser.
 - L'adaptateur ne contacte pas Kraken et n'a besoin d'aucune clé API ; les cotations publiques du dashboard sont indépendantes du portefeuille.
-- Les montants sont calculés en `Decimal` pendant un cycle, mais l'état public expose des nombres JSON pour compatibilité dashboard : **valider la précision multi-cycle et la comptabilité de bout en bout avant activation**.
-- La protection contre les doublons vérifie le dernier cycle et l'ordre chronologique. Une publication concurrente nécessite aussi une protection transactionnelle côté orchestrateur.
+- Les montants sont calculés en `Decimal` et conservés dans `_ledger` sous forme de chaînes décimales exactes ; les champs numériques publics servent au dashboard. **Valider la comptabilité de bout en bout avant activation**.
+- La protection contre les doublons vérifie tous les identifiants déjà traités et l'ordre chronologique. Une publication concurrente nécessite aussi une protection transactionnelle côté orchestrateur.
 - Le backtest, le kill-switch de l'orchestrateur, le contrôle de fraîcheur des données, le suivi des ordres clôturés et les tests end-to-end restent à finaliser/valider.
 - **Aucun automatisme ni ordre réel ne doit être déclenché par la présence de ces fichiers.**
 
