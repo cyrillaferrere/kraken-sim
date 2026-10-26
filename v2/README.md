@@ -3,6 +3,14 @@
 **État au 26/10/2026 : préparation technique, PAS de simulation autonome active.**
 Le dashboard V2 est publié, les prix publics Kraken sont visibles. Le moteur `v2/engine.py` reste volontairement HOLD. Le workflow V2 est manuel, sans cron. Aucun ordre réel autorisé.
 
+## Cadence et données marché — exigence V2 (26/10/2026)
+
+**Cadence demandée : 10 secondes, pas 5.** Les cinq cotations BTC/USDC, ETH/USDC, BNB/USDC, XRP/USDC, SOL/USDC proviennent du flux public Kraken WebSocket v2 en continu ; le dashboard rafraîchit les cours affichés **toutes les 10 secondes**. Le dashboard recharge aussi `v2/state.json` **toutes les 10 secondes**. Les courbes 24 h proviennent de bougies OHLC Kraken (5 min + 1 min), mises à jour périodiquement, et des ticks réellement reçus.
+
+**À intégrer par GrokBot :** la cadence cible d'un cycle de décision/valorisation PAPER est **10 secondes**, après validation de la faisabilité, des limites API et de la fraîcheur des sources. Chaque cycle doit utiliser les prix Kraken les plus récents et sourcés ; le dashboard ne doit pas servir de source d'exécution. Chaque état publié doit porter son horodatage réel `updated`, et le moteur doit refuser les données trop anciennes. Aucune extrapolation de prix, d'ordre, de portefeuille ou de rendement.
+
+**Important :** actualiser le navigateur toutes les 10 secondes n'implique pas que le moteur calcule ou publie effectivement un nouveau cycle toutes les 10 secondes. Le workflow V2 actuel est toujours sans cron, et la stratégie reste à brancher. Le déclenchement d'une cadence de 10 secondes exige un orchestrateur compatible (un cron GitHub Actions n'est pas adapté à une fréquence de 10 secondes), un mécanisme anti-chevauchement et un GO explicite. Ne pas activer le trading réel.
+
 ## 1. Ce qui est déjà prêt
 
 - Dashboard `v2/index.html` : cinq cours USDC, courbe Kraken 24 h dépliable, portefeuille, performance, allocations, signaux, décisions, score.
