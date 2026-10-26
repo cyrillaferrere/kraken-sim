@@ -7,12 +7,12 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from engine import market_snapshot, execute_plan, MarketRejected, maker_fill
 from plan_contract import InvalidPlan
 
-NOW = datetime(2026, 10, 26, 12, tzinfo=timezone.utc)
+NOW = datetime(2026, 10, 25, 12, tzinfo=timezone.utc)
 
 
 def plan():
     return {"plan_id": "synthetic", "author": "kraken-bot-crypto",
-            "created_at": "2026-10-26T11:00:00Z", "expires_at": "2026-10-27T11:00:00Z",
+            "created_at": "2026-10-25T11:00:00Z", "expires_at": "2026-10-26T11:00:00Z",
             "regime": "neutral", "targets": {"BTC": 0.2, "USDC": 0.8},
             "buy_zones": {}, "sell_zones": {}, "stop_loss_pct": {},
             "take_profit_pct": {}, "execution": {"style": "taker", "maker_timeout_min": 30},
@@ -20,7 +20,7 @@ def plan():
 
 
 def market():
-    return {"source": "kraken_public", "ts": "2026-10-26T11:59:00Z",
+    return {"source": "kraken_public", "ts": "2026-10-25T11:59:00Z",
             "quotes": {"BTC": {"pair": "BTC/USDC", "endpoint": "https://api.kraken.com/0/public/Depth",
                                "price": "100", "spread_pct": "0.1", "depth_usdc": "10000",
                                "maker_fee_pct": "0.2", "taker_fee_pct": "0.4",
@@ -40,7 +40,7 @@ def state():
 class EngineTests(unittest.TestCase):
     def test_stale_data(self):
         m = market()
-        m["ts"] = "2026-10-26T11:49:00Z"
+        m["ts"] = "2026-10-25T11:49:00Z"
         with self.assertRaisesRegex(MarketRejected, "STALE_DATA"):
             execute_plan(plan(), state(), m, now=NOW)
 
@@ -59,7 +59,7 @@ class EngineTests(unittest.TestCase):
 
     def test_expired_no_buys(self):
         p = plan()
-        p["expires_at"] = "2026-10-26T11:30:00Z"
+        p["expires_at"] = "2026-10-25T11:30:00Z"
         s = execute_plan(p, state(), market(), now=NOW)
         self.assertEqual(len(s["orders"]), 0)
 
