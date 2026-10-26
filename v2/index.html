@@ -5,7 +5,7 @@
 <header><div><strong style="font-size:19px"><b>Kraken</b> Sim <span class="muted">V2</span></strong><div class="muted" style="font-size:12px">Portefeuille opportuniste · Production PAPER</div></div><div><span class="tag" id="status">Chargement…</span> <span class="tag">Aucun ordre réel</span></div></header>
 <main><div class="eyebrow">Cockpit de simulation</div><h1>Une stratégie. Trois horizons.<br>Une allocation intelligente.</h1><p class="muted">Capital dynamique entre USDC et opportunités court, moyen et long terme. Résultats simulés, après frais et slippage.</p>
 <div class="metrics"><div class="metric"><div class="eyebrow">Valeur portefeuille</div><strong id="equity">—</strong><small>USDC</small></div><div class="metric"><div class="eyebrow">Performance nette</div><strong id="pnl">—</strong><small>Depuis le démarrage V2</small></div><div class="metric"><div class="eyebrow">Réserve USDC</div><strong id="cash">—</strong><small id="cashpct">—</small></div><div class="metric"><div class="eyebrow">Cycles / ordres</div><strong id="activity">—</strong><small>Simulation PAPER</small></div></div>
-<section class="market-panel" aria-label="Cours Kraken en direct"><div class="market-head"><div><span class="eyebrow">Marché Kraken · Cotations USDC</span><div class="market-sub">BTC · ETH · BNB · XRP · SOL</div></div><div class="market-meta"><span id="marketStatus">Connexion en cours…</span><span id="marketUpdated">—</span></div></div><div class="market-strip" id="marketStrip" aria-live="off"><div class="market-coin" data-asset="BTC"><span class="coin-name">BTC <small>/ USDC</small></span><strong class="coin-price">—</strong><span class="coin-change">—</span></div><div class="market-coin" data-asset="ETH"><span class="coin-name">ETH <small>/ USDC</small></span><strong class="coin-price">—</strong><span class="coin-change">—</span></div><div class="market-coin" data-asset="BNB"><span class="coin-name">BNB <small>/ USDC</small></span><strong class="coin-price">—</strong><span class="coin-change">—</span></div><div class="market-coin" data-asset="XRP"><span class="coin-name">XRP <small>/ USDC</small></span><strong class="coin-price">—</strong><span class="coin-change">—</span></div><div class="market-coin" data-asset="SOL"><span class="coin-name">SOL <small>/ USDC</small></span><strong class="coin-price">—</strong><span class="coin-change">—</span></div></div><div class="market-foot">Cours publics Kraken via WebSocket. Affichage toutes les 5 secondes ; horodatage du dernier tick. Variation : 24 h, lorsque disponible.</div></section>
+<section class="market-panel" aria-label="Cours Kraken en direct"><div class="market-head"><div><span class="eyebrow">Marché Kraken · Cotations USDC</span><div class="market-sub">BTC · ETH · BNB · XRP · SOL</div></div><div class="market-meta"><span id="marketStatus">Connexion en cours…</span><span id="marketUpdated">—</span></div></div><div class="market-strip" id="marketStrip" aria-live="off"><div class="market-coin" data-asset="BTC"><span class="coin-name">BTC <small>/ USDC</small></span><strong class="coin-price">—</strong><span class="coin-change">—</span></div><div class="market-coin" data-asset="ETH"><span class="coin-name">ETH <small>/ USDC</small></span><strong class="coin-price">—</strong><span class="coin-change">—</span></div><div class="market-coin" data-asset="BNB"><span class="coin-name">BNB <small>/ USDC</small></span><strong class="coin-price">—</strong><span class="coin-change">—</span></div><div class="market-coin" data-asset="XRP"><span class="coin-name">XRP <small>/ USDC</small></span><strong class="coin-price">—</strong><span class="coin-change">—</span></div><div class="market-coin" data-asset="SOL"><span class="coin-name">SOL <small>/ USDC</small></span><strong class="coin-price">—</strong><span class="coin-change">—</span></div></div><div class="market-foot">Mini-courbes : historique réel des dernières 24 h (bougies Kraken 1 min), prolongé en direct. Cotations actualisées toutes les 5 secondes.</div></section>
 <section class="bot-score" aria-label="Jauge de performance du bot"><div class="bot-score-top"><div><span class="eyebrow">Évaluation des décisions clôturées</span><h2>Jauge du bot</h2></div><div class="bot-score-value" id="botScore">—</div></div><div class="bot-score-track" role="progressbar" aria-label="Part de points positifs" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="botScoreTrack"><div class="bot-score-fill" id="botScoreFill"></div></div><div class="bot-score-detail"><span id="botWins">Gains nets : —</span><span id="botLosses">Pertes nettes : —</span><span id="botScoreStatus">En attente des trades validés par GrokBot</span></div><p class="bot-score-note">Gain net réalisé : +1 pt · Perte nette réalisée : −2 pts · Égalité : 0 pt. Indicateur d'observation, sans influence sur les ordres.</p></section>
 <div class="analytics-grid"><section class="analytics-card"><h2>Performance nette du bot</h2><div class="chart-key"><span><i></i>Valeur du portefeuille</span><span><i class="green"></i>Capital initial validé</span></div><canvas id="performanceChart" aria-label="Courbe de performance du portefeuille"></canvas><div class="chart-caption" id="performanceCaption">En attente de l'historique GrokBot</div></section><section class="analytics-card"><h2>Exposition crypto / USDC</h2><div class="chart-key"><span><i></i>Exposition crypto</span><span><i class="green"></i>Réserve USDC</span></div><canvas id="exposureChart" aria-label="Évolution de l'exposition crypto et de la réserve USDC"></canvas><div class="chart-caption" id="exposureCaption">En attente des allocations GrokBot</div></section><section class="analytics-card"><h2>Score du bot</h2><canvas id="scoreChart" aria-label="Historique du score de trading"></canvas><div class="chart-caption" id="scoreCaption">En attente des trades clôturés validés par GrokBot</div></section><section class="analytics-card"><h2>Activité du bot</h2><div id="activityFeed" class="activity-list"><div class="empty">En attente des décisions GrokBot</div></div></section></div>
 <div class="layout"><section class="panel"><h2>Évolution du portefeuille</h2><canvas id="chart" aria-label="Évolution de la valeur du portefeuille"></canvas><p id="chartEmpty" class="empty">En attente des données publiées par GrokBot.</p></section><section class="panel"><h2>Allocation actuelle</h2><div class="bar" id="alloc"></div><div class="legend"><span><i class="dot cash"></i>USDC</span><span><i class="dot"></i>Positions crypto</span></div><div class="note">Les allocations ne sont pas fixes : le moteur ajuste l'exposition en fonction des signaux. Le maintien intégral en USDC reste possible.</div></section></div>
@@ -71,10 +71,51 @@ function drawLine(canvas,series,color='#60a5fa',baseline=null){
  ctx.lineWidth=2*ratio;ctx.strokeStyle=color;ctx.beginPath();series.forEach((v,i)=>{if(!Number.isFinite(v))return;i===0?ctx.moveTo(x(i),y(v)):ctx.lineTo(x(i),y(v))});ctx.stroke();
  const last=series[series.length-1];if(Number.isFinite(last)){ctx.beginPath();ctx.arc(x(series.length-1),y(last),3*ratio,0,Math.PI*2);ctx.fillStyle=color;ctx.fill()}
 }
-function drawMarketSpark(asset){const el=marketNodes[asset],canvas=el?.querySelector('canvas.spark');if(!canvas)return;const h=marketHistory[asset];drawLine(canvas,h.map(p=>p.price),h.length>1&&h.at(-1).price<h[0].price?'#fb7185':'#34d399')}
+const MARKET_WINDOW_MS=24*60*60*1000,MARKET_BUCKET_MS=60*1000;
+const marketHistoryLoaded=Object.fromEntries(['BTC','ETH','BNB','XRP','SOL'].map(a=>[a,false]));
+function drawMarketSpark(asset){
+ const el=marketNodes[asset],canvas=el?.querySelector('canvas.spark');if(!canvas)return;
+ const h=marketHistory[asset],now=Date.now(),start=now-MARKET_WINDOW_MS;
+ // Espacement temporel constant : une courbe represente vraiment les dernieres 24 heures.
+ const box=canvas.getBoundingClientRect();if(!box.width)return;
+ const ratio=Math.min(window.devicePixelRatio||1,2),w=Math.round(box.width*ratio),ht=Math.round(box.height*ratio);
+ if(canvas.width!==w||canvas.height!==ht){canvas.width=w;canvas.height=ht}
+ const ctx=canvas.getContext('2d');ctx.clearRect(0,0,w,ht);
+ const points=h.filter(p=>p.ts>=start&&p.ts<=now&&Number.isFinite(p.price)&&p.price>0);
+ if(points.length<2)return;
+ const vals=points.map(p=>p.price),min=Math.min(...vals),max=Math.max(...vals),pad=(max-min)*.08||Math.abs(max)*.005||1;
+ const lo=min-pad,hi=max+pad,x=t=>Math.max(3*ratio,Math.min(w-3*ratio,3*ratio+(w-6*ratio)*(t-start)/MARKET_WINDOW_MS)),y=v=>ht-3*ratio-(ht-6*ratio)*(v-lo)/(hi-lo);
+ ctx.strokeStyle=points.at(-1).price<points[0].price?'#fb7185':'#34d399';ctx.lineWidth=2*ratio;ctx.beginPath();
+ points.forEach((p,i)=>i?ctx.lineTo(x(p.ts),y(p.price)):ctx.moveTo(x(p.ts),y(p.price)));ctx.stroke();
+ const last=points.at(-1);ctx.fillStyle=ctx.strokeStyle;ctx.beginPath();ctx.arc(x(last.ts),y(last.price),2.5*ratio,0,Math.PI*2);ctx.fill();
+}
 function marketSparkUpdate(asset,price){
- const h=marketHistory[asset];if(h.length&&h.at(-1).price!==price){const el=marketNodes[asset];el.classList.remove('flash-up','flash-down');void el.offsetWidth;el.classList.add(price>h.at(-1).price?'flash-up':'flash-down')}
- h.push({ts:Date.now(),price});if(h.length>120)h.shift();drawMarketSpark(asset);
+ const h=marketHistory[asset],now=Date.now();
+ if(h.length&&h.at(-1).price!==price){const el=marketNodes[asset];el.classList.remove('flash-up','flash-down');void el.offsetWidth;el.classList.add(price>h.at(-1).price?'flash-up':'flash-down')}
+ // Remplace la derniere bougie minute par le tick recu, sans effacer l'historique.
+ const bucket=Math.floor(now/MARKET_BUCKET_MS)*MARKET_BUCKET_MS;
+ if(h.length&&h.at(-1).ts>=bucket)h[h.length-1]={ts:now,price};else h.push({ts:now,price});
+ while(h.length&&h[0].ts<now-MARKET_WINDOW_MS)h.shift();
+ drawMarketSpark(asset);
+}
+async function loadMarketHistory(){
+ const assets=['BTC','ETH','BNB','XRP','SOL'],pairs={BTC:'XBTUSDC',ETH:'ETHUSDC',BNB:'BNBUSDC',XRP:'XRPUSDC',SOL:'SOLUSDC'};
+ await Promise.all(assets.map(async asset=>{
+  try{
+   const res=await fetch('https://api.kraken.com/0/public/OHLC?pair='+encodeURIComponent(pairs[asset])+'&interval=1',{cache:'no-store'});
+   if(!res.ok)throw Error('HTTP '+res.status);
+   const json=await res.json();if(json.error?.length)throw Error(json.error.join(', '));
+   const key=Object.keys(json.result||{}).find(k=>k!=='last');const candles=key?json.result[key]:null;
+   if(!Array.isArray(candles))throw Error('Historique indisponible');
+   const now=Date.now(),cutoff=now-MARKET_WINDOW_MS;
+   const points=candles.map(c=>({ts:Number(c[0])*1000,price:Number(c[4])})).filter(p=>Number.isFinite(p.ts)&&Number.isFinite(p.price)&&p.price>0&&p.ts>=cutoff&&p.ts<=now);
+   if(!points.length)throw Error('Aucune bougie');
+   // Preserve les cotations live plus recentes deja recues pendant le chargement.
+   const merged=new Map([...points,...marketHistory[asset]].map(p=>[Math.floor(p.ts/MARKET_BUCKET_MS),p]));
+   marketHistory[asset]=[...merged.values()].sort((a,b)=>a.ts-b.ts);
+   marketHistoryLoaded[asset]=true;drawMarketSpark(asset);
+  }catch(err){marketHistoryLoaded[asset]=false;console.warn('Historique Kraken '+asset+' indisponible',err)}
+ }));
 }
 function renderAnalytics(s){
  const verified=s.data_source==='grokbot_verified',history=verified&&Array.isArray(s.history)?s.history:[];
@@ -100,7 +141,7 @@ load();setInterval(load,60000);
 // REST public : au maximum une requête par intervalle ; jamais de valeur inventée.
 const MARKET_SYMBOLS=['BTC/USDC','ETH/USDC','BNB/USDC','XRP/USDC','SOL/USDC'];
 const marketNodes=Object.fromEntries([...document.querySelectorAll('.market-coin')].map(el=>[el.dataset.asset,el]));
-for(const el of Object.values(marketNodes)){const canvas=document.createElement('canvas');canvas.className='spark';canvas.setAttribute('aria-label','Cours '+el.dataset.asset+' depuis ouverture');el.appendChild(canvas)}
+for(const el of Object.values(marketNodes)){const canvas=document.createElement('canvas');canvas.className='spark';canvas.setAttribute('aria-label','Cours '+el.dataset.asset+' sur les dernières 24 heures');el.appendChild(canvas)}
 let marketSocket=null,marketLastOk=0,marketConnecting=false,marketLastConnect=0;
 const latestTicks=new Map();
 const marketFmt=n=>Number(n).toLocaleString('fr-FR',{maximumFractionDigits:n>=100?2:n>=1?4:6,minimumFractionDigits:2});
@@ -115,6 +156,6 @@ function connectMarket(){if(marketConnecting||marketSocket?.readyState===WebSock
  ws.onclose=()=>{marketConnecting=false;marketSocket=null;marketStatus('Reconnexion Kraken…',false)};
 }catch(e){marketConnecting=false;marketSocket=null;marketStatus('WebSocket indisponible',false)}}
 function flushMarket(){for(const [asset,tick] of latestTicks){marketRender(asset,tick.price,tick.change)}const fresh=marketLastOk&&Date.now()-marketLastOk<20000;marketStatus(fresh?'Marché en direct · '+latestTicks.size+'/5':'Flux interrompu · reconnexion',fresh);if((!marketSocket||marketSocket.readyState===WebSocket.CLOSED)&&Date.now()-marketLastConnect>5000)connectMarket()}
-connectMarket();setInterval(flushMarket,5000);
+loadMarketHistory();connectMarket();setInterval(flushMarket,5000);setInterval(loadMarketHistory,10*60*1000);
 
 </script></body></html>
