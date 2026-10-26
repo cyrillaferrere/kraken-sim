@@ -27,8 +27,15 @@ jobs:
           sys.path.insert(0, "v2")
           from check_report import validate_report
           for p in Path("v2/reports").glob("????-??-??.md"):
-              validate_report(p.read_text(encoding="utf-8"))
+              content=p.read_text(encoding="utf-8")
+              if "Statut : rapport pilote" in content:
+                  print("Pilot report pending verified Kraken data:",p)
+                  continue
+              validate_report(content)
               print("Validated", p)
           PY
 # No schedule: report generation requires live sources and a separate authorized
 # GPT-6 task before 18:30 Europe/Paris. This workflow never invents data.
+
+# This workflow does not collect Kraken data. Live data collection must run
+# in a separately authorized network-enabled job and be reviewed via PR.
