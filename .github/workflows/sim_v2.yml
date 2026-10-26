@@ -29,7 +29,7 @@ jobs:
           python-version: '3.12'
       - name: Compile and test PAPER-only modules
         run: |
-          python -m py_compile v2/engine.py v2/paper_executor.py v2/plan_contract.py v2/check_pr_policy.py
+          python -m py_compile v2/engine.py v2/paper_executor.py v2/plan_contract.py v2/check_pr_policy.py v2/run_cycle.py v2/check_report.py
           python -m unittest discover -s v2 -p 'test_*.py' -v
       - name: Check V2 PR boundaries and guardrail approvals
         if: github.event_name == 'pull_request'
@@ -46,5 +46,5 @@ jobs:
           assert not d.get("orders")
           print("Public V2 remains uninitialized")
           PY
-# Hourly engine: 40 * * * * (UTC) — DISABLED until Cyril's explicit GO.
+# schedule: (DISABLED until written GO from Cyril)\n#   - cron: '40 * * * *'  # UTC, GitHub Actions uses UTC\n# Hourly engine: 40 * * * * (UTC) — DISABLED until Cyril's explicit GO.
 # No publication, no private Kraken API, no deployment key in this CI.
