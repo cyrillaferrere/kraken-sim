@@ -21,6 +21,15 @@ def wide_market():
         m["quotes"][a]=dict(m["quotes"]["XRP"])
     return m
 
+_PATCH=None
+def setUpModule():
+    """Scénarios historiques V1.6.3/V1.6.4 dimensionnés pour un plafond de 1 500 USDC sans enveloppe initiale."""
+    global _PATCH
+    _PATCH=mock.patch.dict(au.SPEC["RISK"],{"max_crypto_exposure_usdc":1500,"initial_envelope_split":False})
+    _PATCH.start()
+def tearDownModule():
+    _PATCH.stop()
+
 def _init_state(td):
     e=PaperEngine(td,c0="6605.10",quote_currency="USDC");e.close()
 

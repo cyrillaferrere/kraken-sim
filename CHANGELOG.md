@@ -12,6 +12,17 @@
 > - Versions sur `develop` : **moteur partagé V1.2 · stratégie V1.1 · UX/UI V1.1.2**. En PR expérimentale seulement : **moteur V1.3 (`VERSION_ENGINE_V12`) · stratégie V1.2**, sans fusion ni cycle.
 
 
+## [Moteur V1.6.5] — 26/10/2026 01h55 (Paris) — Kraken Bot (VERSION_ENGINE_V12, moteur expérimental V1.2)
+
+**Fonctionnel**
+- `strategy/v1_2/params.json` : plafond d'exposition crypto porté de 1 500 à 2 000 USDC (coût investi, frais inclus) à la demande de Cyril ; diversification inchangée (40 % max par actif, 25 % du plafond max par achat). Backtest non recalculé.
+- État V1.2 remis à zéro (6 605,10 USDC), ancien état archivé dans `archive/2026-10-26-run1/` sur state-v12.
+
+## [Stratégie V1.2] — 26/10/2026 01h55 (Paris) — Kraken Bot
+
+**Fonctionnel**
+- Plafond 2 000 USDC ; résultats de backtest non encore calculés.
+
 ## [Moteur V1.6.4] — 26/10/2026 01h15 (Paris) — Kraken Bot (VERSION_ENGINE_V12, moteur expérimental V1.2)
 ### Fonctionnel
 - `v12_autonomy.py` : plafond par actif `max_per_asset_share=0.40` (600 USDC de coût investi + achats en attente par crypto, refus `ASSET_SHARE_CAP`) et plafond par achat `max_buy_share_per_cycle=0.25` (375 USDC, refus `BUY_ABOVE_PER_CYCLE_SHARE`). Position au-dessus du plafond : aucune vente forcée, seuls les nouveaux achats sont bloqués.
