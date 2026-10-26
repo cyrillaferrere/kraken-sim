@@ -214,9 +214,18 @@ def execute_plan(plan, previous, snapshot, *, now=None, limits=None):
                 continue
             notional = min(notional, current if side == "SELL" else simulated_cash)
             if side == "BUY":
-                notional = min(notional, envelope - invested, envelope * limits["max_asset_fraction"] - cost_basis.get(asset, Decimal(0)))
+                cap_room = envelope - invested
+                asset_room = envelope * limits["max_asset_fraction"] - cost_basis.get(asset, Decimal(0))
+                minimum = max(limits["min_order_usdc"], q["min_order_usdc"])
+                if cap_room < minimum:
+                    reject(asset, side, "CAP_2000")
+                    continue
+                if asset_room < minimum:
+                    reject(asset, side, "ASSET_40PCT")
+                    continue
+                notional = min(notional, cap_room, asset_room)
             if notional < max(limits["min_order_usdc"], q["min_order_usdc"]):
-                reject(asset, side, "BELOW_MIN" if notional > 0 else ("CAP_2000" if invested >= envelope else "ASSET_40PCT"))
+                reject(asset, side, "BELOW_MIN")
                 continue
             book_side = "asks" if side == "BUY" else "bids"
             if depth_near_mid(q, book_side) < notional * limits["min_depth_multiple"]:
