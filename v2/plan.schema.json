@@ -1,0 +1,129 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Kraken Sim V2 GrokBot strategic plan",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "plan_id",
+    "author",
+    "created_at",
+    "expires_at",
+    "regime",
+    "targets",
+    "rationale"
+  ],
+  "properties": {
+    "plan_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "author": {
+      "const": "kraken-bot-crypto"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "expires_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "regime": {
+      "enum": [
+        "risk_on",
+        "neutral",
+        "risk_off",
+        "cash"
+      ]
+    },
+    "targets": {
+      "type": "object",
+      "minProperties": 1,
+      "required": [
+        "USDC"
+      ],
+      "propertyNames": {
+        "pattern": "^(USDC|BTC|ETH|BNB|XRP|SOL)$"
+      },
+      "additionalProperties": {
+        "type": "number",
+        "minimum": 0,
+        "maximum": 1
+      }
+    },
+    "buy_zones": {
+      "$ref": "#/$defs/zones"
+    },
+    "sell_zones": {
+      "$ref": "#/$defs/zones"
+    },
+    "stop_loss_pct": {
+      "$ref": "#/$defs/pct"
+    },
+    "take_profit_pct": {
+      "$ref": "#/$defs/pct"
+    },
+    "max_orders_per_cycle": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 6
+    },
+    "execution": {
+      "type": "object",
+      "required": [
+        "style",
+        "maker_timeout_min"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "style": {
+          "enum": [
+            "taker",
+            "maker_first"
+          ]
+        },
+        "maker_timeout_min": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 120
+        }
+      }
+    },
+    "ack_kill_switch": {
+      "type": "boolean"
+    },
+    "rationale": {
+      "type": "string",
+      "minLength": 1
+    }
+  },
+  "$defs": {
+    "zones": {
+      "type": "object",
+      "propertyNames": {
+        "pattern": "^(BTC|ETH|BNB|XRP|SOL)$"
+      },
+      "additionalProperties": {
+        "type": "array",
+        "items": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "minItems": 2,
+        "maxItems": 2
+      }
+    },
+    "pct": {
+      "type": "object",
+      "propertyNames": {
+        "pattern": "^(BTC|ETH|BNB|XRP|SOL)$"
+      },
+      "additionalProperties": {
+        "type": "number",
+        "minimum": 0,
+        "maximum": 1
+      }
+    }
+  }
+}
