@@ -14,7 +14,8 @@ jobs:
           python-version: '3.12'
       - name: Contrôler que V2 n'invente pas de capital
         run: |
-          python -m py_compile v2/engine.py
+          python -m py_compile v2/engine.py v2/paper_executor.py v2/test_paper_executor.py
+          python -m unittest discover -s v2 -p 'test_*.py' -v
           python v2/engine.py
           python - <<'PY'
           import json
