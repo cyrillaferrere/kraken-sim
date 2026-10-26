@@ -22,6 +22,34 @@ jobs:
           grep -nE "open\([^)]*state/|state/[^\"]*\", *[\"']w" render_preprod.py && { echo "::error::écriture dans state/"; exit 1; } || true
           if grep 'git push' .github/workflows/preprod.yml | grep -v 'git@github.com:cyrillaferrere/kraken-sim-preprod.git'; then echo "::error::push hors kraken-sim-preprod"; exit 1; fi
           echo "préprod isolée"
+  sim-v12-isole:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: "sim_v12.yml isolé (seul schedule autorisé = cron 25 * * * *)"
+        shell: bash
+        run: |
+          F=.github/workflows/sim_v12.yml
+          test -f "$F" || exit 0
+          # Assouplissement minimal : un unique schedule, exactement cron '25 * * * *'.
+          N=$(grep -cE '^[[:space:]]*schedule:' "$F" || true)
+          if [ "$N" != "0" ]; then
+            [ "$N" = "1" ] || { echo "::error::plusieurs schedule"; exit 1; }
+            [ "$(grep -cE '^[[:space:]]*- cron:' "$F")" = "1" ] || { echo "::error::un seul cron autorisé"; exit 1; }
+            grep -qE "^    - cron: '25 \* \* \* \*'$" "$F" || { echo "::error::seul cron '25 * * * *' autorisé"; exit 1; }
+          fi
+          ! grep -nE '^[[:space:]]*contents: write|git push .*kraken-sim\.git|git push (--force|-f )' "$F" || { echo "::error::écriture prod ou force-push"; exit 1; }
+          grep -q 'cancel-in-progress: false' "$F" || { echo "::error::concurrency manquante"; exit 1; }
+          grep -q 'group: kraken-sim-v12' "$F" || { echo "::error::concurrency group manquant"; exit 1; }
+          grep -q 'V12_REVIEWED_CODE_SHA' "$F" || exit 1
+          grep -q 'V12_MIN_INTERVAL_MIN' "$F" || { echo "::error::anti-doublon manquant"; exit 1; }
+          # Contrôles PAPER : 0 ordre réel, aucune clé, investi <= plafond.
+          grep -q "live_orders'\]==0" "$F" && grep -q "api_keys_used'\] is False" "$F" && grep -q "invested_usdc'\]<=" "$F" || { echo "::error::contrôles PAPER absents"; exit 1; }
+          # Aucun secret autre que la clé de déploiement préprod ; aucune clé Kraken.
+          BAD=$(grep -oE 'secrets\.[A-Za-z0-9_]+' "$F" | sort -u | grep -v '^secrets\.PREPROD_DEPLOY_KEY$' || true)
+          [ -z "$BAD" ] || { echo "::error::secret non autorisé : $BAD"; exit 1; }
+          ! grep -niE 'KRAKEN_(API|KEY|SECRET|PRIVATE)|api\.kraken\.com/0/private' "$F" || { echo "::error::clé ou API privée Kraken"; exit 1; }
+          echo "sim_v12 isolé"
   perimetre-ux:
     if: github.event_name == 'pull_request' && startsWith(github.head_ref, 'ux/')
     runs-on: ubuntu-latest

@@ -1,13 +1,16 @@
-name: Kraken Sim V1.2 — préprod manuelle isolée (init-check ou cycle PAPER, manuel)
-# Déclenchement MANUEL uniquement : aucun schedule, aucune clé Kraken, aucun ordre réel (PAPER uniquement).
+name: Kraken Sim V1.2 — préprod isolée (cycle PAPER horaire :25 UTC + manuel)
+# Planifié à la minute 25 (UTC) en mode cycle PAPER (V1.1 tourne à la minute 10), + déclenchement manuel.
+# Aucune clé Kraken, aucun ordre réel (PAPER uniquement). Anti-doublon : pas de cycle si le dernier a moins de 45 min.
 on:
+  schedule:
+    - cron: '25 * * * *'
   workflow_dispatch:
     inputs:
       code_sha:
         description: "SHA épinglé de strategy/v1.2 (40 hex)"
         type: string
         required: true
-        default: "3636db6d09041230acf5c6b2221aadf77ebbc9bf"
+        default: "8a5068ef0941b1743653626920e8920e08616897"
       mode:
         description: "init-check (HOLD, 0 ordre) ou cycle (ordres PAPER, plafond 1 500 USDC)"
         type: choice
@@ -19,14 +22,21 @@ concurrency:
   group: kraken-sim-v12
   cancel-in-progress: false
 env:
-  V12_REVIEWED_CODE_SHA: ${{ inputs.code_sha }}
-  V12_MODE: ${{ inputs.mode || 'init-check' }}
+  V12_REVIEWED_CODE_SHA: ${{ inputs.code_sha || '8a5068ef0941b1743653626920e8920e08616897' }}
+  V12_MODE: ${{ github.event_name == 'schedule' && 'cycle' || inputs.mode || 'init-check' }}
+  V12_MIN_INTERVAL_MIN: '45'
 jobs:
   check:
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    outputs:
+      skip: ${{ steps.dedup.outputs.skip }}
     steps:
+      - name: Aucune clé Kraken dans l'environnement
+        shell: bash
+        run: |
+          if env | grep -iE '^(KRAKEN|API_KEY|API_SECRET|PRIVATE_KEY)' ; then echo "::error::variable de clé détectée"; exit 1; fi
       - name: Exiger un SHA immuable
         shell: bash
         run: |
@@ -54,7 +64,27 @@ jobs:
         run: |
           git clone --depth 1 --branch state-v12 https://github.com/cyrillaferrere/kraken-sim-preprod.git "$RUNNER_TEMP/v12state"
           git -C "$RUNNER_TEMP/v12state" rev-parse HEAD > "$RUNNER_TEMP/v12_previous_sha"
+      - name: Anti-doublon (dernier cycle < 45 min via as_of / generated_at)
+        id: dedup
+        shell: bash
+        run: |
+          set -euo pipefail
+          SKIP=$(python3 - "$RUNNER_TEMP/v12state/check_report.json" "$V12_MODE" "$V12_MIN_INTERVAL_MIN" <<'PY'
+          import json,sys
+          from datetime import datetime,timezone,timedelta
+          path,mode,minutes=sys.argv[1],sys.argv[2],int(sys.argv[3])
+          try:r=json.load(open(path))
+          except Exception:print("false");sys.exit()
+          ts=r.get("as_of") or r.get("generated_at")
+          if mode!="cycle" or r.get("mode")!="PAPER_CYCLE" or not ts:print("false");sys.exit()
+          last=datetime.fromisoformat(str(ts).replace("Z","+00:00"))
+          print("true" if datetime.now(timezone.utc)-last<timedelta(minutes=minutes) else "false")
+          PY
+          )
+          echo "skip=$SKIP" >> "$GITHUB_OUTPUT"
+          [ "$SKIP" = "true" ] && echo "::notice::dernier cycle < ${V12_MIN_INTERVAL_MIN} min : aucun nouveau cycle" || true
       - name: Init-check ou cycle PAPER (données publiques Kraken, aucune clé)
+        if: steps.dedup.outputs.skip != 'true'
         working-directory: code
         env:
           V12_STATE_DIR: ${{ runner.temp }}/v12state
@@ -66,6 +96,7 @@ jobs:
             *) echo "::error::mode inconnu"; exit 1 ;;
           esac
       - name: Contrôle zéro ordre et construction de l'artefact
+        if: steps.dedup.outputs.skip != 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -79,6 +110,7 @@ jobs:
           done
           if [ -f "$RUNNER_TEMP/v12state/migration_log.json" ]; then cp "$RUNNER_TEMP/v12state/migration_log.json" "$RUNNER_TEMP/v12out/"; fi
       - name: Rendu de la page PREPROD V1.2 PAPER (v12/index.html + public_state_v12.json)
+        if: steps.dedup.outputs.skip != 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -86,12 +118,14 @@ jobs:
           python3 -c "import json,sys;d=json.load(open(sys.argv[1]));assert d['strategy_id']=='kraken-sim-v1.2' and d['environment']=='preprod' and (d['orders']==[] or '$V12_MODE'=='cycle') and d['quote_currency']=='USDC',d" "$RUNNER_TEMP/v12out/site/public_state_v12.json"
           grep -q 'PREPROD V1.2 PAPER' "$RUNNER_TEMP/v12out/site/index.html"
       - uses: actions/upload-artifact@v4
+        if: steps.dedup.outputs.skip != 'true'
         with:
           name: v12-next-state
           path: ${{ runner.temp }}/v12out/
           retention-days: 7
   publish:
     needs: check
+    if: needs.check.outputs.skip != 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
