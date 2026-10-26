@@ -1,3 +1,10 @@
+## [Rapport V2 — revue GrokBot] — 26/10/2026 — GPT-6
+- Rapport pilote `v2/reports/2026-10-26.md` corrigé sur branche `reports/*` : BNB retiré, limites de provenance explicitées.
+- `v2/collect_market_report.py` : collecteur public Kraken Ticker/OHLC 1h et 1j/Depth pour BTC, ETH, SOL, XRP ; EMA20/50, RSI14, ATR14 et profondeur ±0,5 % ; annexe JSON des réponses brutes.
+- `v2/test_market_report.py` : tests hors réseau des indicateurs et de la liquidité.
+- `v2/check_report.py` et `.github/workflows/v2_report.yml` : contrôle des futurs rapports techniques, pilote conservé en attente de collecte vérifiée.
+- Aucune activation de routine, aucun ordre, aucun changement V1/V1.2 ; la collecte live n'a pas pu être exécutée dans cette session.
+
 # Journal des modifications — Kraken Sim (paper trading, aucun ordre réel)
 
 ## [Infra V2.0.1] — 26/10/2026 — GPT-6 — préparation des routines (non activées)
