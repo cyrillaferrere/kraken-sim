@@ -1,0 +1,204 @@
+{
+  "STRATEGY_VERSION": "V1.2",
+  "STRATEGY_ID": "kraken-sim-v1.2",
+  "STATUS": "experimental-unselected",
+  "C0": 6605.1,
+  "CASH_INITIAL_PCT": 100,
+  "UNIVERSE": {
+    "max_assets": 20,
+    "min_history_daily": 120,
+    "min_median_daily_usdc_volume_30d": 1000000,
+    "liquidity_days": 30,
+    "exclusions": [
+      "USDT",
+      "USDC",
+      "DAI",
+      "PYUSD",
+      "WBTC",
+      "XAUT",
+      "PAXG",
+      "TBTC",
+      "EUR",
+      "GBP",
+      "USD"
+    ],
+    "quote": "USD"
+  },
+  "LIQUIDITY": {
+    "volume_source": "OHLC_1440_closed_bars_median_30d_volume_x_close_usdc",
+    "max_spread": 0.003,
+    "depth_band_pct": 0.005,
+    "depth_multiple": 3,
+    "alert_min_attempts": 20,
+    "alert_max_reject_rate": 0.05,
+    "alert_max_median_slippage": 0.0015,
+    "rollback_min_median_daily_usdc_volume_30d": 5000000,
+    "rollback_automated": false
+  },
+  "COSTS": {
+    "F1": {
+      "maker": 0.0025,
+      "taker": 0.004
+    },
+    "F2": {
+      "maker": 0.004,
+      "taker": 0.008
+    },
+    "spread_half": {
+      "major": 0.0002,
+      "other": 0.0008
+    },
+    "slippage": {
+      "major": 0.0005,
+      "other": 0.0015
+    },
+    "forced_multiplier": 3
+  },
+  "COMMON": {
+    "min_order_usd": 25,
+    "rebal_band": 0.02,
+    "candle_period": "1d",
+    "cash_yield": 0,
+    "maker_fill_participation_hypothesis": 0.5
+  },
+  "RISK": {
+    "peak_drawdown_kill": 0.25,
+    "cooldown_days": 14,
+    "correlation_window_days": 60,
+    "correlation_max": 0.85,
+    "correlated_weight_max": 0.4,
+    "max_exposure": 0.9,
+    "max_crypto_exposure_usdc": 2000,
+    "crypto_exposure_basis": "COST_INVESTED_INCL_FEES", "max_per_asset_share": 0.40, "max_buy_share_per_cycle": 0.25, "initial_envelope_split": true, "initial_envelope_max_assets": 4
+  },
+  "CANDIDATES": {
+    "A": {
+      "label": "Donchian 55/20",
+      "breakout_days": 55,
+      "exit_days": 20,
+      "btc_sma": 200,
+      "atr_period": 20,
+      "atr_mult": 3,
+      "risk_per_entry": 0.005,
+      "max_per_asset": 0.15,
+      "max_exposure": 0.8,
+      "max_positions": 8,
+      "grid": {
+        "breakout_days": [
+          40,
+          55,
+          70
+        ],
+        "exit_days": [
+          10,
+          20,
+          30
+        ],
+        "atr_mult": [
+          2.5,
+          3,
+          4
+        ]
+      }
+    },
+    "B": {
+      "label": "Dual momentum hebdomadaire",
+      "momentum_days": 90,
+      "skip_days": 7,
+      "sma_days": 100,
+      "k": 4,
+      "btc_absolute_regime": true,
+      "vol_window": 20,
+      "target_vol": 0.4,
+      "max_per_asset": 0.3,
+      "max_exposure": 0.9,
+      "stop_atr_mult": 4,
+      "retention_extra_ranks": 2,
+      "grid": {
+        "momentum_days": [
+          60,
+          90,
+          120
+        ],
+        "k": [
+          3,
+          4,
+          5
+        ],
+        "target_vol": [
+          0.3,
+          0.4,
+          0.5
+        ]
+      }
+    },
+    "C": {
+      "label": "BTC/ETH tendance",
+      "assets": [
+        "BTC",
+        "ETH"
+      ],
+      "fast_ema": 50,
+      "slow_ema": 200,
+      "vol_window": 20,
+      "target_vol": 0.3,
+      "max_per_asset": 0.5,
+      "max_exposure": 1,
+      "rebal_band": 0.05,
+      "grid": {
+        "fast_ema": [
+          30,
+          50,
+          70
+        ],
+        "slow_ema": [
+          150,
+          200,
+          250
+        ],
+        "target_vol": [
+          0.2,
+          0.3,
+          0.4
+        ]
+      }
+    },
+    "D": {
+      "label": "V1.1 hebdomadaire corrigée",
+      "top": 5,
+      "atr_mult": 3,
+      "max_per_asset": 0.2,
+      "max_exposure": 0.8,
+      "min_hold_hours": 0,
+      "btc_ema": 50,
+      "btc_hysteresis_atr": 0.15,
+      "grid": {
+        "top": [
+          3,
+          5,
+          7
+        ],
+        "atr_mult": [
+          2.5,
+          3,
+          4
+        ],
+        "max_per_asset": [
+          0.15,
+          0.2,
+          0.25
+        ]
+      }
+    }
+  },
+  "VALIDATION": {
+    "train_months": 12,
+    "test_months": 3,
+    "step_months": 3,
+    "min_positive_fold_ratio": 0.5,
+    "max_oos_drawdown": 0.35,
+    "min_closed_roundtrips": 30,
+    "max_cost_to_gross_profit": 0.4,
+    "require_oos_outperform_v11": true
+  }
+}

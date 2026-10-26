@@ -2,14 +2,170 @@
 
 > **Convention d'ajout (obligatoire, vérifiée par `guard.yml`)**
 > - Trois versions **indépendantes** :
->   - **Moteur** : fichier `VERSION_ENGINE` (source unique, exposée dans `state.json` / `D.version_engine`). Incrémentée **uniquement par Kraken Bot** à chaque modif moteur/données/règles.
->   - **Stratégie** : `STRATEGY_VERSION` dans `strategy/params.json` (règles d'achat/vente et paramètres, source unique, exposée dans `state.json` / `D.strategy_version`, enregistrée sur chaque ordre, décision et cycle). Incrémentée **uniquement par Kraken Bot** ; entrée obligatoire avec **paramètres avant/après, justification, résultat de backtest**. GPT6 n'y touche jamais.
+>   - **Moteur** : `VERSION_ENGINE` reste réservé au moteur partagé V1.1 ; `VERSION_ENGINE_V12` est la source indépendante du moteur expérimental V1.2. Chaque flux expose uniquement sa propre version. Pour la V1.2, GPT-6 code avec revue technique Kraken Bot.
+>   - **Stratégie** : la V1.1 est définie par `strategy/params.json` ; les hypothèses expérimentales V1.2 sont isolées dans `strategy/v1_2/params.json` avec `STRATEGY_VERSION=V1.2`. Spécification et revue par Kraken Bot, implémentation déléguée à GPT-6. Les résultats de backtest non encore calculés doivent être explicitement indiqués comme tels.
 >   - **UX/UI** : constante `const VERSION_UX = "Vx.y";` dans `dashboard_template.html`. Incrémentée **uniquement par GPT6** à chaque PR `ux/*`.
 > - Toute modification ajoute une entrée **en tête** du fichier, dans la même PR :
 >   `## [Moteur Vx.y] — JJ/MM/AAAA HHhMM (Paris) — Kraken Bot`, `## [Stratégie Vx.y] — … — Kraken Bot` ou `## [UX Vx.y] — JJ/MM/AAAA HHhMM (Paris) — GPT6`
 >   puis les sections utiles : **Fonctionnel / UX-UI / Infra / Corrections**, une ligne par changement (fichier + impact sur les décisions, « aucun » si visuel).
 > - Les commits automatiques « état sim … » ne sont pas journalisés.
-> - Versions actuelles : **Moteur V1.2 · Stratégie V1.1 · UX/UI V1.1.2**.
+> - Versions sur `develop` : **moteur partagé V1.2 · stratégie V1.1 · UX/UI V1.1.2**. En PR expérimentale seulement : **moteur V1.3 (`VERSION_ENGINE_V12`) · stratégie V1.2**, sans fusion ni cycle.
+
+
+## [Moteur V1.6.5] — 26/10/2026 01h55 (Paris) — Kraken Bot (VERSION_ENGINE_V12, moteur expérimental V1.2)
+
+**Fonctionnel**
+- `strategy/v1_2/params.json` : plafond d'exposition crypto porté de 1 500 à 2 000 USDC (coût investi, frais inclus) à la demande de Cyril ; diversification inchangée (40 % max par actif, 25 % du plafond max par achat). Backtest non recalculé.
+- État V1.2 remis à zéro (6 605,10 USDC), ancien état archivé dans `archive/2026-10-26-run1/` sur state-v12.
+
+## [Stratégie V1.2] — 26/10/2026 01h55 (Paris) — Kraken Bot
+
+**Fonctionnel**
+- Plafond 2 000 USDC ; résultats de backtest non encore calculés.
+
+## [Moteur V1.6.4] — 26/10/2026 01h15 (Paris) — Kraken Bot (VERSION_ENGINE_V12, moteur expérimental V1.2)
+### Fonctionnel
+- `v12_autonomy.py` : plafond par actif `max_per_asset_share=0.40` (600 USDC de coût investi + achats en attente par crypto, refus `ASSET_SHARE_CAP`) et plafond par achat `max_buy_share_per_cycle=0.25` (375 USDC, refus `BUY_ABOVE_PER_CYCLE_SHARE`). Position au-dessus du plafond : aucune vente forcée, seuls les nouveaux achats sont bloqués.
+- `v12_cycle.py` : budget d'achat = min(poids × equity, budget restant, 375, 600 − coût de l'actif) ; actifs au-dessus de 40 % listés `ASSET_SHARE_CAP_NO_NEW_BUY`.
+### Corrections
+- `v12_autonomy.py` : un spread > 0,3 % sur une paire hors BTC/ETH ne bloque plus tous les achats (`EXCESSIVE_SPREAD` global) ; la paire seule est exclue (`PAIR_EXCLUDED_SPREAD`). BTC/ETH au-delà de 0,3 % bloquent toujours globalement.
+- `v12_paper_engine.py` : `pending_buy_usd_by_asset` dans l'état de risque.
+- `tests/test_v12_exposure_cap.py` : 7 tests V1.6.4.
+
+## [Stratégie V1.2] — 26/10/2026 01h15 (Paris) — Kraken Bot (paramètres expérimentaux, accompagne Moteur V1.6.4)
+### Fonctionnel
+- `strategy/v1_2/params.json` : `RISK.max_per_asset_share=0.40`, `RISK.max_buy_share_per_cycle=0.25`. Backtest **non recalculé** avec ces plafonds.
+
+## [Moteur V1.6.3] — 26/10/2026 00h59 (Paris) — Kraken Bot (VERSION_ENGINE_V12, moteur expérimental V1.2)
+### Fonctionnel
+- `v12_autonomy.py` : plafond absolu d'exposition crypto `RISK.max_crypto_exposure_usdc` (1 500 USDC) sur le **coût investi frais inclus** (Σ qty × avg_cost) + ordres en attente ; refus `CRYPTO_EXPOSURE_CAP_USDC` à l'admission et à l'exécution.
+- `v12_cycle.py` (nouveau) + `cycle_v12.py --cycle --state-dir` : cycle PAPER déterministe moteur (pas une IT Grok) repris sur l'état existant (pas de réinitialisation), taille des ordres et contrôle de profondeur calculés sur le budget restant sous plafond ; HOLD motivé sinon. Aucun ordre réel, aucune clé.
+- `render_v12_page.py`, `dashboard_v12_cockpit_template.html` : affichage plafond, montant investi, budget restant et USDC restant ; ordres PAPER exécutés listés.
+### Corrections / tests
+- `tests/test_v12_exposure_cap.py` (8 tests) ; fixtures synthétiques pré-V1.6.3 exécutées plafond désactivé (`crypto_cap_disabled`, jamais en cycle).
+
+## [Stratégie V1.2] — 26/10/2026 00h59 (Paris) — Kraken Bot (paramètres expérimentaux, accompagne Moteur V1.6.3)
+### Fonctionnel
+- `strategy/v1_2/params.json` : `RISK.max_crypto_exposure_usdc=1500`, `crypto_exposure_basis=COST_INVESTED_INCL_FEES` (consigne Cyril : capital réel suivi, 1 500 USDC max investis en crypto). Backtest **non recalculé** avec ce plafond.
+
+## [Stratégie V1.2] — 26/10/2026 01h00 (Paris) — Kraken Bot (paramètres expérimentaux, accompagne Moteur V1.6.2)
+### Fonctionnel
+- `strategy/v1_2/params.json` : `UNIVERSE.min_median_daily_usdc_volume_30d` = 1 000 000 (ex-`min_median_daily_usd_volume` = 5 000 000) + bloc `LIQUIDITY` (garde-fous Depth, alerte, repli 5 M documenté non automatisé). STRATEGY_VERSION reste V1.2 (stratégie expérimentale non sélectionnée).
+- Backtest : **non recalculé** pour ce seuil (résultats de backtest existants obtenus à 5 M ; à relancer avant toute sélection). Aucun cycle avec ordres lancé.
+
+## [Moteur V1.6.2] — 26/10/2026 01h00 (Paris) — Kraken Bot (VERSION_ENGINE_V12, moteur expérimental V1.2)
+> Correctif (3e chiffre). Décision Cyril : seuil de liquidité PAPER abaissé à 1 M USDC, avec garde-fous. VERSION_ENGINE partagé V1.1 inchangé.
+### Fonctionnel
+- `strategy/v1_2/params.json` : `UNIVERSE.min_median_daily_usd_volume` (5 M) renommé `min_median_daily_usdc_volume_30d` = **1 000 000** ; lecture rétrocompatible de l'ancienne clé (`v12_autonomy.min_median_volume_usdc`). Nouveau bloc `LIQUIDITY` (spread ≤ 0,3 %, bande ±0,5 %, 3× l'ordre, seuils d'alerte, repli 5 M non automatisé). Impact décisions : l'univers éligible est désormais filtré par médiane 30 j ≥ 1 M USDC.
+- `v12_kraken_public.py` : éligibilité = **médiane 30 j** du volume quotidien en USDC (volume × close des bougies OHLC journalières closes), et non plus le Ticker 24 h (`usd_volume` → `usdc_volume_24h`, utilisé seulement pour ordonner la présélection). Moins de 30 bougies ou donnée manquante → `null` et paire rejetée (`VOLUME_MEDIAN_30D_UNAVAILABLE`), sinon `VOLUME_MEDIAN_30D_BELOW_MIN`. BTC/ETH restent obligatoires. Lecture du carnet via l'endpoint public `/0/public/Depth` pour chaque paire éligible ; instantané `liquidity.books` (meilleur bid/ask, spread, profondeur USDC à ±0,5 %).
+- Nouveau `v12_liquidity.py` + `v12_paper_engine._liquidity_gate` : avant chaque ordre PAPER taker, profondeur cumulée côté exécution à ±0,5 % du mid ≥ 3× la taille de l'ordre, sinon refus `INSUFFICIENT_DEPTH` (`DEPTH_UNAVAILABLE` si carnet absent). Slippage estimé en traversant le carnet. Sorties de sécurité forcées (kill switch, stops) jamais bloquées par un carnet mince.
+- Métriques persistées dans l'état V1.2 (kv `liquidity_metrics`, `liquidity_alert`) et bloc `liquidity_monitor` publié à chaque IT dans `check_report.json` et `public_state_v12.json` (champs attendus par le dashboard de la PR #22).
+- Alerte `LIQUIDITY_REVIEW` (état + logs) si ≥ 20 tentatives et (refus > 5 % ou slippage médian > 0,15 %). Repli documenté : retour à 5 M, décision manuelle de Cyril.
+### Infra
+- Tests : `tests/test_v12_liquidity.py` (profondeur suffisante/insuffisante, médiane 30 j, alerte, null si données manquantes, garde moteur) ; stub Depth dans `test_v12_real_bridge.py`.
+
+## [Moteur V1.6.1] — 25/10/2026 23h55 (Paris) — Kraken Bot (VERSION_ENGINE_V12, moteur expérimental V1.2)
+> Numérotation : désormais à 3 chiffres (x.y.z). VERSION_ENGINE partagé V1.1 inchangé.
+### Fonctionnel
+- Conformité UE/MiCA (demande Cyril, résident FR) : nouveau `v12_compliance.py` + `docs/CONFORMITE_UE_V1_2.md` (sources datées). Impact décisions : univers réduit aux seules paires XXX/USDC.
+- `v12_kraken_public.py` : univers = XXX/USDC `online` de `AssetPairs?country_code=FR`, hors stablecoins (USDT…) et liste EEE restreinte, spread ≤ 0,3 %. Voie de conversion XXX/USD ÷ USDC/USD supprimée (`usdc_quote`, `pairs_usd`). Bougies des signaux = OHLC XXX/USDC ; < 220 bougies → `insufficient_history`, données null, exclues des entrées. Régime BTC sur BTC/USDC.
+- Gateway moteur (`v12_paper_engine.admit_batch`) : rejet `REJECTED_COMPLIANCE` de toute décision hors USDC, stablecoin, actif restreint, levier/marge, vente à découvert (SELL > position), paire non éligible ou historique insuffisant. Indépendant de Grok.
+- `v12_init_check.py` / `render_v12_page.py` : bloc `compliance` publié ; page `/v12/` affiche « Conformité UE/MiCA » et le nombre de paires USDC éligibles (UX V1.2.1 du cockpit V1.2, ligne d'info USDC/USD retirée).
+- Portefeuille (précision Cyril) : l'USDC est compté comme une crypto. `public_state_v12.json` expose `portfolio` = ligne USDC (quantité = valeur = cash, poids %) + positions ; la page `/v12/` affiche le tableau « Portefeuille » (Actif, Quantité, Valeur USDC, Poids, Rôle) — UX V1.2.2. USDC reste devise de compte/refuge, exclu des signaux et des entrées ; `cash_usdc` conservé dans le moteur.
+### Infra
+- Tests : `tests/test_v12_eu_compliance.py` (USD, USDT, short, levier, historique null, univers 100 % USDC), test gateway dans `test_v12_paper_engine_30d.py` ; `test_v12_usdc_quote.py` supprimé (conversion retirée).
+
+## [Moteur V1.6] — 25/10/2026 23h30 (Paris) — Kraken Bot (VERSION_ENGINE_V12, moteur expérimental V1.2)
+### Fonctionnel
+- Devise de compte du portefeuille V1.2 = **USDC** (demande Cyril) : capital de départ 6 605,10 USDC, cash, équité, PnL, frais, pic et positions en USDC (`v12_paper_engine.py` : `quote_currency` persisté, défaut historique USD pour les anciens états). Impact décisions : seuils/montants désormais exprimés en USDC.
+- Valorisation (`v12_kraken_public.py`) : paire Kraken XXX/USDC directe si en ligne et spread ≤ 0,3 % ; sinon XXX/USD convertie par USDC/USD de façon prudente (bid = bid_USD / ask_USDCUSD, ask = ask_USD / bid_USDCUSD). Méthode publiée (`valuation_method`, champ `valuation` par cotation). Bougies journalières (signaux, ratios) inchangées en XXX/USD.
+- Benchmark « conserver les USDC » = 6 605,10 USDC constants, rendement 0 %. USDC/USD conservé comme ligne d'information.
+- `check_report.json` / `public_state_v12.json` : `"quote_currency": "USDC"`, clés `*_usdc` (plus de clés `*_usd` pour le portefeuille).
+### Infra
+- Migration (`v12_init_check.py`) : un état USD hérité est réinitialisé en USDC **uniquement** si 0 ordre, 0 exécution, 0 position ; journalisé dans `check_report.json` (`migration`) et `migration_log.json` ; refus `USD_STATE_WITH_ACTIVITY_REFUSED` sinon. L'historique git de state-v12 est conservé.
+### UX-UI
+- `dashboard_v12_cockpit_template.html` : montants affichés en « USDC » (plus de « $ »). Impact décisions : aucun.
+### Tests
+- `tests/test_v12_usdc_quote.py`, migration et refus dans `tests/test_v12_init_check.py`, absence de « $ »/USD dans `tests/test_v12_page_render.py`.
+
+## [Moteur V1.5] — 2026-10-25 (VERSION_ENGINE_V12, moteur expérimental V1.2)
+- Nouveau `render_v12_page.py` : rendu de la page PREPROD V1.2 PAPER (`v12/index.html` + `v12/public_state_v12.json`) à partir du `check_report.json` réel de l'init-check, via `export_v12.normalize` ; données absentes = null (« — »). Impact décisions : aucun (lecture seule de l'état V1.2, aucun ordre).
+- Nouveau `dashboard_v12_cockpit_template.html` : cockpit UX V1.2.0 (branche ux/v1.2-preprod-cockpit) avec bandeau PREPROD V1.2 PAPER et bloc contrôle init-check (décision HOLD, ordres, paires exclues, garde-fous). Impact décisions : aucun.
+- Tests : `tests/test_v12_page_render.py`.
+
+## [Moteur V1.4] — 2026-10-25 (VERSION_ENGINE_V12, moteur expérimental V1.2)
+- Exclusion par paire : une cotation invalide, périmée ou au spread > 0,3 % exclut seulement cette paire pour le tick (raison journalisée `PAIRS_EXCLUDED_THIS_TICK`, `excluded_pairs` dans la synthèse). Pause globale seulement si BTC/ETH invalides ou si moins de N = max(2, min(10, ⌈paires cotées/2⌉)) paires valides (N = 10 pour 40 paires). Une position détenue à cotation invalide est conservée (valorisée au dernier bid > 0, protections maintenues) et journalisée.
+- Nouveau mode `cycle_v12.py --init-check --state-dir <abs>` : init si absent (6 605,10 cash, pic 6 605,10, benchmark USDC), sans jamais écraser ; données publiques Kraken ; signaux A/B/C/D ; synthèse ; garde-fous ; décision HOLD seule via la gateway ; assertion orders == 0 et fills == 0 avant écriture de l'état et de `check_report.json`.
+
+## [Stratégie V1.2] — 25/10/2026 — correction de cadrage IT / connecteur Kraken — Cyril / GPT-6
+### Fonctionnel
+- **Précision utilisateur (sans modification de stratégie)** : Grok Bot réalise ses analyses **par IT à fréquence variable, possiblement 10 fois par jour ou davantage**. La recommandation d'IT quotidienne vers 02h30 n'est **pas une exigence utilisateur** et ne doit plus guider l'ordonnanceur.
+- Grok dispose **déjà d'un connecteur Kraken**. Il analyse le marché, prend les décisions de gestion fictive selon la V1.2 et apprend de ses résultats ; le moteur PAPER est un système d'exécution, de comptabilité, de risques et de vérification indépendante des cours.
+- **Correctif technique multi-IT** : `v12_grok_issues.py` traite désormais les issues récentes en lot, dans l'ordre, et `v12_live_bridge.py` soumet toutes les IT valides au moteur (idempotence par `decision_id`) au lieu de ne retenir que la dernière. Test de 12 IT sur une seule collecte. Ce correctif ne change ni les paramètres V1.2, ni le cron, ni V1.1, ni la production.
+
+## [Stratégie V1.2] — 25/10/2026 — Kraken Bot (SPEC) / GPT-6 (paramètres expérimentaux)
+### Fonctionnel
+- Spécification et critères de rejet pre-enregistrés par Grok Bot avant backtest ; `strategy/v1_2/params.json` fige les hypothèses des candidats A Donchian, B dual momentum, C BTC/ETH tendance, D V1.1 hebdomadaire.
+- Les scénarios frais F1 et F2, l'univers point-in-time, les limites d'exposition et le kill-switch de la SPEC sont documentés séparément de la stratégie V1.1.
+### Backtest
+- **Non exécuté / aucun résultat** au moment de ce commit : le backtest V1.2 sera implémenté et évalué hors échantillon avant toute sélection ou mise en fonctionnement.
+
+## [Moteur V1.3] — 25/10/2026 — GPT-6 (préprod V1.2, infrastructure)
+### Corrections P1-A à P1-F de Grok Bot (fonctionnement par IT, sans activation)
+- `v12_autonomy.py` : admission de la décision sur la synthèse de son IT puis revalidation sur quotes fraîches au cycle suivant ; TTL jusqu'à 26 h (A/C/D) et 7 jours (B). Refus des signaux incompatibles et des montants qui dépassent le cash réservé, les positions ou le risque.
+- `v12_paper_engine.py` : exécuteur PAPER SQLite **hors réseau et hors production**, ordres idempotents par `decision_id`, maker initial puis éventuel fill partiel et repli taker, contrôle répété du risque avant tout fill, liquidations, stops déterministes A/B/C/D sans IT Grok, état moteur persistant (pic, pause, kill-switch, modèles/politiques autorisés).
+- `v12_usdc_baseline.py` : comparaison contre les USDC conservés sur bid/ask observés, sans parité 1 USD inventée. `v12_paper_engine.py` calcule lui-même les outcomes à J+1/7/30, MAE et écarts USDC/BTC ; les sorties Grok ne peuvent pas écrire ces résultats.
+- Exposition candidate C plafonnée à **min(90 % global, plafond spécifique)** ; test de dépassement explicite.
+- `cycle_v12.py --dry-run --out ...`, `v12_synthetic_30d.py` : simulation locale accélérée de 30 jours **100 % synthétiques**, double livraison, IT manquantes, décision expirée, fill et kill-switch, résultat écrit uniquement hors dépôt. **`--cycle` demeure interdit**.
+- `tests/test_v12_paper_engine_30d.py`, `tests/test_v12_cli_dry_run.py` : couverture du flux à blanc, garde-fous, sortie C indépendante de Grok et refus d'activation. Voir `docs/REVIEW_GROK_P1_30J_V12.md`.
+- **Aucun résultat historique réel, aucun ordre réel, aucune fusion ni IT Grok lancée**. Le collecteur Kraken et le canal authentifié GitHub Issue ne sont pas branchés.
+
+### Connexion Grok IT ↔ marché Kraken — code prêt, AUCUNE activation
+- `v12_kraken_public.py` : collecte Kraken REST **publique** (AssetPairs, Ticker, OHLC clos), top spot USD préfiltré par volume, bid/ask et USDC/USD, sans identifiants de trading ni fichiers d'archives volumineux. Préfiltre 24 h non exhaustif ; contrôles de fraîcheur obligatoires.
+- `v12_grok_issues.py` : lecture d'issues `IT V1.2` labellisées `it-decision` avec ID numérique d'auteur autorisé ; vérification JSON strict et SHA de synthèse avant admission indépendante.
+- `v12_live_bridge.py` : raccord code collecteur → contrôles/positions PAPER → décision issue → validation, avec protections exécutées avant lecture GitHub ; aucun ordre en cas d'IT manquante. CLI de **vérification seulement** `--check-market`, sans démarrage de cycles.
+- `tests/test_v12_real_bridge.py` : simulateurs réseau Kraken et GitHub, refus de mauvaises issues/SHA, données OHLC ouvertes, pannes GitHub ; aucune transaction réelle.
+- [Procédure et prérequis restants](docs/BRANCHEMENT_KRAKEN_GROK_V12.md). Ni cron IT, ni collecte récurrente, ni merge, ni publication/déploiement, ni nouveau site.
+
+### Suite aux corrections P1 de Grok Bot (branche, sans cycles)
+- **Étape autonomie Grok V1.2 (sur PR, sans cycle)** : `v12_autonomy.py` reçoit une décision structurée et rejette tout signal/poids A/B/C/D non conforme, avec données Kraken fraîchement clôturées, frais F2, sans short ni levier, limite de corrélation et kill-switch indépendants. La politique/modèle actifs sont imposés par le futur orchestrateur, jamais par Grok.
+- `v12_grok_gateway.py` : mode **prévalidation uniquement** et journalisation d'une proposition Grok ou indisponibilité, sans appel effectif au modèle ni exécution d'ordre.
+- `v12_learning.py` : journal SQLite isolé, append-only au niveau applicatif, idempotence et chaîne d'empreintes, évaluation des horizons 1/7/30 jours et propositions de politique uniquement shadow (aucune auto-promotion).
+- `tests/test_v12_autonomy.py`, `tests/test_v12_learning.py`, `tests/test_v12_grok_gateway.py` : refus de faux signaux, sur-exposition, mauvais modèle/politique, quote expirée, tentative de LIVE, collisions d'identifiants et altération de log.
+- `docs/GROK_AUTONOME_V12_ETAPE1.md` : frontière entre les modules de préflight testés et les composants **encore manquants** (invocation Grok authentifiée, collecte public Kraken, exécuteur PAPER, USDC/USD). Aucun cycle V1.2 ni trading réel.
+
+- `docs/VISION_AUTONOMIE_APPRENTISSAGE.md` : décision produit de Cyril : Grok Bot devra devenir le décideur autonome PAPER, avec apprentissage mesurable, mémoire persistante, contrôle de risque déterministe indépendant, journalisation et évaluation prospective. Les quatre stratégies A/B/C/D sont aussi des comparateurs ; aucune autorisation de cycle ou de trading LIVE n'est donnée.
+- `fetch_kraken_history_v12.py` : outil en lecture réseau publique **uniquement sur action explicite** (`--download`), avec source Kraken verrouillée, 5 SHA-256 officiels, reprise HTTP Range, ZIP réassemblé vérifié, garde disque et sortie hors dépôt. Une relance n'écrase pas le manifeste et permet l'ajout Q3 sans effacer les preuves archivées.
+- `prepare_kraken_history_v12.py`, `v12_data.py` : URL d'origine contrôlée par `scheme/hostname/path` exact, rejet des OHLC NaN/infini et des dates fractionnaires ; contrôle des archives Q3 conteneur ZIP. 
+- `tests/test_v12_downloader.py` + tests de données : aucun accès réseau pendant les tests, reprise interrompue, serveur ignorant `Range`, SHA erroné, contenu trimestriel invalide, tentative d'URL mimant Kraken et manifeste inchangé au second passage.
+- `docs/TELECHARGEMENT_KRAKEN_V1_2.md` : procédure locale Windows/PowerShell étape par étape et rappel du blocage sur listing/delisting historique. **Aucun téléchargement historique réel exécuté** sur GitHub ni depuis cet échange.
+
+- `prepare_kraken_history_v12.py` : inventaire hors ligne des ZIP Kraken complets et 2026 T3, contrôle SHA-256, revue explicite des paires USD, dédoublonnage strict et `MANIFEST.draft.json` non certifié. Tests négatifs ZIP, paires inconnues et contradictions inter-archives.
+- `v12_v11_replay.py` : rejeu du moteur `cycle_v11.py` original à l'aide de snapshots d'API synthétiques, dans SQLite + historique isolés hors dépôt et sans réseau ; toute API manquante fait échouer la référence, même si le moteur enregistre un cycle. Aucun historique 2021–2026 n'est revendiqué.
+- `docs/DONNEES_ET_REPLAY_V1_2.md` : provenance Kraken, somme SHA-256 de l'archive complète, procédures de staging et distinction entre tests déterministes et véritable baseline V1.1.
+
+- `v12_signals.py` : rejette bougies imputées, passe le sizing A par paramètres ; D récupère les indicateurs V1.1 historiques.
+- `v12_rebalance.py`, `v12_backtest_core.py` : ventes partielles, rétention top K+2 de B, risque BTC quotidien, limites de corrélation et d'exposition, fills maker partiels et fallback taker, frais/spread/slippage distincts, kill-switch et délistage conventionnel, refus de valorisation gelée.
+- `v12_data.py` : manifeste SHA-256 avec vérification de couverture des paires USD historiques et délistées exigée pour le mode officiel ; données historiques exhaustives encore absentes.
+- `v12_walkforward.py`, `v12_acceptance.py` : 12 mois IS / 3 mois OOS, grille sélectionnée sur IS, critères de rejet figés, aucune sélection sans baseline V1.1 auditée ; `v12_baselines.py` modélise BTC, panier BTC/ETH/XRP mensuel et cash aux deux niveaux de frais.
+- `export_v12.py`, `dashboard_v12_template.html`, `render_preprod.py` : données absentes à null, 51 clés du contrat, horodatages UTC/Paris et rendu V1.2 autonome uniquement sur activation explicite.
+- `sim_v12.yml` : clé hôte SSH GitHub épinglée selon documentation officielle et nettoyage de la clé de déploiement même en échec ; workflow toujours uniquement en PR.
+- `tests/test_v12_*.py` : nouveaux tests delisting/staleness, confluence V1.1, invariance A/B/C/D, manifeste, baselines, OOS, export local et sécurité du workflow.
+- **Aucun résultat financier officiel, aucune simulation V1.2 lancée** : données exhaustives et replay V1.1 complet restent bloquants. Détails dans `docs/ETAT_AVANCEMENT_V1_2.md`.
+
+### Corrections P0/P1 (revue Grok Bot PR #7)
+- `.github/workflows/guard.yml` : contrôle exhaustif de `state/**` et gel de `VERSION_ENGINE` dans les branches `strategy/*` ; tests négatifs de chemin protégés.
+- `VERSION_ENGINE_V12` : **V1.3 réservé au moteur V1.2** ; `VERSION_ENGINE` reste à V1.2 comme sur `develop`. Les exports V1.2 n’utilisent que `VERSION_ENGINE_V12`.
+- `v12_isolation.py` : refus des clones V1.1 et des ancêtres contenant `.git`/ `sim.db` ; exceptions contrôlées au checkout d'état `kraken-sim-preprod`.
+### Infrastructure
+- Branche strategy/v1.2 depuis develop + state-v12 dans kraken-sim-preprod. Aucune exécution de cycle ni modification main.
+- cycle_v12.py bloqué en l'attente de SPEC et accord ; v12_isolation.py refuse les chemins d'état production ; export_v12.py impose la source V1.2 et des données réelles.
+- Workflow sim_v12.yml manuel, pas de cron, pin SHA requis, calcul sans secret, publication distincte et limitée à preprod/state-v12.
+- guard.yml : exception explicite strategy/v1.2 pour GPT-6, périmètre stratégie protégeant la V1.1, tests isolation-v12. GARDE_FOUS.md mis à jour.
+### Tests et limites
+- Tests infrastructure : chemin de stockage, idempotence, export minimal, look-ahead des bougies, intégrité statique du code V1.1. Tests trading/risque/backtest non encore implémentés.
+- `v12_acceptance.py` : sept critères de rejet OOS §5 pré-encodés ; refus explicite des métriques absentes ou des runs exploratoires, choix Calmar/Sortino seulement parmi les survivants. `tests/test_v12_acceptance.py` couvre les rejets.
+- Aucune performance ni validation économique revendiquée. Première fusion develop et tout workflow sur main soumis à Cyril.
 
 ## [UX V1.1.2] — 25/10/2026 15h15 (Paris) — GPT6
 ### Correctifs critiques

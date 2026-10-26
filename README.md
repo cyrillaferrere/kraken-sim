@@ -1,3 +1,15 @@
+> **FRÉQUENCE GROK V1.2 :** Grok Bot possède déjà un connecteur Kraken et décide **à chaque IT** (potentiellement ~10 IT/jour ou davantage), sans routine quotidienne unique imposée. Le moteur PAPER vérifie indépendamment les cotations, tient les comptes et applique les garde-fous. Voir [clarification du raccordement](docs/BRANCHEMENT_KRAKEN_GROK_V12.md).
+
+> **RACCORDEMENT V1.2 EN PR (non activé) :** [Kraken public et issues Grok](docs/BRANCHEMENT_KRAKEN_GROK_V12.md). Vérification manuelle sans ordre : `python3 v12_live_bridge.py --check-market --max-pairs 8`. La vraie IT Grok, l'ordonnancement et le dashboard ne tournent pas encore.
+
+> **ÉTAPE V1.2 — correction des 6 P1 Grok :** [simulation PAPER synthétique 30 jours](docs/REVIEW_GROK_P1_30J_V12.md), `python3 cycle_v12.py --dry-run --out /tmp/kraken-v12-test`. Les ordres sont **fictifs et hors ligne** ; **aucune IT Grok, aucun cron ni ordre réel activé**. `--cycle` reste bloqué.
+
+> **Autonomie Grok V1.2 :** [décision A/B/C/D, sécurité indépendante et apprentissage](docs/GROK_AUTONOME_V12_ETAPE1.md). La liaison réelle à Grok et au collecteur Kraken reste à construire ; aucune promotion LIVE automatique.
+
+> **NOUVEAU — données historiques V1.2 :** [téléchargement manuel, reprenable et sécurisé des archives Kraken](docs/TELECHARGEMENT_KRAKEN_V1_2.md), avec 5 checksums officiels et vérification du ZIP complet. Aucune archive massive n'a été téléchargée par GitHub Actions et aucun cycle V1.2 n'a été lancé. Exception de travail GPT-6 sur `strategy/v1.2` : voir `GARDE_FOUS.md`.
+
+> **Historique V1.2 et V1.1** : [archives Kraken et rejeu hors ligne](docs/DONNEES_ET_REPLAY_V1_2.md). L'importeur ne certifie jamais automatiquement la couverture des actifs historiques ; le rejeu V1.1 sur fixtures synthétiques ne prouve pas une performance passée.
+
 > **Collaboration GPT6 (UX/UI) ↔ Kraken Bot (moteur)** — versions : **Moteur `VERSION_ENGINE`** · **Stratégie `strategy/params.json`** · **UX/UI `VERSION_UX`** (template).
 > GPT6 ne modifie que `dashboard_template.html` sur une branche `ux/*` issue de `develop` + PR vers `develop` qu'il fusionne lui-même après guard vert (jamais de push ni de fusion sur main), incrémente `VERSION_UX` et ajoute une entrée au `CHANGELOG.md`. Contrat : une seule ligne `const D = __DATA__;`, 2 blocs script, ids et clés `D` du contrat, données live (state.json + API Kraken), aucune donnée d'exemple. Stratégie : Kraken Bot seul (incrément + CHANGELOG avec backtest). Demandes fonctionnelles → issue `fonctionnel`.
 > **Circuit** : `ux/*` `feature/*` `fix/*` depuis `develop` → PR vers `develop` (GPT-6 fusionne lui-même dès guard vert si la PR ne touche ni moteur, ni `VERSION_ENGINE`, ni `strategy/`/`params.json`, ni `sim.yml`, ni `state/`/`sim.db` ; sinon revue technique Kraken Bot) → préprod auto (https://cyrillaferrere.github.io/kraken-sim-preprod/) → PR `develop`→`main` fusionnée par Cyril seulement après guard vert + « OK prod » de GPT-6 (UX/fonctionnel) et Kraken Bot (revue technique à cette étape), qui ne remplacent ni guard ni sa décision. `strategy/*` réservé à Kraken Bot. Retour arrière = revert du code ; l'état de la sim n'est jamais rembobiné.

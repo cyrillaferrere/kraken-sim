@@ -1,0 +1,352 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#080c14">
+<title>PREPROD V1.2 PAPER — Kraken Sim Cockpit</title>
+<style>
+:root{color-scheme:dark;--bg:#080c14;--surface:#101824;--surface-2:#121f30;--ink:#eaf2fb;--muted:#9cacc0;--soft:#768ba5;--line:#233247;--line-hi:#34465d;--blue:#75b5ff;--green:#3cdaa8;--red:#ef4444;--danger:#ff6b7d;--amber:#ffac43;--purple:#a88bf5;--radius:16px}
+*{box-sizing:border-box}html{scroll-behavior:smooth;scroll-padding-top:88px}body{margin:0;background:radial-gradient(ellipse 70% 320px at 54% -150px,#18324a4a,transparent 80%),var(--bg);color:var(--ink);font:14px/1.52 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-variant-numeric:tabular-nums}
+button,input,select{font:inherit}a{color:inherit;text-decoration:none}button{cursor:pointer}button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--blue);outline-offset:3px}
+h1,h2,h3,p{margin:0}h1{font-size:29px;letter-spacing:-.9px;font-weight:720;line-height:1.2}h2{font-size:17px;letter-spacing:-.32px}h3{font-size:14px}small{font-size:12px}.muted{color:var(--muted)}.soft{color:var(--soft)}.eyebrow{font-size:10px;text-transform:uppercase;letter-spacing:1.15px;font-weight:780;color:var(--soft)}
+.rail{position:fixed;z-index:35;top:0;left:0;bottom:0;width:68px;background:#0b1420;border-right:1px solid var(--line);display:flex;flex-direction:column;overflow:hidden;transition:width .2s}
+.rail.expanded{width:216px}.rail-head{height:70px;display:flex;align-items:center;gap:12px;padding:0 15px;border-bottom:1px solid var(--line)}
+.mark{flex:0 0 38px;height:38px;display:grid;place-items:center;background:#17263a;border:1px solid #2b4664;border-radius:11px;font-weight:800;font-size:20px;color:var(--blue)}
+.rail-title,.nav-text{opacity:0;white-space:nowrap;transition:opacity .2s}.rail.expanded .rail-title,.rail.expanded .nav-text{opacity:1}
+.rail-title{font-weight:750;font-size:13px}.rail-title span{display:block;font-size:10px;font-weight:500;letter-spacing:1px;color:var(--soft)}
+.nav-list{display:grid;gap:7px;padding:18px 9px}.nav-link,.nav-toggle{display:flex;align-items:center;gap:14px;min-height:44px;border-radius:10px;padding:0 14px;color:#a5b9d0;white-space:nowrap;background:transparent;border:0;text-align:left;width:100%}
+.nav-link:hover,.nav-toggle:hover{background:#17263a;color:#fff}.nav-link.active{background:#1a3047;color:#a7d5ff}.nav-icon{flex:0 0 21px;font-size:18px;line-height:1;text-align:center}.nav-text{font-size:13px;font-weight:600}.nav-toggle{margin-top:auto;margin-bottom:16px}
+.frame{margin-left:68px;transition:margin-left .2s}.rail.expanded~.frame{margin-left:216px}.frame-inner{width:min(1600px,100%);padding:0 clamp(20px,3vw,48px) 70px;margin:0 auto}
+.top{position:sticky;top:0;z-index:22;background:#080c14ef;backdrop-filter:blur(15px);border-bottom:1px solid var(--line);min-height:70px;display:flex;justify-content:space-between;align-items:center;gap:16px}
+.brand{display:flex;align-items:baseline;gap:9px;white-space:nowrap}.brand strong{font-size:17px;letter-spacing:-.5px}.brand strong b{color:var(--red);font-weight:800}.brand strong span{font-weight:500}.brand em{font-size:11px;font-style:normal;color:var(--soft);font-weight:650}
+.top-right{display:flex;align-items:center;gap:17px;font-size:12px}.versions{color:var(--soft);font-size:11px;white-space:nowrap}.status-inline{display:flex;align-items:center;gap:8px;color:#b6c8da;white-space:nowrap}.dot{height:8px;width:8px;border-radius:50%;background:var(--soft);display:inline-block;flex-shrink:0}.dot.ok{background:var(--green)}.dot.alert{background:var(--danger)}.dot.wait{background:var(--amber)}
+.mobile-toggle{display:none;background:none;border:0;color:var(--ink);font-size:21px}
+.intro{display:flex;align-items:end;justify-content:space-between;gap:20px;padding:27px 0 19px}.intro h1{margin-top:7px}.intro p{color:var(--muted);font-size:13px;margin-top:8px}
+.env-label{font-size:11px;color:#b6c9dd;padding:7px 11px;background:#111e2d;border:1px solid var(--line);border-radius:8px;white-space:nowrap}
+.notice{border:1px solid #3b4a5f;border-radius:10px;color:#b3c5d9;background:#132033;padding:10px 14px;font-size:12px;display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:18px}
+.notice.is-error{border-color:#8b4652;color:#ffd2d7}.notice.is-hidden{display:none}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:20px;min-width:0}.card-head{display:flex;justify-content:space-between;gap:12px;align-items:start;margin-bottom:16px}.card-head p{font-size:12px;color:var(--muted);margin-top:3px}.card-head .tag{white-space:nowrap}
+.grid4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}.pair{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(330px,1fr);align-items:stretch;gap:14px}
+.kpi{padding:18px 20px;min-height:128px;display:flex;flex-direction:column}.kpi .value{font-size:27px;line-height:1.1;letter-spacing:-.65px;font-weight:740;margin:14px 0 9px;overflow-wrap:anywhere}.kpi .foot{font-size:12px;color:var(--muted);margin-top:auto}.pos{color:var(--green)}.neg{color:var(--danger)}
+.hero-grid{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(310px,.85fr);gap:14px;margin-top:15px}.hero{background:linear-gradient(130deg,#142337,#111b2a 64%,#101824);min-height:180px;display:flex;justify-content:space-between;flex-direction:column}.hero .headline{font-size:40px;letter-spacing:-1.2px;line-height:1.12;font-weight:760;margin:12px 0 10px}.hero .subkpi{display:flex;flex-wrap:wrap;gap:9px 20px;color:#c0d0e1;font-size:12px}.hero .subkpi strong{font-weight:690}
+.grok-summary{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:start}.grok-summary .bigline{font-size:17px;font-weight:690;margin:10px 0 7px;letter-spacing:-.2px}.grok-summary p{font-size:12px;color:var(--muted)}
+.section{padding-top:29px;scroll-margin-top:72px}.section-header{display:flex;align-items:baseline;justify-content:space-between;gap:16px;margin-bottom:14px}.section-header h2{font-size:19px}.section-header p{font-size:12px;color:var(--muted)}.section-header a{font-size:12px;color:var(--blue)}
+.chart-card{min-height:386px;display:flex;flex-direction:column}.chart-head{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}.segment{display:flex;background:#0c1521;border:1px solid var(--line);border-radius:9px;padding:3px;gap:2px}.segment button{border:0;background:transparent;border-radius:6px;color:var(--muted);padding:5px 10px;font-size:11px;font-weight:650}.segment button.active{color:var(--ink);background:#26394f}
+.chart-area{flex:1;min-height:235px;display:flex;align-items:center;justify-content:center;position:relative;padding:8px 0 0}.chart-area svg{display:block;width:100%;height:245px;overflow:visible}.chart-note{display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;font-size:11px;color:var(--soft);border-top:1px solid var(--line);padding-top:10px}.legend{display:flex;flex-wrap:wrap;gap:14px;margin-top:6px;color:var(--muted);font-size:11px}.key{display:inline-block;width:12px;height:3px;vertical-align:middle;margin-right:6px;border-radius:9px}.empty{color:var(--muted);font-size:13px;display:flex;align-items:center;justify-content:center;text-align:center;min-height:100px;padding:24px;line-height:1.7}.chart-area .empty{min-height:190px}
+.barlist{display:grid;gap:15px}.barrow{display:grid;gap:7px}.barlabels{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:12px}.track{height:8px;background:#1f2f42;border-radius:20px;overflow:hidden}.fill{height:100%;background:var(--blue);border-radius:20px}
+.statline{display:flex;justify-content:space-between;gap:10px;font-size:13px;border-bottom:1px solid var(--line);padding:11px 0}.statline:last-child{border-bottom:0}.statline span{color:var(--muted)}
+.table-scroll{width:100%;overflow-x:auto}table{width:100%;border-collapse:collapse;font-size:12px;white-space:nowrap}th{text-align:left;color:var(--soft);font-size:11px;font-weight:630;padding:11px 10px;border-bottom:1px solid var(--line)}td{padding:13px 10px;border-bottom:1px solid #1b2a3c}tr:last-child td{border-bottom:0}td:last-child,th:last-child{text-align:right}tbody tr:hover{background:#172333}
+.tag{display:inline-block;padding:4px 9px;border:1px solid #35445a;border-radius:8px;color:#b9cee2;font-size:11px;font-weight:620}.tag.green{color:#84e3bf;background:#3cdaa811;border-color:#3cdaa833}.tag.red{color:#ffadb6;background:#ff6b7d0d;border-color:#ff6b7d55}.tag.gold{color:#ffd099;background:#ffac4310;border-color:#ffac4345}
+.actions{display:flex;align-items:center;gap:9px}.filter{border:1px solid var(--line-hi);background:#101e2e;color:var(--ink);border-radius:9px;padding:9px 12px;font-size:12px;max-width:160px}.details{margin-top:14px;border-top:1px solid var(--line);padding-top:13px}.details summary{color:var(--muted);font-size:12px;cursor:pointer;list-style:none}.details summary:hover{color:var(--ink)}.details summary:before{content:"＋";margin-right:9px;font-weight:700}.details[open] summary:before{content:"−"}
+.signal-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}.signal{border:1px solid var(--line);border-radius:12px;background:#101d2c;padding:14px;min-width:0}.signal header{display:flex;gap:9px;align-items:baseline}.signal header b{font-size:17px;color:var(--blue)}.signal header span{font-size:12px;color:var(--muted)}.signal .signal-value{font-size:18px;font-weight:730;margin-top:14px}.signal .signal-desc{font-size:11px;color:var(--soft);margin-top:5px}
+.timeline{display:grid;gap:0}.timeline-item{display:grid;grid-template-columns:18px minmax(0,1fr);gap:12px;padding:9px 0}.timeline-rail{display:flex;flex-direction:column;align-items:center;gap:5px}.timeline-rail:before{content:"";width:8px;height:8px;border-radius:50%;background:var(--blue);margin-top:6px}.timeline-rail:after{content:"";height:100%;width:1px;background:var(--line)}.timeline-item:last-child .timeline-rail:after{display:none}.timeline-item .event-title{font-size:12px;font-weight:670}.timeline-item .event-sub{font-size:11px;color:var(--soft);margin-top:2px}.timeline-item .event-desc{font-size:12px;color:var(--muted);margin-top:3px;white-space:normal;overflow-wrap:anywhere}
+.duocol{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(300px,.85fr);gap:14px}
+.footer{padding:30px 0 0;display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--soft)}
+.no-borrow{display:block;margin-top:9px;color:var(--soft);font-size:11px}.mini-list{display:flex;flex-wrap:wrap;gap:8px;margin-top:9px}.chart-border{stroke:#233247;stroke-width:1}.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+@media(max-width:1280px){.top-right .versions{display:none}.grid4{grid-template-columns:repeat(2,minmax(0,1fr))}.signal-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:1050px){.pair,.hero-grid,.duocol{grid-template-columns:1fr}.chart-card{min-height:360px}}
+@media(max-width:700px){.rail{transform:translateX(-100%);width:216px}.rail.expanded{transform:translateX(0)}.rail .rail-title,.rail .nav-text{opacity:1}.frame,.rail.expanded~.frame{margin-left:0}.mobile-toggle{display:block}.frame-inner{padding:0 15px 85px}.top{min-height:62px}.intro{padding:22px 0 15px}.intro h1{font-size:25px}.env-label{display:none}.brand strong{font-size:15px}.top-right{gap:8px}.top-right .status-inline{font-size:11px}.grid4{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.grid3{grid-template-columns:1fr}.kpi{padding:15px;min-height:117px}.kpi .value{font-size:22px}.hero .headline{font-size:34px}.section-header{align-items:start}.section-header p{max-width:50%;text-align:right}.card{padding:16px}.signal-grid{grid-template-columns:1fr 1fr}}
+@media(max-width:430px){.grid4{grid-template-columns:1fr 1fr}.kpi .value{font-size:20px}.signal-grid{grid-template-columns:1fr}.brand em{display:none}.section-header p{display:none}}
+@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}}
+</style>
+</head>
+<body>
+<nav class="rail" id="rail" aria-label="Navigation principale">
+ <div class="rail-head"><span class="mark">K</span><span class="rail-title">KRAKEN SIM<span>PREPROD · V1.2</span></span></div>
+ <div class="nav-list">
+  <a href="#overview" class="nav-link active" title="Vue d'ensemble"><span class="nav-icon">◉</span><span class="nav-text">Vue d'ensemble</span></a>
+  <a href="#portfolio" class="nav-link" title="Portefeuille"><span class="nav-icon">◈</span><span class="nav-text">Portefeuille</span></a>
+  <a href="#grok" class="nav-link" title="Décisions Grok"><span class="nav-icon">⌁</span><span class="nav-text">Décisions Grok</span></a>
+  <a href="#analyse" class="nav-link" title="Analyse et risque"><span class="nav-icon">▥</span><span class="nav-text">Analyse et risque</span></a>
+ </div>
+ <button id="navToggle" class="nav-toggle" type="button" aria-label="Déployer ou réduire le menu" aria-expanded="false"><span class="nav-icon">☰</span><span class="nav-text">Réduire le menu</span></button>
+</nav>
+<div class="frame"><div class="frame-inner">
+ <header class="top">
+  <div style="display:flex;align-items:center;gap:10px"><button id="mobileToggle" class="mobile-toggle" type="button" aria-label="Ouvrir la navigation">☰</button><div class="brand"><strong><b>Kraken</b> <span>Sim</span></strong><em>PreProd</em></div></div>
+  <div class="top-right"><span class="versions" id="versions">Moteur : — · Stratégie : V1.2 · UX/UI : V1.2.0</span><span class="status-inline"><i class="dot" id="healthDot"></i><span id="healthText">État indisponible</span></span></div>
+ </header>
+ <main>
+  <div id="preprodBanner" style="background:#2a1f12;border:1px solid #ffac43;color:#ffe2b8;padding:11px 16px;border-radius:9px;margin-top:18px;font-weight:700;letter-spacing:.4px">PREPROD V1.2 PAPER — simulation fictive, aucun ordre réel, aucune clé Kraken</div>
+  <div id="overview" class="intro"><div><div class="eyebrow">Portefeuille fictif · Stratégie V1.2</div><h1>Vue d'ensemble</h1><p id="asofText">Aucun cycle V1.2 vérifié pour le moment</p></div><span class="env-label">ENVIRONNEMENT DE PRÉPRODUCTION</span></div>
+  <div class="notice" id="notice" role="status"><span id="noticeText">Tableau de bord prêt. En attente des données PAPER V1.2.</span><span class="soft" id="noticeSource">Aucun ordre réel</span></div>
+  <div class="hero-grid">
+   <section class="card hero" aria-label="Valeur du portefeuille fictif">
+    <div class="eyebrow">Valeur totale · PAPER</div>
+    <div class="headline" id="equity">—</div>
+    <div class="subkpi"><span>Résultat net : <strong id="pnl">—</strong></span><span>Depuis le démarrage : <strong id="netPct">—</strong></span><span>Capital initial : <strong id="initialCapital">—</strong></span></div>
+   </section>
+   <section class="card grok-summary" aria-label="État de Grok Bot">
+    <div><div class="eyebrow">Grok Bot · Décideur V1.2</div><div class="bigline" id="grokState">En attente de sa première IT</div><p id="grokLast">Dernière IT : non enregistrée</p><p style="margin-top:10px" id="grokAction">Aucune décision attribuée à Grok.</p></div><span class="tag" id="grokBadge">IT libre</span>
+    <div class="no-borrow" style="grid-column:1/-1">Grok intervient à son rythme, potentiellement plusieurs fois par jour. Les protections PAPER restent indépendantes.</div>
+   </section>
+  </div>
+  <section class="grid4" style="margin-top:14px" aria-label="Indicateurs du portefeuille">
+   <article class="card kpi"><div class="eyebrow">Liquidités</div><div class="value" id="cash">—</div><div class="foot" id="cashFoot">Cash du portefeuille PAPER</div></article>
+   <article class="card kpi"><div class="eyebrow">Écart vs USDC conservés</div><div class="value" id="vsUsdc">—</div><div class="foot" id="usdcValue">Référence USDC indisponible</div></article>
+   <article class="card kpi"><div class="eyebrow">Exposition</div><div class="value" id="exposure">—</div><div class="foot">Plafond global V1.2 : 90 %</div></article>
+   <article class="card kpi"><div class="eyebrow">Drawdown actuel</div><div class="value" id="drawdown">—</div><div class="foot" id="riskCaption">Seuil de sécurité : −25 % depuis le pic</div></article>
+  </section>
+  <section class="section" aria-label="Performance et état du moteur">
+   <div class="section-header"><h2>Performance et marché</h2><p>Comparaison sur les données enregistrées, jamais avec la V1.1</p></div>
+   <div class="pair">
+    <article class="card chart-card">
+     <div class="card-head"><div><h2>Portefeuille vs conserver les USDC</h2><p>Valorisation fictive nette en USDC · historique du moteur V1.2</p></div><div class="segment" id="chartPeriod" role="group" aria-label="Période"><button type="button" data-days="7">7 j</button><button type="button" data-days="30">30 j</button><button type="button" data-days="0" class="active">Tout</button></div></div>
+     <div class="chart-area" id="chartArea" role="img" aria-label="Historique des valeurs PAPER et USDC"><div class="empty">Historique de valorisation V1.2 non disponible.<br>Aucune courbe fictive affichée.</div></div>
+     <div class="legend"><span><i class="key" style="background:var(--blue)"></i>Kraken Sim PAPER</span><span><i class="key" style="background:var(--green)"></i>USDC conservés</span><span><i class="key" style="background:var(--amber)"></i>BTC conservé (si enregistré)</span></div>
+     <div class="chart-note"><span id="chartRange">Aucun historique V1.2 enregistré</span><span>Prix historiques, pas cotations instantanées</span></div>
+    </article>
+    <article class="card chart-card">
+     <div class="card-head"><div><h2>Santé du système</h2><p>Risque moteur indépendant des décisions Grok</p></div><span id="riskTag" class="tag">Non disponible</span></div>
+     <div class="barlist">
+      <div class="barrow"><div class="barlabels"><span>Exposition actuelle</span><strong id="exposureLabel">—</strong></div><div class="track"><div id="exposureBar" class="fill" style="width:0%"></div></div><div class="soft" style="font-size:11px">Plafond : 90 % du portefeuille</div></div>
+      <div class="barrow"><div class="barlabels"><span>Repli depuis le sommet</span><strong id="ddLabel">—</strong></div><div class="track"><div id="ddBar" class="fill" style="width:0%;background:var(--danger)"></div></div><div class="soft" style="font-size:11px">Coupe-circuit moteur à −25 %</div></div>
+     </div>
+     <div style="margin-top:16px"><div class="statline"><span>Ordres en attente</span><strong id="pendingCount">—</strong></div><div class="statline"><span>Frais cumulés</span><strong id="fees">—</strong></div><div class="statline"><span>Dernier cycle PAPER</span><strong id="cycleWhen">—</strong></div><div class="statline"><span>Dernière donnée publiée</span><strong id="freshness">—</strong></div></div>
+    </article>
+   </div>
+  </section>
+  <section id="portfolio" class="section">
+   <div class="section-header"><h2>Portefeuille</h2><p>Positions et liquidités réelles de la simulation fictive</p></div>
+   <div class="duocol">
+    <article class="card"><div class="card-head"><div><h2>Portefeuille</h2><p>USDC compté comme une crypto (devise de compte et refuge) + positions du moteur PAPER</p></div><span id="positionCount" class="tag">—</span></div><div class="table-scroll"><table><thead><tr><th>Actif</th><th>Quantité</th><th>Valeur (USDC)</th><th>Poids</th><th>Rôle</th></tr></thead><tbody id="positions"><tr><td colspan="5" class="empty">Aucune donnée de position publiée</td></tr></tbody></table></div></article>
+    <article class="card"><div class="card-head"><div><h2>Allocation actuelle</h2><p>Part du portefeuille valorisée au dernier état</p></div></div><div class="barlist" id="allocation"><div class="empty">Répartition indisponible.</div></div><details class="details"><summary>Comptabilité et référence USDC</summary><div class="statline"><span>Capital PAPER de départ</span><strong id="c0Again">—</strong></div><div class="statline"><span>USDC conservés</span><strong id="usdcAgain">—</strong></div><div class="statline"><span>BTC conservé</span><strong id="btcAgain">—</strong></div></details></article>
+   </div>
+  </section>
+  <section id="grok" class="section">
+   <div class="section-header"><h2>Grok Bot & décisions</h2><p>IT à fréquence libre · analyses et ordres distincts</p></div>
+   <div class="pair">
+    <article class="card"><div class="card-head"><div><h2>Journal des opérations PAPER</h2><p>Achats, ventes, rejets et opérations en attente</p></div><div class="actions"><label class="sr-only" for="orderFilter">Filtrer le journal</label><select id="orderFilter" class="filter"><option value="all">Tous les ordres</option><option value="BUY">Achats</option><option value="SELL">Ventes</option><option value="rejected">Refusés</option></select></div></div><div class="table-scroll"><table><thead><tr><th>Date</th><th>Crypto</th><th>Action</th><th>Qté</th><th>Statut</th></tr></thead><tbody id="orders"><tr><td colspan="5" class="empty">Aucune opération enregistrée.</td></tr></tbody></table></div></article>
+    <article class="card"><div class="card-head"><div><h2>Historique des IT Grok</h2><p>Chaque intervention compte, pas seulement la dernière</p></div><span id="itCount" class="tag">—</span></div><div class="timeline" id="itHistory"><div class="empty">Aucune IT Grok publiée dans l'état V1.2.</div></div></article>
+   </div>
+   <div class="section-header" style="margin-top:24px"><h2>Les quatre stratégies V1.2</h2><p>Cadre d'analyse de Grok, pas quatre bots indépendants</p></div>
+   <div class="signal-grid">
+    <div class="signal"><header><b>A</b><span>Donchian</span></header><div class="signal-value" id="signalA">—</div><div class="signal-desc">Breakout et suivi de tendance</div></div>
+    <div class="signal"><header><b>B</b><span>Dual Momentum</span></header><div class="signal-value" id="signalB">—</div><div class="signal-desc">Sélection et rotations hebdomadaires</div></div>
+    <div class="signal"><header><b>C</b><span>BTC / ETH</span></header><div class="signal-value" id="signalC">—</div><div class="signal-desc">Tendance et maîtrise de l'exposition</div></div>
+    <div class="signal"><header><b>D</b><span>V1.1 corrigée</span></header><div class="signal-value" id="signalD">—</div><div class="signal-desc">Approche hebdomadaire comparative</div></div>
+   </div>
+  </section>
+  <section id="initcheck" class="section" aria-label="Contrôle init-check V1.2">
+   <div class="grid3" style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px">
+    <article class="card"><div class="card-head"><div><h2>Dernier contrôle moteur</h2><p>Mode, données Kraken publiques et ordres</p></div><span id="icMode" class="tag">—</span></div><div class="statline"><span>Décision</span><strong id="icDecision">—</strong></div><div class="statline"><span>Ordres / exécutions / trades</span><strong id="icOrders">—</strong></div><div class="statline"><span>Paires cotées / valides</span><strong id="icPairs">—</strong></div><div class="statline"><span>Conformité UE/MiCA</span><strong id="icEu">__EU_COMPLIANCE__</strong></div><div class="statline"><span>Paires USDC éligibles</span><strong id="icEuPairs">__EU_PAIRS__</strong></div><div class="statline"><span>Clés API utilisées</span><strong id="icKeys">—</strong></div></article>
+    <article class="card"><div class="card-head"><div><h2>Paires exclues ce tick</h2><p>Cotation invalide ou spread trop large</p></div></div><div id="icExcluded"><div class="empty">—</div></div></article>
+    <article class="card"><div class="card-head"><div><h2>Garde-fous</h2><p>Paramètres de risque du moteur V1.2</p></div></div><div id="icGuards"><div class="empty">—</div></div></article>
+   </div>
+  </section>
+  <section id="analyse" class="section">
+   <div class="section-header"><h2>Analyse & apprentissage</h2><p>Constats mesurés par le moteur, distincts des propositions de Grok</p></div>
+   <div class="grid3">
+    <article class="card"><div class="eyebrow">Outcomes observés</div><div class="kpi value" style="min-height:0;padding:0;margin:13px 0" id="outcomeCount">—</div><p class="muted" style="font-size:12px">Évaluations moteur à J+1 / J+7 / J+30</p></article>
+    <article class="card"><div class="eyebrow">Politique active</div><div style="font-size:20px;font-weight:700;margin:13px 0;overflow-wrap:anywhere" id="policy">—</div><p class="muted" style="font-size:12px">Version imposée par l'orchestrateur, pas par Grok</p></article>
+    <article class="card"><div class="eyebrow">Propositions shadow</div><div class="kpi value" style="min-height:0;padding:0;margin:13px 0" id="shadowCount">—</div><p class="muted" style="font-size:12px">Aucune modification automatique des limites financières</p></article>
+   </div>
+   <div class="pair" style="margin-top:14px">
+    <article class="card"><div class="card-head"><div><h2>Dernières décisions et justifications</h2><p>Pourquoi Grok a choisi acheter, vendre ou attendre</p></div></div><div class="timeline" id="reasonHistory"><div class="empty">Aucune justification enregistrée.</div></div></article>
+    <article class="card"><div class="card-head"><div><h2>Transparence des données</h2><p>Pas d'indicateur masquant une absence de données</p></div></div><div class="statline"><span>Source des résultats</span><strong id="sourceName">—</strong></div><div class="statline"><span>Version moteur</span><strong id="engineVersion">—</strong></div><div class="statline"><span>Version stratégie</span><strong>V1.2</strong></div><div class="statline"><span>Dernier instantané reçu</span><strong id="asofAgain">—</strong></div><div class="no-borrow">Les métriques d'apprentissage restent vides tant qu'elles ne sont pas publiées par le moteur V1.2. Les résultats V1.1 ne sont jamais importés ici.</div></article>
+   </div>
+  </section>
+ </main>
+ <footer class="footer"><span>Kraken Sim PreProd · UX V1.2.0 · Simulation spot fictive · Aucun ordre réel</span><span>Indicateurs selon les cycles disponibles · Horaires Europe/Paris</span></footer>
+</div></div>
+<script>
+const D = __DATA__;
+const STATE_URL = "__STATE_SOURCE__";
+const VERSION_UX = "V1.2.2";
+const qs = id => document.getElementById(id);
+const nf = new Intl.NumberFormat("fr-FR",{maximumFractionDigits:2,minimumFractionDigits:2});
+const nfQty = new Intl.NumberFormat("fr-FR",{maximumFractionDigits:8});
+const dtf = new Intl.DateTimeFormat("fr-FR",{timeZone:"Europe/Paris",day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"});
+let latest=null,period=0,filter="all",lastError=null;
+const num = v => {if(v===null||v===undefined||v==="")return null;if(typeof v!=="number"&&typeof v!=="string")return null;if(typeof v==="string"&&!/^-?\d+(\.\d+)?$/.test(v.trim()))return null;let n=Number(v);return Number.isFinite(n)?n:null;};
+const arr=v=>Array.isArray(v)?v:[];
+const val=(v,dec=2)=>{const n=num(v);return n===null?"—":new Intl.NumberFormat("fr-FR",{minimumFractionDigits:dec,maximumFractionDigits:dec}).format(n);};
+const usd=v=>num(v)===null?"—":nf.format(Number(v))+" USDC";
+const percent=v=>num(v)===null?"—":nf.format(Number(v))+" %";
+const signedUsd=v=>{const n=num(v);return n===null?"—":(n>0?"+":"")+usd(n);};
+const htmlEscape=v=>String(v===null||v===undefined?"—":v).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const stamp=v=>{if(!v)return"—";const d=new Date(v);return Number.isNaN(+d)?"—":dtf.format(d)+" (Paris)";};
+const timeValue=v=>{const t=Date.parse(v);return Number.isFinite(t)?t:null;};
+const obj=v=>v&&typeof v==="object"&&!Array.isArray(v)?v:{};
+function text(id,value){const e=qs(id);if(e)e.textContent=value===null||value===undefined?"—":String(value);}
+function paint(id,n){const e=qs(id);if(!e)return;e.classList.toggle("pos",n!==null&&n>0);e.classList.toggle("neg",n!==null&&n<0);}
+function valid(d){return d&&d.strategy_id==="kraken-sim-v1.2"&&d.environment==="preprod"&&d.strategy_version==="V1.2";}
+function setNotice(message,error){const n=qs("notice");n.classList.toggle("is-error",!!error);text("noticeText",message);}
+function derive(d){
+ const equity=num(d.equity),cash=num(d.cash),start=num(d.C0);
+ const cx=obj(d.crypto_exposure);
+ if(num(cx.max_crypto_exposure_usdc)!==null){const m=v=>num(v)===null?"—":num(v).toLocaleString("fr-FR",{maximumFractionDigits:2})+" USDC";
+  text("cashFoot","Plafond crypto "+m(cx.max_crypto_exposure_usdc)+" (coût investi) · investi "+m(cx.invested_usdc)+" · budget restant "+m(cx.budget_remaining_usdc)+" · USDC restant "+m(cx.usdc_remaining));}
+ const gain=equity!==null&&start!==null?equity-start:null;
+ const usdc=num(d.usdc_hold_usdc??d.benchmarks?.usdc_hold_usdc);
+ const btc=num(d.btc_hold_usdc??d.benchmarks?.btc_hold_usdc);
+ const exposure=num(d.exposure_pct)??(equity!==null&&equity>0&&cash!==null?(equity-cash)/equity*100:null);
+ const drawdown=num(d.cur_dd_pct);
+ const risk=obj(d.risk);
+ const grok=obj(d.grok);
+ const learning=obj(d.learning);
+ return{equity,cash,start,gain,usdc,btc,exposure,drawdown,risk,grok,learning};
+}
+function rowPlaceholder(cols,msg){return '<tr><td colspan="'+cols+'" class="muted">'+htmlEscape(msg)+'</td></tr>';}
+function metricBar(id,label,value,max,color){
+ const bar=qs(id),el=qs(label);if(bar)bar.style.width=num(value)===null?"0%":String(Math.max(0,Math.min(100,Math.abs(value)/max*100)))+"%";
+ if(bar&&color)bar.style.background=color;
+ text(label,percent(value));
+}
+function periodEntries(d){
+ const input=arr(d.curve_v12?.length?d.curve_v12:d.marks);
+ return input.map(p=>{if(Array.isArray(p)){return {ts:p[0],paper:num(p[1]),usdc:num(p[2]),btc:num(p[3])};}
+ return{ts:p.ts??p.iso??p.day??p.t,paper:num(p.equity??p.paper_usdc??p.sim),
+       usdc:num(p.usdc_hold_usdc??p.usdc),btc:num(p.btc_hold_usdc??p.btc)};})
+ .filter(x=>timeValue(x.ts)!==null&&x.paper!==null&&x.paper>0).sort((a,b)=>timeValue(a.ts)-timeValue(b.ts));
+}
+function plotLine(rows,key,min,max,width,height){
+ const points=rows.map((x,i)=>{const n=x[key];if(n===null)return null;
+   const xx=34+(i/(rows.length-1))*(width-46);
+   const yy=16+(1-(n-min)/(max-min))*(height-40);
+   return [xx,yy];});
+ const segments=[];let active=[];
+ points.forEach(p=>{if(p){active.push(p);}else if(active.length){segments.push(active);active=[];}});if(active.length)segments.push(active);
+ return segments.filter(seg=>seg.length>1).map(seg=>'<polyline points="'+seg.map(p=>p.map(n=>n.toFixed(2)).join(",")).join(" ")+'" fill="none" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" stroke="'+(key==="paper"?"#75b5ff":key==="usdc"?"#3cdaa8":"#ffac43")+'"/>').join("");
+}
+function chart(d){
+ const mount=qs("chartArea"),raw=periodEntries(d);
+ const until=raw.length?timeValue(raw[raw.length-1].ts):0;
+ const rows=(period?raw.filter(r=>timeValue(r.ts)>=until-period*86400000):raw);
+ const showUsdc=rows.length>=2&&rows.every(r=>r.usdc!==null&&r.usdc>0);
+ const paper=rows.map(x=>x.paper);
+ if(rows.length<2){mount.innerHTML='<div class="empty">Historique V1.2 insuffisant pour tracer une courbe.<br>Le moteur doit publier au moins deux valorisations datées.</div>';text("chartRange","Historique non enregistré");return;}
+ let all=paper.slice();if(showUsdc)all=all.concat(rows.map(x=>x.usdc));
+ const showBtc=rows.every(r=>r.btc!==null&&r.btc>0);if(showBtc)all=all.concat(rows.map(x=>x.btc));
+ let min=Math.min(...all),max=Math.max(...all);let margin=Math.max(1,(max-min)*.15);min-=margin;max+=margin;
+ if(!Number.isFinite(min)||!Number.isFinite(max)){mount.innerHTML='<div class="empty">Courbe non disponible.</div>';return;}
+ const w=730,h=248;
+ let grid="";for(let i=0;i<4;i++){const y=16+i*(h-40)/3;const amount=max-(max-min)*i/3;
+ grid+='<line x1="34" y1="'+y+'" x2="'+(w-10)+'" y2="'+y+'" stroke="#233247" stroke-dasharray="3 5"/>';
+ grid+='<text x="0" y="'+(y+4)+'" fill="#71869f" font-size="11">'+Math.round(amount).toLocaleString("fr-FR")+'</text>';}
+ const svg='<svg viewBox="0 0 730 248" role="img" aria-label="Courbe PAPER'+(showUsdc?" et USDC conservés":"")+'">'+grid+plotLine(rows,"paper",min,max,w,h)+(showUsdc?plotLine(rows,"usdc",min,max,w,h):"")+(showBtc?plotLine(rows,"btc",min,max,w,h):"")+'</svg>';
+ mount.innerHTML=svg;
+ text("chartRange",stamp(rows[0].ts)+" — "+stamp(rows[rows.length-1].ts)+(showUsdc?"":" · Référence USDC manquante"));
+}
+function renderOrders(d){
+ const orders=arr(d.orders).concat(arr(d.pending_orders)).filter(x=>x&&typeof x==="object");
+ const normAction=x=>String(x.action??x.side??x.type??"").toUpperCase();
+ const selected=orders.filter(o=>filter==="all"||(filter==="rejected"?/REJECT|REFUS|CANCEL/.test(String(o.status??"").toUpperCase()):normAction(o).includes(filter)));
+ if(!orders.length){qs("orders").innerHTML=rowPlaceholder(5,"Aucun ordre PAPER enregistré.");return;}
+ if(!selected.length){qs("orders").innerHTML=rowPlaceholder(5,"Aucun ordre dans ce filtre.");return;}
+ qs("orders").innerHTML=selected.slice(-40).reverse().map(o=>{
+ const side=normAction(o),status=String(o.status??(o.filled_at?"FILLED":"—"));
+ const tag=/BUY|ACHAT/.test(side)?"green":/SELL|VENTE/.test(side)?"red":"";
+ return'<tr><td>'+htmlEscape(stamp(o.ts??o.created_at??o.filled_at??o.at))+'</td><td><strong>'+htmlEscape(o.asset??o.symbol??"—")+'</strong></td><td><span class="tag '+tag+'">'+htmlEscape(side||"—")+'</span></td><td>'+htmlEscape(val(o.qty??o.quantity,7))+'</td><td>'+htmlEscape(status)+'</td></tr>';
+ }).join("");
+}
+function renderPositions(d,a){
+ const positions=arr(d.portfolio);text("positionCount",positions.length+" ligne"+(positions.length>1?"s":""));
+ if(!positions.length){qs("positions").innerHTML=rowPlaceholder(5,"Portefeuille non publié.");return;}
+ qs("positions").innerHTML=positions.map(p=>'<tr><td><strong>'+htmlEscape(p.asset??"—")+'</strong></td><td>'+htmlEscape(val(p.qty,p.asset==="USDC"?2:7))+'</td><td>'+htmlEscape(val(p.value_usdc,2)+" USDC")+'</td><td>'+htmlEscape(percent(p.weight_pct))+'</td><td>'+htmlEscape(p.role??"—")+'</td></tr>').join("");
+}
+function allocation(d,a){
+ const container=qs("allocation");
+ if(a.equity===null||a.equity<=0||a.cash===null){container.innerHTML='<div class="empty">Allocation non enregistrée.</div>';return;}
+ const parts=[{asset:"USDC",v:a.cash}];
+ for(const pos of arr(d.positions)){const value=num(pos.value??pos.value_usdc);if(value!==null&&value>=0)parts.push({asset:String(pos.asset??"Actif"),v:value});}
+ container.innerHTML=parts.map((p,i)=>{const per=p.v/a.equity*100,clamp=Math.max(0,Math.min(100,per));return '<div class="barrow"><div class="barlabels"><span>'+htmlEscape(p.asset)+'</span><strong>'+htmlEscape(percent(per))+'</strong></div><div class="track"><div class="fill" style="width:'+clamp.toFixed(2)+'%;background:'+(i===0?"#3cdaa8":"#75b5ff")+'"></div></div></div>';}).join("");
+}
+function timeline(id,items,empty,make){
+ const mount=qs(id);if(!items.length){mount.innerHTML='<div class="empty">'+htmlEscape(empty)+'</div>';return;}
+ mount.innerHTML=items.slice(-8).reverse().map(x=>{const parts=make(x);return'<div class="timeline-item"><span class="timeline-rail"></span><div><div class="event-title">'+htmlEscape(parts[0])+'</div><div class="event-sub">'+htmlEscape(parts[1])+'</div><div class="event-desc">'+htmlEscape(parts[2])+'</div></div></div>';}).join("");
+}
+function signals(d){
+ const names=["A","B","C","D"],sig=obj(d.candidate_signals);
+ for(const key of names){
+   const value=sig[key],target=qs("signal"+key);
+   if(value===null||value===undefined){target.textContent="Non publié";target.style.fontSize="14px";continue;}
+   target.textContent=typeof value==="string"?value:
+     (Array.isArray(value)?value.length+" signal"+(value.length>1?"s":""):String(value.status??value.signal??"Non publié"));
+ }
+}
+function initCheck(d){
+ const ic=obj(d.init_check);const st=(k,v)=>'<div class="statline"><span>'+htmlEscape(k)+'</span><strong>'+htmlEscape(v)+'</strong></div>';
+ text("icMode",ic.mode??"—");
+ const dec=arr(ic.decisions);text("icDecision",dec.length?dec.map(x=>(x.action??"—")+" · "+(x.reason??"—")).join(" ; "):"—");
+ const n=v=>num(v)===null?"—":val(v,0);text("icOrders",n(ic.orders)+" / "+n(ic.fills)+" / "+n(ic.trades));
+ text("icPairs",n(ic.pairs_quoted)+" / "+n(ic.pairs_valid));
+ text("icKeys",ic.api_keys_used===false?"Non":ic.api_keys_used===true?"OUI":"—");
+ const ex=obj(ic.excluded_pairs),ek=Object.keys(ex);
+ qs("icExcluded").innerHTML=ic.excluded_pairs==null?'<div class="empty">—</div>':ek.length?ek.map(k=>st(k,(ex[k].reason??"—")+(ex[k].spread!=null?" · spread "+percent(num(ex[k].spread)*100):""))).join(""):'<div class="empty">Aucune paire exclue</div>';
+ const g=obj(ic.guardrails),r=obj(g.risk);const pc=v=>num(v)===null?"—":percent(num(v)*100);
+ qs("icGuards").innerHTML=ic.guardrails==null?'<div class="empty">—</div>':[st("Coupe-circuit drawdown","−"+pc(r.peak_drawdown_kill)),st("Exposition max",pc(r.max_exposure)),st("Spread max",pc(g.max_spread)),st("Paires valides min",n(g.min_valid_pairs)),st("Corrélation max",val(r.correlation_max,2)),st("Verrou risque",g.risk_lock===false?"Inactif":g.risk_lock===true?"ACTIF":"—"),st("Pic moteur",usd(g.engine_peak_usd))].join("");
+}
+function render(d){
+ if(!valid(d)){
+  lastError="Source incompatible";qs("healthDot").className="dot alert";text("healthText","Source V1.2 rejetée");
+  setNotice("Source rejetée : seuls les états PAPER préprod de la stratégie V1.2 sont acceptés.",true);
+  return;
+ }
+ latest=d;lastError=null;
+ const a=derive(d),date=timeValue(d.as_of??d.last_cycle_iso);
+ const old=date!==null&&(Date.now()-date)>20*60*1000;
+ qs("healthDot").className="dot "+(old?"wait":"ok");
+ text("healthText",old?"Dernier état non récent":"État PAPER V1.2");
+ text("asofText",date!==null?"Dernière publication du moteur : "+stamp(d.as_of??d.last_cycle_iso):"Date du dernier cycle non disponible");
+ setNotice(old?"Dernier état V1.2 ancien : données figées, ne pas les considérer comme live.":"Données issues du moteur PAPER V1.2. Les décisions et les prix affichés sont distincts du portefeuille réel.",false);
+ text("noticeSource","Aucun ordre réel");
+ text("versions","Moteur : "+String(d.version_engine??"—")+" · Stratégie : V1.2 · UX/UI : "+VERSION_UX);
+ text("equity",usd(a.equity));text("pnl",signedUsd(a.gain));paint("pnl",a.gain);
+ text("netPct",a.gain===null||!a.start?"—":percent(a.gain/a.start*100));paint("netPct",a.gain);
+ text("initialCapital",usd(a.start));text("cash",usd(a.cash));
+ text("vsUsdc",a.equity===null||a.usdc===null?"—":signedUsd(a.equity-a.usdc));paint("vsUsdc",a.equity===null||a.usdc===null?null:a.equity-a.usdc);
+ text("usdcValue",a.usdc===null?"USDC HOLD : non publié":"USDC HOLD : "+usd(a.usdc));
+ text("exposure",percent(a.exposure));text("drawdown",percent(a.drawdown));
+ text("riskCaption","Coupe-circuit : −25 % depuis le pic (paramètre V1.2)");
+ metricBar("exposureBar","exposureLabel",a.exposure,90);
+ metricBar("ddBar","ddLabel",a.drawdown,25);
+ const locked=a.risk.risk_lock??d.risk_lock??d.killed;
+ const paused=a.risk.paused??d.paused;
+ const label=locked===true?"COUPE-CIRCUIT ACTIF":paused===true?"MOTEUR EN PAUSE":locked===false?"Protections actives":"État non transmis";
+ text("riskTag",label);qs("riskTag").className="tag "+(locked===true?"red":locked===false?"green":"");
+ const pending=arr(d.pending_orders);
+ text("pendingCount",num(d.pending_count)!==null?val(d.pending_count,0):(d.pending_orders===undefined?"—":val(pending.length,0)));
+ text("fees",usd(d.fees_paid_usdc??d.fees));text("cycleWhen",stamp(d.last_cycle_iso??d.as_of));
+ text("freshness",old?"État ancien":"État horodaté");
+ text("c0Again",usd(a.start));text("usdcAgain",usd(a.usdc));text("btcAgain",usd(a.btc));
+ const g=a.grok,lastIt=g.last_it_iso??d.last_it_iso;
+ text("grokState",g.status??(lastIt?"Dernière IT enregistrée":"En attente de la première IT"));
+ text("grokLast",lastIt?"Dernière IT : "+stamp(lastIt):"Dernière IT : non enregistrée");
+ text("grokAction",g.last_action??"Les décisions seront visibles dans le journal ci-dessous.");
+ text("grokBadge",g.policy_version??"IT libre");
+ const it=arr(d.it_history);text("itCount",it.length?(it.length+" IT enregistrée"+(it.length>1?"s":"")):"Aucune IT");
+ timeline("itHistory",it,"Aucune IT Grok publiée dans l'état V1.2.",x=>[x.title??("IT "+(x.it_id??"—")),stamp(x.at??x.created_at??x.ts),x.summary??x.status??"Aucun résumé"]);
+ timeline("reasonHistory",arr(d.decisions),"Aucune justification attribuée à Grok.",x=>[(x.action??x.side??"DÉCISION")+" · "+(x.asset??"—"),stamp(x.created_at??x.ts??x.at),x.reason??x.rationale??"Motif non publié"]);
+ text("outcomeCount",num(a.learning.outcomes_count??d.outcomes_count)===null?"—":val(a.learning.outcomes_count??d.outcomes_count,0));
+ text("policy",a.risk.active_policy_version??a.learning.active_policy_version??d.active_policy_version??"Non publiée");
+ text("shadowCount",num(a.learning.shadow_proposals??d.shadow_proposals_count)===null?"—":val(a.learning.shadow_proposals??d.shadow_proposals_count,0));
+ text("sourceName",d.source??"V1.2 PAPER");text("engineVersion",d.version_engine??"—");text("asofAgain",stamp(d.as_of));
+ signals(d);initCheck(d);renderPositions(d,a);allocation(d,a);renderOrders(d);chart(d);
+}
+function selectNav(hash){
+ document.querySelectorAll(".nav-link").forEach(a=>a.classList.toggle("active",a.getAttribute("href")===hash));
+}
+qs("navToggle").addEventListener("click",function(){const r=qs("rail");r.classList.toggle("expanded");this.setAttribute("aria-expanded",r.classList.contains("expanded"));});
+qs("mobileToggle").addEventListener("click",()=>qs("rail").classList.toggle("expanded"));
+document.querySelectorAll(".nav-link").forEach(a=>a.addEventListener("click",()=>{selectNav(a.getAttribute("href"));if(window.innerWidth<701)qs("rail").classList.remove("expanded");}));
+document.querySelectorAll("#chartPeriod button").forEach(b=>b.addEventListener("click",()=>{period=Number(b.dataset.days)||0;document.querySelectorAll("#chartPeriod button").forEach(v=>v.classList.toggle("active",v===b));if(latest)chart(latest);}));
+qs("orderFilter").addEventListener("change",function(){filter=this.value;if(latest)renderOrders(latest);});
+render(D);
+async function refresh(){
+ try{
+  const response=await fetch(STATE_URL,{cache:"no-store"});
+  if(!response.ok)throw new Error("HTTP "+response.status);
+  const obj=await response.json();
+  if(!valid(obj))throw new Error("Stratégie étrangère ou état V1.1");
+  render(obj);
+ }catch(err){
+  qs("healthDot").className="dot wait";text("healthText","Données figées");
+  setNotice("Impossible de rafraîchir l'état V1.2 : "+String(err.message||"erreur réseau")+". Dernier instantané conservé.",true);
+ }
+}
+setInterval(refresh,60000);
+</script>
+</body>
+</html>
