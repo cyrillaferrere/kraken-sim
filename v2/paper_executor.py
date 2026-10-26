@@ -73,14 +73,18 @@ def apply_cycle(previous, cycle):
         raise RejectedCycle("Invalid previous state")
     verified = previous.get("data_source") == SOURCE
     if verified:
-        if cid == previous.get("last_cycle_id"):
+        if cid == previous.get("last_cycle_id") or cid in previous.get("processed_cycle_ids", []):
             raise RejectedCycle("Duplicate cycle_id: idempotency guard")
         prior_ts = previous.get("updated")
         if prior_ts and dt <= timestamp(prior_ts):
             raise RejectedCycle("Cycle must be newer than published state")
-        initial = decimal(previous.get("initial"), "previous.initial", positive=True)
-        cash = decimal(previous.get("cash"), "previous.cash")
-        positions = {validate_asset(a): decimal(q, "position qty") for a, q in (previous.get("positions") or {}).items()}
+        ledger = previous.get("_ledger") or {}
+        initial = decimal(ledger.get("initial", previous.get("initial")), "previous.initial", positive=True)
+        cash = decimal(ledger.get("cash", previous.get("cash")), "previous.cash")
+        raw_positions = ledger.get("positions", previous.get("positions")) or {}
+        positions = {validate_asset(a): decimal(q, "position qty") for a, q in raw_positions.items()}
+        if cycle.get("initial_usdc") is not None and decimal(cycle["initial_usdc"], "initial_usdc", positive=True) != initial:
+            raise RejectedCycle("Starting capital cannot change")
     else:
         if previous.get("data_source") not in (None, "") or previous.get("initial") is not None:
             raise RejectedCycle("Unrecognized previous state; refusing reset")
@@ -96,7 +100,7 @@ def apply_cycle(previous, cycle):
         raise RejectedCycle("decisions must be an array, even for HOLD")
     orders = list(previous.get("orders") or []) if verified else []
     new_orders = []
-    fees = decimal(previous.get("fees"), "previous.fees") if verified else Decimal(0)
+    fees = decimal((previous.get("_ledger") or {}).get("fees", previous.get("fees")), "previous.fees") if verified else Decimal(0)
     for i, item in enumerate(decisions):
         if not isinstance(item, dict):
             raise RejectedCycle(f"decisions[{i}]: object required")
@@ -151,6 +155,8 @@ def apply_cycle(previous, cycle):
     history = list(previous.get("history") or []) if verified else []
     history.append({"ts": cycle["ts"], "equity": number(equity), "cash": number(cash)})
     result = dict(previous)
+    processed = list(previous.get("processed_cycle_ids") or []) if verified else []
+    processed.append(cid)
     result.update({"schema": "v2-paper-1", "engine": "V2.0.0", "strategy": "V2.0",
                    "mode": "PAPER", "data_source": SOURCE, "initial": number(initial),
                    "cash": number(cash), "equity": number(equity),
@@ -159,7 +165,10 @@ def apply_cycle(previous, cycle):
                    "positions": {a: number(q) for a, q in positions.items()},
                    "position_values": position_values, "orders": orders + new_orders,
                    "history": history, "signals": signals, "updated": cycle["ts"],
-                   "last_cycle_id": cid, "status": "PAPER · GrokBot vérifié"})
+                   "last_cycle_id": cid, "processed_cycle_ids": processed,
+                   "_ledger": {"initial": str(initial), "cash": str(cash), "fees": str(fees),
+                               "positions": {a: str(q) for a, q in positions.items()}},
+                   "status": "PAPER · GrokBot vérifié"})
     if summary is not None:
         result["closed_trades_summary"] = summary
     if "closed_trades_history" in cycle:
