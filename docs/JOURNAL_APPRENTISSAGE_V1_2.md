@@ -27,3 +27,15 @@ Tenu par Kraken - Bot Crypto à chaque revue (vers 8h et 19h, heure de Paris). P
 **Décision.** Aucun changement de `strategy/v1_2/params.json` : moins de 24 h de données et aucun signal bloqué de façon instructive. Pas de correctif moteur. Pour le cron, ce n'est pas une panne (aucun run en échec, état publié), mais la régularité est insuffisante ; je propose à Cyril un déclencheur de secours plutôt que de modifier le workflow seul.
 
 **À vérifier ensuite.** Le taux de créneaux exécutés sur 24 h ; le barème réel de frais USDC (via le compte de Cyril en lecture, ou la doc Kraken) pour savoir si 0,8 % est trop pessimiste ; l'écart du panier contre BTC sur plusieurs jours (ETH et SOL plus faibles que BTC aujourd'hui).
+
+## 2026-10-27 08h (Paris) — revue n°3
+
+**Observations.** Depuis la revue d'hier 19h, seulement 2 cycles planifiés ont tourné (22h48 et 02h13 UTC), tous deux réussis, état publié à 02h14 UTC. Depuis le départ, environ 6 créneaux horaires sur une trentaine ont été exécutés par le cron GitHub, aucun en échec. Aucun nouvel ordre, 0 refus, aucune alerte LIQUIDITY_REVIEW, 4 paires éligibles, spread médian 0,027 %, slippage estimé 0,006 %. Signaux A, C, D : aucune entrée ; B signale BTC, SOL et XRP, mais le budget restant (≈ 41 USDC) impose HOLD. Revalorisation au prix public Kraken de 06h50 UTC (BTC 79 551, ETH 2 303,5, SOL 99,69, XRP 1,2963 USDC) : environ 6 575 USDC, soit −30 USDC (−0,46 %) depuis le départ et −12 USDC depuis hier 19h. En face, l'USDC fait 0 % et un maintien BTC −0,56 % depuis l'achat. Hors frais, le panier est à environ −0,76 % (BTC −0,56 %, ETH −0,85 %, SOL −1,63 %, XRP 0,0 %). Frais cumulés 15,55 USDC.
+
+**Rapport GPT-6.** Pas de rapport du 27/10 à cette heure (attendu avant 18h30) ; rien de neuf à revérifier.
+
+**Hypothèses passées.** « La performance suit le marché » : confirmée une troisième fois, le recul de la nuit vient du marché (BTC −0,6 % sur 24 h). « ETH et SOL plus faibles que BTC » : confirmée sur 30 h, SOL est le plus gros contributeur négatif ; XRP compense. Toujours trop court pour en tirer une règle.
+
+**Décision.** Aucun changement de `strategy/v1_2/params.json` : à peine 30 h de données, et aucun signal n'a été bloqué de façon instructive. Pas de correctif moteur. Le cron reste irrégulier mais pas en panne ; le déclencheur de secours reste une proposition à valider avec Cyril.
+
+**À vérifier ensuite.** Sur 48 h, si l'écart SOL/ETH contre BTC se confirme (piste d'un poids réduit sur SOL, à ne décider qu'après plusieurs jours) ; le taux de créneaux exécutés ; le rapport GPT-6 du 27/10 et ses chiffres contre Kraken en direct.
