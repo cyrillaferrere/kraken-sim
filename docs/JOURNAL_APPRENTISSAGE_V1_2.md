@@ -39,3 +39,17 @@ Tenu par Kraken - Bot Crypto à chaque revue (vers 8h et 19h, heure de Paris). P
 **Décision.** Aucun changement de `strategy/v1_2/params.json` : à peine 30 h de données, et aucun signal n'a été bloqué de façon instructive. Pas de correctif moteur. Le cron reste irrégulier mais pas en panne ; le déclencheur de secours reste une proposition à valider avec Cyril.
 
 **À vérifier ensuite.** Sur 48 h, si l'écart SOL/ETH contre BTC se confirme (piste d'un poids réduit sur SOL, à ne décider qu'après plusieurs jours) ; le taux de créneaux exécutés ; le rapport GPT-6 du 27/10 et ses chiffres contre Kraken en direct.
+
+## 2026-10-27 19h (Paris) — revue n°4
+
+**Observations.** Depuis la revue de 8h, 2 cycles planifiés ont tourné (08h06 et 14h45 UTC), tous deux réussis, état publié à 14h45 UTC. Depuis le départ, 8 runs planifiés sur environ 40 créneaux horaires, aucun en échec. Aucun nouvel ordre, 0 refus, aucune alerte LIQUIDITY_REVIEW, 4 paires éligibles (BTC, ETH, SOL, XRP contre USDC). Signaux A, C, D : aucune entrée ; B signale BTC, SOL et XRP, budget restant ≈ 41 USDC, donc HOLD. Valeur publiée à 14h45 UTC : 6 593,60 USDC. Revalorisée au prix public Kraken de 17h48 UTC (BTC 80 582, ETH 2 349,27, SOL 101,07, XRP 1,3189 USDC) : environ 6 605,7 USDC, soit +0,6 USDC (+0,01 %) depuis le départ et +31 USDC depuis 8h. En face, l'USDC fait 0 % et un maintien BTC +0,73 % depuis l'achat. Hors frais, le panier est à +0,83 % (XRP +1,75 %, ETH +1,12 %, BTC +0,73 %, SOL −0,27 %). Frais cumulés 15,55 USDC, qui effacent à eux seuls le gain du panier. Drawdown max observé ≈ −30 USDC (−0,46 %, ce matin), loin du seuil de 25 %.
+
+**Rapport GPT-6.** Aucun rapport `v2/reports/2026-10-27.md` à 18h48 (attendu avant 18h30), ni branche de rapport. Rien à revérifier ; à signaler.
+
+**Hypothèses passées.** « La performance suit le marché » : confirmée une quatrième fois (rebond de la journée, BTC +1,3 % depuis ce matin). « ETH et SOL plus faibles que BTC » : invalidée pour ETH, qui passe devant BTC ; seule SOL reste en retard (−1 point contre BTC sur 40 h). Le classement entre actifs s'est inversé en 12 h : c'est du bruit, pas une règle.
+
+**Point appris.** Sur 40 h, la diversification n'a ni aidé ni nui (panier +0,83 % contre BTC +0,73 % hors frais), mais les frais d'entrée de 0,8 % pèsent plus que tout l'écart de performance entre actifs. Le levier principal à court terme est le coût d'exécution, pas la sélection.
+
+**Décision.** Aucun changement de `strategy/v1_2/params.json` : moins de 2 jours de données, et l'idée d'alléger SOL repose sur un écart que la journée a déjà en partie effacé. Pas de correctif : le cron est irrégulier (environ 1 créneau sur 5) mais aucun run n'échoue et l'état est publié.
+
+**À vérifier ensuite.** Sur 3 à 4 jours, si SOL reste durablement sous BTC ; le barème réel des frais USDC (0,8 % simulé semble pessimiste) avant toute réflexion sur des ordres maker ; le taux de créneaux exécutés ; l'arrivée du rapport GPT-6.
