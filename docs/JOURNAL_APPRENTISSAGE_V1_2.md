@@ -53,3 +53,15 @@ Tenu par Kraken - Bot Crypto à chaque revue (vers 8h et 19h, heure de Paris). P
 **Décision.** Aucun changement de `strategy/v1_2/params.json` : moins de 2 jours de données, et l'idée d'alléger SOL repose sur un écart que la journée a déjà en partie effacé. Pas de correctif : le cron est irrégulier (environ 1 créneau sur 5) mais aucun run n'échoue et l'état est publié.
 
 **À vérifier ensuite.** Sur 3 à 4 jours, si SOL reste durablement sous BTC ; le barème réel des frais USDC (0,8 % simulé semble pessimiste) avant toute réflexion sur des ordres maker ; le taux de créneaux exécutés ; l'arrivée du rapport GPT-6.
+
+## 2026-10-28 08h (Paris) — revue n°5
+
+**Observations.** Depuis la revue d'hier 19h, 3 cycles planifiés ont tourné (20h09, 23h53 et 05h59 UTC), tous réussis, état publié à 05h59 UTC. Depuis le départ, 11 runs planifiés sur environ 53 créneaux horaires, aucun en échec. Aucun nouvel ordre, 0 refus, aucune alerte LIQUIDITY_REVIEW, 4 paires éligibles. Signaux : B signale les 4 actifs, C signale BTC (première entrée C observée), A et D rien ; budget restant ≈ 41 USDC, donc HOLD. Valeur publiée à 05h59 UTC : 6 612,08 USDC (nouveau plus haut moteur 6 612,74). Revalorisée au prix public Kraken de 06h55 UTC (BTC 80 802, ETH 2 349,7, SOL 101,90, XRP 1,3259 USDC) : environ 6 613,8 USDC, soit +8,7 USDC (+0,13 %) depuis le départ et +8 USDC depuis hier 19h. En face, l'USDC fait 0 % et un maintien BTC +1,01 % depuis l'achat. Hors frais, le panier est à +1,25 % (XRP +2,28 %, ETH +1,14 %, BTC +1,01 %, SOL +0,55 %). Frais cumulés 15,55 USDC. Drawdown max toujours ≈ −30 USDC (−0,46 %, le 27 au matin).
+
+**Rapport GPT-6.** Toujours aucun rapport `v2/reports/2026-10-27.md` (seul celui du 26 existe). Rien à revérifier ; deuxième jour manquant, à signaler.
+
+**Hypothèses passées.** « La performance suit le marché » : confirmée une cinquième fois. « SOL durablement sous BTC » : toujours vrai (−0,5 point) mais l'écart se réduit ; pas une règle. « Les frais pèsent plus que la sélection » : confirmée, le panier bat BTC de 0,24 point hors frais mais les 0,8 % d'entrée le font passer derrière (+0,13 % du capital total, soit environ +0,45 % sur la part investie, contre +1,01 % pour BTC).
+
+**Décision.** Aucun changement de `strategy/v1_2/params.json` : 54 h de données seulement, aucun signal bloqué de façon instructive (l'entrée C sur BTC ne pourrait de toute façon pas s'exécuter, plafond quasi atteint). Pas de correctif : cron irrégulier mais sans échec, état publié.
+
+**À vérifier ensuite.** Si le signal C sur BTC persiste (signe d'une tendance que le plafond empêche de suivre, à documenter sans toucher au plafond) ; l'écart SOL contre BTC sur 4 jours ; le barème réel des frais USDC ; l'arrivée du rapport GPT-6.
