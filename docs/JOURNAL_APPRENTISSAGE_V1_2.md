@@ -65,3 +65,17 @@ Tenu par Kraken - Bot Crypto à chaque revue (vers 8h et 19h, heure de Paris). P
 **Décision.** Aucun changement de `strategy/v1_2/params.json` : 54 h de données seulement, aucun signal bloqué de façon instructive (l'entrée C sur BTC ne pourrait de toute façon pas s'exécuter, plafond quasi atteint). Pas de correctif : cron irrégulier mais sans échec, état publié.
 
 **À vérifier ensuite.** Si le signal C sur BTC persiste (signe d'une tendance que le plafond empêche de suivre, à documenter sans toucher au plafond) ; l'écart SOL contre BTC sur 4 jours ; le barème réel des frais USDC ; l'arrivée du rapport GPT-6.
+
+## 2026-10-28 19h (Paris) — revue n°6
+
+**Observations.** Depuis la revue de 8h, un seul cycle planifié a tourné (13h18 UTC), réussi, état publié à 13h18 UTC. Depuis le départ, 12 runs planifiés sur environ 65 créneaux horaires, aucun en échec. Aucun nouvel ordre, 0 refus, aucune alerte LIQUIDITY_REVIEW, 4 paires éligibles, slippage estimé 0,006 %, spread médian 0,012 %. Signaux : B signale les 4 actifs, C signale toujours BTC (deuxième cycle d'affilée), A et D rien ; budget restant ≈ 41 USDC, donc HOLD. Valeur publiée à 13h18 UTC : 6 602,50 USDC. Revalorisée au prix public Kraken de 17h52 UTC (BTC 80 755,7, ETH 2 342,4, SOL 101,66, XRP 1,3189 USDC) : environ 6 608,2 USDC, soit +3,1 USDC (+0,05 %) depuis le départ et −5,6 USDC depuis 8h. En face, l'USDC fait 0 % et un maintien BTC +0,95 % depuis l'achat. Hors frais, le panier est à +0,96 % (XRP +1,75 %, BTC +0,95 %, ETH +0,83 %, SOL +0,31 %). Frais cumulés 15,55 USDC. Recul depuis le plus haut moteur (6 612,74) d'environ −4,5 USDC ; drawdown max toujours ≈ −30 USDC (−0,46 %, le 27 au matin).
+
+**Rapport GPT-6.** Aucun rapport du 27 ni du 28/10 dans `v2/reports/` (seul celui du 26 existe), PR #36 et #38 toujours ouvertes. Troisième jour sans rapport : la boucle d'analyse GPT-6 est à l'arrêt, rien à revérifier.
+
+**Hypothèses passées.** « La performance suit le marché » : confirmée une sixième fois (journée plate, BTC dans une fourchette 80 320 à 81 728). « SOL durablement sous BTC » : toujours vrai sur 66 h (−0,6 point), c'est la seule tendance stable entre actifs, mais l'écart reste inférieur aux frais d'un aller-retour (≈ 1,6 %), donc alléger SOL coûterait plus qu'il ne rapporterait. « Les frais pèsent plus que la sélection » : confirmée, le panier fait jeu égal avec BTC hors frais et les 0,8 % d'entrée expliquent tout l'écart.
+
+**Signal C sur BTC.** Il persiste depuis deux cycles, mais BTC n'a pas progressé depuis ce matin ; un renfort n'aurait rien apporté aujourd'hui. Je le documente sans toucher au plafond.
+
+**Décision.** Aucun changement de `strategy/v1_2/params.json` : moins de 3 jours de données, aucun signal bloqué de façon coûteuse, et toute rotation serait mangée par les frais. Pas de correctif : cron irrégulier (≈ 1 créneau sur 5) mais sans échec, état publié.
+
+**À vérifier ensuite.** Sur 4 à 5 jours, si l'écart SOL contre BTC dépasse le coût d'un aller-retour (seuil où un allègement aurait du sens) ; si le signal C sur BTC se maintient et ce qu'il aurait rapporté ; le barème réel des frais USDC ; la relance du rapport GPT-6.
