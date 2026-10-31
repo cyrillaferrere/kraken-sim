@@ -79,3 +79,17 @@ Tenu par Kraken - Bot Crypto à chaque revue (vers 8h et 19h, heure de Paris). P
 **Décision.** Aucun changement de `strategy/v1_2/params.json` : moins de 3 jours de données, aucun signal bloqué de façon coûteuse, et toute rotation serait mangée par les frais. Pas de correctif : cron irrégulier (≈ 1 créneau sur 5) mais sans échec, état publié.
 
 **À vérifier ensuite.** Sur 4 à 5 jours, si l'écart SOL contre BTC dépasse le coût d'un aller-retour (seuil où un allègement aurait du sens) ; si le signal C sur BTC se maintient et ce qu'il aurait rapporté ; le barème réel des frais USDC ; la relance du rapport GPT-6.
+
+## 2026-10-31 19h (Paris) — revue n°7
+
+**Observations.** Pas de revue entre le 28/10 19h et aujourd'hui (routine en pause « mode éco », relancée ce jour). Depuis, 13 cycles planifiés ont tourné, tous réussis, dernier état publié à 13h45 UTC (moteur V1.6.5, statut DRY_RUN du tick sans événement). Le cron reste irrégulier, environ 1 créneau horaire sur 5 à 6, sans aucun échec. Aucun nouvel ordre, 0 refus, aucune alerte LIQUIDITY_REVIEW, 4 paires éligibles (BTC, ETH, SOL, XRP contre USDC). Signaux : B signale BTC seul, A, C et D rien ; plafond quasi atteint, donc HOLD. Revalorisation au prix public Kraken de 17h47 UTC (BTC 77 567, ETH 2 254, SOL 95,96, XRP 1,2548 USDC) : environ 6 519 USDC, soit −86 USDC (−1,30 %) depuis le départ et −89 USDC depuis la revue du 28/10 19h. En face, l'USDC fait 0 % et un maintien BTC −3,04 % depuis l'achat. Hors frais, le panier fait −3,6 % (ETH −3,0 %, BTC −3,0 %, XRP −3,2 %, SOL −5,3 %). Frais cumulés inchangés à 15,55 USDC. Recul depuis le plus haut moteur (6 620,17) d'environ −101 USDC (−1,5 %), loin du seuil de 25 %.
+
+**Rapport GPT-6.** Toujours aucun rapport après celui du 26/10 dans `v2/reports/`. Rien à revérifier.
+
+**Hypothèses passées.** « La performance suit le marché » : confirmée une septième fois, le recul vient entièrement de la baisse générale (BTC de ~80 800 à ~77 500). « SOL durablement sous BTC » : confirmée sur 6 jours, l'écart atteint −2,3 points et dépasse désormais le coût d'un aller-retour (≈ 1,6 %), le seuil que je m'étais fixé. Le signal C sur BTC du 28/10 a disparu : ne pas avoir pu renforcer BTC a évité environ −4 % sur ce renfort.
+
+**Point appris.** Avoir 70 % du capital en USDC est ce qui protège le portefeuille : −1,3 % au total quand le marché fait −3 %. Le plafond de 2 000 USDC joue son rôle d'amortisseur.
+
+**Décision.** Aucun changement de `strategy/v1_2/params.json`. L'écart SOL vient tout juste de franchir le seuil, sur une séance de baisse générale où SOL, plus volatile, recule mécaniquement plus ; un allègement maintenant reviendrait à vendre au plus bas. Je veux le voir tenir encore 2 à 3 jours, y compris en rebond. Pas de correctif : cron irrégulier mais sans échec, état publié.
+
+**À vérifier ensuite.** Si l'écart SOL contre BTC reste au-delà de 1,6 point lors d'un rebond (sinon c'est juste du bêta plus élevé) ; la régularité du cron ; la relance du rapport GPT-6.
