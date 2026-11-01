@@ -93,3 +93,15 @@ Tenu par Kraken - Bot Crypto à chaque revue (vers 8h et 19h, heure de Paris). P
 **Décision.** Aucun changement de `strategy/v1_2/params.json`. L'écart SOL vient tout juste de franchir le seuil, sur une séance de baisse générale où SOL, plus volatile, recule mécaniquement plus ; un allègement maintenant reviendrait à vendre au plus bas. Je veux le voir tenir encore 2 à 3 jours, y compris en rebond. Pas de correctif : cron irrégulier mais sans échec, état publié.
 
 **À vérifier ensuite.** Si l'écart SOL contre BTC reste au-delà de 1,6 point lors d'un rebond (sinon c'est juste du bêta plus élevé) ; la régularité du cron ; la relance du rapport GPT-6.
+
+## 2026-11-01 08h (Paris) — revue n°8
+
+**Observations.** Depuis la revue d'hier 19h, 3 cycles planifiés ont tourné (18h40, 22h38 et 02h24 UTC), tous réussis, dernier état publié à 02h24 UTC (moteur V1.6.5, tick DRY_RUN sans événement). Aucun nouvel ordre, 0 refus, aucune alerte LIQUIDITY_REVIEW, aucune paire exclue, 4 paires valides. Signaux : B signale BTC seul, A, C et D rien ; plafond quasi atteint, donc HOLD. Revalorisation au prix public Kraken d'environ 06h55 UTC (BTC 77 911, ETH 2 266,9, SOL 95,53, XRP 1,2514 USDC) : environ 6 520 USDC, soit −1,28 % depuis le départ et +1 USDC depuis hier soir. En face, l'USDC fait 0 % et un maintien BTC −2,61 % depuis l'achat. Hors frais : BTC −2,6 %, ETH −2,4 %, XRP −3,5 %, SOL −5,7 %. Frais cumulés inchangés à 15,55 USDC. Recul depuis le plus haut moteur (6 620,17) d'environ −1,5 %.
+
+**Rapport GPT-6.** Toujours aucun rapport après celui du 26/10. Rien à revérifier.
+
+**Hypothèses passées.** « La performance suit le marché » : confirmée une huitième fois. « SOL n'est qu'un bêta plus élevé » : premier test en léger rebond nocturne (BTC +0,45 % depuis hier soir), SOL a encore reculé (95,96 vers 95,53) et l'écart avec BTC passe de 2,3 à 3,1 points. Cela penche vers une vraie faiblesse relative, pas seulement du bêta, mais une nuit de week-end à faible volume reste un test faible.
+
+**Décision.** Aucun changement de `strategy/v1_2/params.json`. Le délai de 2 à 3 jours que je m'étais donné court jusqu'au 02-03/11 ; je ne veux pas trancher sur une nuit de dimanche. Pas de correctif : cron irrégulier mais sans échec, état publié.
+
+**À vérifier ensuite.** Si l'écart SOL contre BTC reste au-delà de 2 points lors des séances de semaine (lundi 02/11) ; s'il s'élargit encore, envisager un allègement de SOL comme premier changement de la semaine, justifié par plus de 6 jours de données ; la relance du rapport GPT-6.
